@@ -45,21 +45,18 @@ public class Pluto_SceneHandler : MonoBehaviour
 
     public Slider torque;                  // For torque controlslider
     public Slider positionSlider;         //for positionSlider
-    public string[] availabe;
+    //public string[] availabe;
     public bool diagonistic = false;
     static public byte pressed { get; private set; }
     static public byte released { get; private set; }
     public static int calibState { get; private set; }
     public static bool iscalib { get; private set; }
     public String jsonUserData;
-    public AppConfig appConfig;
 
 
     // Start is called before the first frame update
     void Start()
     {
-
-
         // Set default values for sliders
         torque.minValue = -1.0f;  // Set minimum value for torque slider
         torque.maxValue = 1.0f;   // Set maximum value for torque slider
@@ -69,13 +66,11 @@ public class Pluto_SceneHandler : MonoBehaviour
         positionSlider.maxValue = 0.0f;     // Set maximum value for position slider
         //positionSlider.value = -135.0f;     // Set initial value to -135�
         statusImage.enabled = false;
-        availabe = ConnectToRobot.availablePorts();
-        TryConnectToDevice();
+        ConnectToRobot.Connect("COM3");
         panel.SetActive(false);
         testPanel.SetActive(false);
         calibPanel.SetActive(false);
         wel_panel.SetActive(false);
-        appConfig = FindObjectOfType<AppConfig>();
         // Attach controls callback
         AttachControlCallbacks();
         // Update the UI when starting
@@ -100,7 +95,6 @@ public class Pluto_SceneHandler : MonoBehaviour
                     pressed = 1;
                     released = 0;
                 }
-                
             }
             else
             {
@@ -173,35 +167,6 @@ public class Pluto_SceneHandler : MonoBehaviour
         UpdateTorquePositionalControl();
     }
 
-    private void TryConnectToDevice()
-    {
-
-        Debug.Log("Available Ports: " + string.Join(", ", availabe));
-
-        ConnectToRobot.Connect("COM8");
-        //foreach (String port in PortsToTry)
-        //{
-
-        //    if (port == "Select Port") continue;
-        //    Debug.Log("Trying port: " + port);
-
-        //    try
-        //    {
-        //        ConnectToRobot.Connect(port);
-        //        if (ConnectToRobot.isPLUTO)
-        //        {
-
-        //            Debug.Log("Connected to PLUTO on port " + port);
-        //            break;
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.LogError("Error connecting to port " + port + ": " + ex.Message);
-        //    }
-        //}
-
-    }
     private void UpdateTorquePositionalControl()
     {
         // Handle torque and positional control slider updates

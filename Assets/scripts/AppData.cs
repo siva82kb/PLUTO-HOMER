@@ -6,7 +6,6 @@ using UnityEngine;
 
 public static class AppData
 {
-    
     public static class PlutoRobotData
     {
         public static double HOCScale = 3.97 * Math.PI / 180;
@@ -41,10 +40,8 @@ public static class AppData
         public static int[] controlType_ = new int[] { 0,1,2,3};//none,position, resist, torque
         public static double[] TORQUE = new double[] { -PLUTOMaxTorque, PLUTOMaxTorque };
         public static double[] POSITION = new double[] { -135, 0 };
-    // Hand Opening and Closing Mechanism Conversion Factor
+        // Hand Opening and Closing Mechanism Conversion Factor
 
-
-    
         public static void parseByteArray(byte[] receivedbytes, int datalength)
         {
             rawBytes = receivedbytes;

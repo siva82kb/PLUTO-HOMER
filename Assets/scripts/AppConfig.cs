@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 
 public class AppConfig : MonoBehaviour
 {
+    //Test
     public class UserRoot
     {
         public string hospno { get; set; }

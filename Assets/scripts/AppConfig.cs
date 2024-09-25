@@ -15,6 +15,8 @@ public class AppConfig : MonoBehaviour
         public string End { get; set; }
         public string Age { get; set; }
     }
+    // Device COM port
+    string comPort = "COM3";
     // Declare directory and file paths
     string directoryPath;
     string directoryPathConfig;

@@ -80,10 +80,8 @@ public class Pluto_SceneHandler : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
         if (ConnectToRobot.isPLUTO)
         {
-            
             updateAngVal();
             if (iscalib)
             {
@@ -91,7 +89,8 @@ public class Pluto_SceneHandler : MonoBehaviour
             }
             if (AppData.PlutoRobotData.buttonst == 0)
             {
-                if (iscalib) {
+                if (iscalib)
+                {
                     pressed = 1;
                     released = 0;
                 }
@@ -108,7 +107,7 @@ public class Pluto_SceneHandler : MonoBehaviour
             statusImage.enabled = true;
             loading.SetActive(false);
             statusImage.color = new Color(0f, 1f, 0f, 0.741f);
-            statusText.color= Color.green;
+            statusText.color = Color.green;
         }
         //Debug.Log(calibState + "calibState");
         if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.D))
@@ -120,51 +119,51 @@ public class Pluto_SceneHandler : MonoBehaviour
                 updateAngVal();
             }
         }
-        if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.C))
-        {
-            calibPanel.SetActive(!calibPanel.activeSelf);
-            // Toggle showing the angle
-            iscalib = false;
-            calibState = -1;
-            if (testPanel.activeSelf)
-            {
-                testPanel.SetActive(false);
-            }
+        //if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.C))
+        //{
+        //    calibPanel.SetActive(!calibPanel.activeSelf);
+        //    // Toggle showing the angle
+        //    iscalib = false;
+        //    calibState = -1;
+        //    if (testPanel.activeSelf)
+        //    {
+        //        testPanel.SetActive(false);
+        //    }
 
-            if (calibPanel.activeSelf)
-            {
-                //updateAngVal();
+        //    if (calibPanel.activeSelf)
+        //    {
+        //        //updateAngVal();
 
-                if (calibState == -1)
-                {
-                    if (AppData.PlutoRobotData.Statusmode.Equals(AppData.PlutoRobotData.outDataType[2]))
-                    {
-                        JediComm.SendMessage(new byte[] { (byte)AppData.PlutoRobotData.inDataType[2] });
+        //        if (calibState == -1)
+        //        {
+        //            if (AppData.PlutoRobotData.Statusmode.Equals(AppData.PlutoRobotData.outDataType[2]))
+        //            {
+        //                JediComm.SendMessage(new byte[] { (byte)AppData.PlutoRobotData.inDataType[2] });
 
-                    }
+        //            }
 
-                    //connection._Calibration.update_calib_ui();
-                   _Calibration.calibrate("NOMECH");
-                    calibState = 0;//to set zero
-                    iscalib = true;
-                }
+        //            //connection._Calibration.update_calib_ui();
+        //           _Calibration.calibrate("NOMECH");
+        //            calibState = 0;//to set zero
+        //            iscalib = true;
+        //        }
 
-            }
-        }
-        if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.T))
-        {
-            testPanel.SetActive(!testPanel.activeSelf);
-            if (calibPanel.activeSelf)
-            {
-               calibPanel.SetActive(false);
-            }
-                // Toggle showing the angle
-                if (testPanel.activeSelf)
-            {
-                JediComm.SendMessage(new byte[] { (byte)AppData.PlutoRobotData.inDataType[6] });
-            }
-        }
-        UpdateTorquePositionalControl();
+        //    }
+        //}
+        //if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.T))
+        //{
+        //    testPanel.SetActive(!testPanel.activeSelf);
+        //    if (calibPanel.activeSelf)
+        //    {
+        //       calibPanel.SetActive(false);
+        //    }
+        //        // Toggle showing the angle
+        //        if (testPanel.activeSelf)
+        //    {
+        //        JediComm.SendMessage(new byte[] { (byte)AppData.PlutoRobotData.inDataType[6] });
+        //    }
+        //}
+        //UpdateTorquePositionalControl();
     }
 
     private void UpdateTorquePositionalControl()

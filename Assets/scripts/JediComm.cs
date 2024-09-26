@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO.Ports;
 using System.Linq;
 using System.Threading;
+using UnityEditor.PackageManager;
 using UnityEngine;
 
 /*
@@ -19,9 +20,10 @@ public static class JediComm
     static public SerialPort serPort { get; private set; }
     static private Thread reader;
     static byte[] packet;
-    static int plcnt = 0;
+    static private int plCount = 0;
     static public double HOCScale = 3.97 * Math.PI / 180;
     static private byte[] rawBytes = new byte[256];
+    static private DateTime plTime;
 
     // Headers for Rx and Tx.
     static public byte HeaderIn = 0xFF;
@@ -95,11 +97,11 @@ public static class JediComm
             try
             {
                 // Read full packet.
-
                 if (readFullSerialPacket())
                 {
+                    plTime = DateTime.Now;
                     ConnectToRobot.isPLUTO = true;
-                    AppData.PlutoRobotData.parseByteArray(rawBytes, plcnt);
+                    PlutoComm.parseByteArray(rawBytes, plCount, plTime);
                 }
                 else
                 {
@@ -119,30 +121,26 @@ public static class JediComm
     // Read a full serial packet.
     static private bool readFullSerialPacket()
     {
-        plcnt = 0;
+        plCount = 0;
         int chksum = 0;
         int _chksum;
       
         if ((serPort.ReadByte() == HeaderIn) && (serPort.ReadByte() == HeaderIn))
         {
-            byte[] dateTimeBytes = BitConverter.GetBytes(DateTime.Now.Ticks); 
-            plcnt = 0;
+            plCount = 0;
             chksum = HeaderIn + HeaderIn;
             // Number of bytes to read.
-            rawBytes[plcnt++] = (byte)serPort.ReadByte();
+            rawBytes[plCount++] = (byte)serPort.ReadByte();
             chksum += rawBytes[0];
             if (rawBytes[0] != 255)
             {
                 // Read all the payload bytes.
                 for (int i = 0; i < rawBytes[0] - 1; i++)
                 {
-                    rawBytes[plcnt++] = (byte)serPort.ReadByte();
-                    chksum += rawBytes[plcnt - 1];
+                    rawBytes[plCount++] = (byte)serPort.ReadByte();
+                    chksum += rawBytes[plCount - 1];
                 }
                 _chksum = serPort.ReadByte();
-                // Add timestamp to rawBytes
-                Array.Copy(dateTimeBytes, 0, rawBytes, plcnt, dateTimeBytes.Length);
-                plcnt += dateTimeBytes.Length;
                 return (_chksum == (chksum & 0xFF));
             }
             else

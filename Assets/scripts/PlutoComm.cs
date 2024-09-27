@@ -8,7 +8,14 @@ public static class PlutoComm
 {
     // Device Level Constants
     public static readonly string[] OUTDATATYPE = new string[] { "SENSORSTREAM", "CONTROLPARAM", "DIAGNOSTICS" };
-    public static readonly string[] MECHANISMS = new string[] { "WFE", "WUD", "WPS", "HOC", "NOMECH" };
+    public static readonly string[] MECHANISMS = new string[] { "WFE", "WUD", "FPS", "HOC", "NOMECH" };
+    public static readonly string[] MECHANISMSTEXT = new string[] { 
+        "Wrist Flex/Extension", 
+        "Wrist Ulnar/Radial Deviation", 
+        "Forearm Pron/Supination", 
+        "Hand Open/Closing", 
+        "NO Mechanism" 
+    };
     public static readonly string[] CALIBRATION= new string[] { "NOCALLIB", "YESCALLIB" };
     public static readonly string[] CONTROLTYPE = new string[] { "NONE", "POSITION", "RESIST", "TORQUE" };
     public static readonly int[]    SENSORNUMBER = new int[] { 
@@ -17,7 +24,16 @@ public static class PlutoComm
         7   // DIAGNOSTICS
     }; 
     public static readonly double   MAXTORQUE = 1.0; // Nm
-    public static readonly int[]    INDATATYPE = new int[] { 0, 1, 2, 3, 4, 5, 6 };
+    public static readonly int[]    INDATATYPECODES = new int[] { 0, 1, 2, 3, 4, 5, 6 };
+    public static readonly string[]    INDATATYPE = new string[] {
+        "GET_VERSION",
+        "CALIBRATE",
+        "START_STREAM",
+        "STOP_STREAM",
+        "SET_CONTROL_TYPE",
+        "SET_CONTROL_TARGET",
+        "SET_DIAGNOSTICS"
+    };
     public static readonly int[]    CALIBANGLE= new int[] { 120, 120, 120, 140 };
     public static readonly double[] TORQUE = new double[] { -MAXTORQUE, MAXTORQUE };
     public static readonly double[] POSITION = new double[] { -135, 0 };
@@ -28,6 +44,10 @@ public static class PlutoComm
     {
         return Array.IndexOf(array, value);
     }
+
+    // Button released event.
+    public delegate void PlutoButtonReleasedEvent();
+    public static event PlutoButtonReleasedEvent OnButtonReleased;
 
     // Private variables
     static private byte[] rawBytes = new byte[256];
@@ -148,12 +168,11 @@ public static class PlutoComm
 
     public static void parseByteArray(byte[] payloadBytes, int payloadCount, DateTime payloadTime)
     {
-        Debug.Log(payloadBytes);
         if (payloadCount == 0)
         {
             return;
         }
-        previousStateData = currentStateData;
+        Array.Copy(currentStateData, previousStateData, currentStateData.Length);
         rawBytes = payloadBytes;
         previousTime = currentTime;
         currentTime = payloadTime;
@@ -184,12 +203,43 @@ public static class PlutoComm
 
         // Updat framerate
         frameRate = 1 / (currentTime - previousTime).TotalSeconds;
+
+        // Check of the button has been released.
+        if (previousStateData[4] == 0 && currentStateData[4] == 1)
+        {
+            OnButtonReleased?.Invoke();
+        }
     }
 
-    static float getHOCDisplay(float angle)
+    public static float getHOCDisplay(float angle)
     {
         return (float) HOCScale * Math.Abs(angle);
 
+    }
+
+    public static void startSensorStream()
+    {
+        JediComm.SendMessage(new byte[] { (byte) GetPlutoCodeFromLabel(INDATATYPE, "START_STREAM") });
+    }
+
+    public static void stopSensorStream()
+    {
+        JediComm.SendMessage(new byte[] { (byte)GetPlutoCodeFromLabel(INDATATYPE, "STOP_STREAM") });
+    }
+
+    public static void setDiagnosticMode()
+    {
+        JediComm.SendMessage(new byte[] { (byte)GetPlutoCodeFromLabel(INDATATYPE, "SET_DIAGNOSTICS") });
+    }
+
+    public static void calibrate(string mech)
+    {
+        JediComm.SendMessage(
+            new byte[] {
+                (byte)GetPlutoCodeFromLabel(INDATATYPE, "CALIBRATE"),
+                (byte)GetPlutoCodeFromLabel(MECHANISMS, mech)
+            }
+        );
     }
 }
 
@@ -198,23 +248,6 @@ public static class ConnectToRobot
 {
     public static string _port;
     public static bool isPLUTO = false;
-
-    public static string[] availablePorts()
-    {
-        string[] portNames = SerialPort.GetPortNames();
-        string[] comPorts = new string[portNames.Length + 1];
-        comPorts[0] = "Select Port";
-        Array.Copy(portNames, 0, comPorts, 1, portNames.Length); // Copy the old values
-        if (comPorts.Length > 1)
-        {
-            Debug.Log("Available Port: " + comPorts[1]);
-        }
-        else
-        {
-            Debug.LogWarning("No available serial ports found.");
-        }
-        return comPorts;
-    }
 
     public static void Connect(string port)
     {
@@ -260,7 +293,4 @@ public static class ConnectToRobot
         ConnectToRobot.isPLUTO = false;
         JediComm.Disconnect();
     }
-
-
-
 }

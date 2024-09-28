@@ -691,8 +691,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 14
-  m_fontSizeBase: 14
+  m_fontSize: 12
+  m_fontSizeBase: 12
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -1885,12 +1885,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   textDataDisplay: {fileID: 1582546135}
-  btnCalib: {fileID: 0}
   tglCalibSelect: {fileID: 561666856}
   ddCalibMech: {fileID: 1703555168}
   textCalibMessage: {fileID: 708663126}
-  diagonistic: 0
-  jsonUserData: 
 --- !u!1 &1582546133
 GameObject:
   m_ObjectHideFlags: 0

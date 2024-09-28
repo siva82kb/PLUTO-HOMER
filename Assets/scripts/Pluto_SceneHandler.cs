@@ -20,6 +20,9 @@ public class Pluto_SceneHandler : MonoBehaviour
     public TextMeshProUGUI textCalibMessage;
 
     private bool isCalibrating = false;
+    private enum CalibrationState { WAIT_FOR_ZERO_SET, ZERO_SET, ROM_SET, ERROR, ALL_DONE };
+    private CalibrationState calibState = CalibrationState.WAIT_FOR_ZERO_SET;
+
     //public TextMeshProUGUI statusModeText;
     //public TextMeshProUGUI angleText;
     //public TextMeshProUGUI controlText;
@@ -46,12 +49,12 @@ public class Pluto_SceneHandler : MonoBehaviour
     //public Slider torque;                  // For torque controlslider
     //public Slider positionSlider;         //for positionSlider
     //public string[] availabe;
-    public bool diagonistic = false;
-    static public byte pressed { get; private set; }
-    static public byte released { get; private set; }
-    public static int calibState { get; private set; }
-    public static bool iscalib { get; private set; }
-    public String jsonUserData;
+    //public bool diagonistic = false;
+    //static public byte pressed { get; private set; }
+    //static public byte released { get; private set; }
+    //public static int calibState { get; private set; }
+    //public static bool iscalib { get; private set; }
+    //public String jsonUserData;
 
 
     // Start is called before the first frame update
@@ -74,6 +77,8 @@ public class Pluto_SceneHandler : MonoBehaviour
     {
         // Udpate UI
         UpdateUI();
+
+        
         //datadisplay.SetText(DateTime.Now.ToString());
         //if (ConnectToRobot.isPLUTO)
         //{
@@ -185,6 +190,7 @@ public class Pluto_SceneHandler : MonoBehaviour
         if (isCalibrating)
         {
             PlutoComm.calibrate("NOMECH");
+            calibState = CalibrationState.WAIT_FOR_ZERO_SET;
         }
     }
 
@@ -195,8 +201,9 @@ public class Pluto_SceneHandler : MonoBehaviour
         {
             return;
         }
-        // Update the UI.
-        textCalibMessage.SetText($"Calibration State: {calibState}");
+        // Run the calibration state machine
+        calibStateMachineOnButtonRelease();
+
     }
 
     private void OnCalibrate()
@@ -223,6 +230,16 @@ public class Pluto_SceneHandler : MonoBehaviour
         ddCalibMech.enabled = tglCalibSelect.enabled && tglCalibSelect.isOn;
         // Update data dispaly
         UpdateDataDispay();
+
+        // Check if calibration is in progress, and update UI accordingly.
+        if (isCalibrating)
+        {
+            calibStateMachineOnUpdate();
+        }
+        else
+        {
+            textCalibMessage.SetText("");
+        }
     }
 
     private void UpdateDataDispay()
@@ -255,6 +272,63 @@ public class Pluto_SceneHandler : MonoBehaviour
         textDataDisplay.SetText(_dispstr);
     }
 
+
+    /*
+     * Calibration State Machine Functions
+     */
+    private void calibStateMachineOnButtonRelease()
+    {
+        int _mechInx = ddCalibMech.value;
+        // Run the calibration state machine.
+        switch (calibState)
+        {
+            case CalibrationState.WAIT_FOR_ZERO_SET:
+                calibState = CalibrationState.ZERO_SET;
+                // Get the current mechanism for calibration.
+                PlutoComm.calibrate(PlutoComm.MECHANISMS[_mechInx]);
+                break;
+            case CalibrationState.ZERO_SET:
+                if (Math.Abs(PlutoComm.angle) >= 0.9 * PlutoComm.CALIBANGLE[_mechInx] 
+                    && Math.Abs(PlutoComm.angle) <= 1.1 * PlutoComm.CALIBANGLE[_mechInx])
+                {
+                    calibState = CalibrationState.ROM_SET;
+                }
+                else
+                {
+                    calibState = CalibrationState.ERROR;
+                    PlutoComm.calibrate("NOMECH");
+                }
+                break;
+            case CalibrationState.ROM_SET:
+            case CalibrationState.ERROR:
+                calibState = CalibrationState.ALL_DONE;
+                break;
+        }
+    }
+
+    private void calibStateMachineOnUpdate()
+    {
+        string _mech = PlutoComm.MECHANISMSTEXT[ddCalibMech.value];
+        // Run the calibration state machine.
+        switch (calibState)
+        {
+            case CalibrationState.WAIT_FOR_ZERO_SET:
+                textCalibMessage.SetText($"Bring '{_mech}' to zero position, and press PLUTO button to set zero.");
+                break;
+            case CalibrationState.ZERO_SET:
+                textCalibMessage.SetText($"[{PlutoComm.angle,7:F2}] Zero set. Move to the other extreme position and press PLUTO button to set zero.");
+                break;
+            case CalibrationState.ROM_SET:
+                textCalibMessage.SetText($"'{_mech}' calibrated. Press PLUTO button to exit calibration mode.");
+                break;
+            case CalibrationState.ERROR:
+                textCalibMessage.SetText($"Error in calibration '{_mech}'. Press PLUTO button to exit calibration mode, and try again.");
+                break;
+            case CalibrationState.ALL_DONE:
+                tglCalibSelect.isOn = false;
+                break;
+        }
+    }
     //private void UpdateTorquePositionalControl()
     //{
     //    // Handle torque and positional control slider updates

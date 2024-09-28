@@ -315,7 +315,6 @@ public static class ConnectToRobot
         }
         if (JediComm.serPort == null)
         {
-            // Setup serial communication with the robot.
         }
 
         else
@@ -326,7 +325,6 @@ public static class ConnectToRobot
 
                 UnityEngine.Debug.Log("Already Opended");
                 JediComm.Disconnect();
-                //AppData.WriteSessionInfo("DisConnecting to robot.");
             }
 
             if (JediComm.serPort.IsOpen == false)
@@ -334,7 +332,6 @@ public static class ConnectToRobot
 
                 UnityEngine.Debug.Log(_port);
                 JediComm.Connect();
-                //AppData.WriteSessionInfo("Connecting to robot.");
             }
         }
 

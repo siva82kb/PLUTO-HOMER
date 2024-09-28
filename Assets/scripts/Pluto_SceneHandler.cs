@@ -113,10 +113,7 @@ public class Pluto_SceneHandler : MonoBehaviour
     private void OnControlChange()
     {
         isControl = tglControlSelect.isOn;
-        if (isControl)
-        {
-            PlutoComm.setControlType("NONE");
-        }
+        PlutoComm.setControlType("NONE");
     }
 
     private void OnCalibrationChange()

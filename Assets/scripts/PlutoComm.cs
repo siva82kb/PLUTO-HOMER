@@ -9,23 +9,29 @@ public static class PlutoComm
     // Device Level Constants
     public static readonly string[] OUTDATATYPE = new string[] { "SENSORSTREAM", "CONTROLPARAM", "DIAGNOSTICS" };
     public static readonly string[] MECHANISMS = new string[] { "WFE", "WUD", "FPS", "HOC", "NOMECH" };
-    public static readonly string[] MECHANISMSTEXT = new string[] { 
-        "Wrist Flex/Extension", 
-        "Wrist Ulnar/Radial Deviation", 
-        "Forearm Pron/Supination", 
-        "Hand Open/Closing", 
-        "NO Mechanism" 
+    public static readonly string[] MECHANISMSTEXT = new string[] {
+        "Wrist Flex/Extension",
+        "Wrist Ulnar/Radial Deviation",
+        "Forearm Pron/Supination",
+        "Hand Open/Closing",
+        "NO Mechanism"
     };
-    public static readonly string[] CALIBRATION= new string[] { "NOCALLIB", "YESCALLIB" };
+    public static readonly string[] CALIBRATION = new string[] { "NOCALLIB", "YESCALLIB" };
     public static readonly string[] CONTROLTYPE = new string[] { "NONE", "POSITION", "RESIST", "TORQUE" };
-    public static readonly int[]    SENSORNUMBER = new int[] { 
+    public static readonly string[] CONTROLTYPETEXT = new string[] {
+        "None",
+        "Position",
+        "Resist",
+        "Torque",
+    };
+    public static readonly int[] SENSORNUMBER = new int[] {
         4,  // SENSORSTREAM 
         0,  // CONTROLPARAM
         7   // DIAGNOSTICS
-    }; 
-    public static readonly double   MAXTORQUE = 1.0; // Nm
-    public static readonly int[]    INDATATYPECODES = new int[] { 0, 1, 2, 3, 4, 5, 6 };
-    public static readonly string[]    INDATATYPE = new string[] {
+    };
+    public static readonly double MAXTORQUE = 1.0; // Nm
+    public static readonly int[] INDATATYPECODES = new int[] { 0, 1, 2, 3, 4, 5, 6 };
+    public static readonly string[] INDATATYPE = new string[] {
         "GET_VERSION",
         "CALIBRATE",
         "START_STREAM",
@@ -34,10 +40,10 @@ public static class PlutoComm
         "SET_CONTROL_TARGET",
         "SET_DIAGNOSTICS"
     };
-    public static readonly int[]    CALIBANGLE= new int[] { 120, 120, 120, 140 };
+    public static readonly int[] CALIBANGLE = new int[] { 120, 120, 120, 140 };
     public static readonly double[] TORQUE = new double[] { -MAXTORQUE, MAXTORQUE };
     public static readonly double[] POSITION = new double[] { -135, 0 };
-    public static readonly double   HOCScale = 3.97 * Math.PI / 180;
+    public static readonly double HOCScale = 3.97 * Math.PI / 180;
 
     // Function to get the number corresponding to a label.
     public static int GetPlutoCodeFromLabel(string[] array, string value)
@@ -49,10 +55,14 @@ public static class PlutoComm
     public delegate void PlutoButtonReleasedEvent();
     public static event PlutoButtonReleasedEvent OnButtonReleased;
 
+    // Control change event.
+    public delegate void PlutoControlModeChangeEvent();
+    public static event PlutoControlModeChangeEvent OnControlModeChange;
+
     // Private variables
     static private byte[] rawBytes = new byte[256];
     // For the following arrays, the first element represents the number of elements in the array.
-    static private int[] previousStateData = new int[32]; 
+    static private int[] previousStateData = new int[32];
     static private int[] currentStateData = new int[32];
     static private float[] currentSensorData = new float[10];
 
@@ -61,7 +71,8 @@ public static class PlutoComm
     static public DateTime previousTime { get; private set; }
     static public DateTime currentTime { get; private set; }
     static public double frameRate { get; private set; }
-    static public int status { 
+    static public int status
+    {
         get
         {
             return currentStateData[1];
@@ -74,7 +85,7 @@ public static class PlutoComm
             return (status >> 4);
         }
     }
-    static public int errorStatus 
+    static public int errorStatus
     {
         get
         {
@@ -85,7 +96,7 @@ public static class PlutoComm
     {
         get
         {
-            return (status & 0x0E) >> 1;
+            return getControlType(status);
         }
     }
     static public int calibration
@@ -127,43 +138,48 @@ public static class PlutoComm
     {
         get
         {
-            return currentSensorData[1]; 
+            return currentSensorData[1];
         }
     }
     static public float control
     {
         get
         {
-            return currentSensorData[2];
+            return currentSensorData[3];
         }
     }
     static public float target
     {
         get
         {
-            return currentSensorData[3];
+            return currentSensorData[4];
         }
     }
     static public float err
     {
         get
         {
-            return currentSensorData[4];
+            return currentSensorData[5];
         }
     }
     static public float errDiff
     {
         get
         {
-            return currentSensorData[5];
+            return currentSensorData[6];
         }
     }
     static public float errSum
     {
         get
         {
-            return currentSensorData[6];
+            return currentSensorData[7];
         }
+    }
+
+    private static int getControlType(int statusByte)
+    {
+        return (statusByte & 0x0E) >> 1;
     }
 
     public static void parseByteArray(byte[] payloadBytes, int payloadCount, DateTime payloadTime)
@@ -197,29 +213,41 @@ public static class PlutoComm
         }
 
         // Update the button state
-        currentStateData[4]= rawBytes[(nSensors + 1) * 4 + 1];
+        currentStateData[4] = rawBytes[(nSensors + 1) * 4 + 1];
         // Number of current state data
         currentStateData[0] = 3;
 
         // Updat framerate
         frameRate = 1 / (currentTime - previousTime).TotalSeconds;
 
-        // Check of the button has been released.
+        // Check if the button has been released.
         if (previousStateData[4] == 0 && currentStateData[4] == 1)
         {
             OnButtonReleased?.Invoke();
+        }
+
+        // Check if the control mode has been changed.
+        if (getControlType(previousStateData[1]) != getControlType(currentStateData[1]))
+        {
+            OnControlModeChange?.Invoke();
         }
     }
 
     public static float getHOCDisplay(float angle)
     {
-        return (float) HOCScale * Math.Abs(angle);
+        return (float)HOCScale * Math.Abs(angle);
+
+    }
+
+    public static float getHOCAngle(float disp)
+    {
+        return (float) (-disp / HOCScale);
 
     }
 
     public static void startSensorStream()
     {
-        JediComm.SendMessage(new byte[] { (byte) GetPlutoCodeFromLabel(INDATATYPE, "START_STREAM") });
+        JediComm.SendMessage(new byte[] { (byte)GetPlutoCodeFromLabel(INDATATYPE, "START_STREAM") });
     }
 
     public static void stopSensorStream()
@@ -241,8 +269,31 @@ public static class PlutoComm
             }
         );
     }
-}
 
+    public static void setControlType(string controlType)
+    {
+        JediComm.SendMessage(
+            new byte[] {
+                (byte)GetPlutoCodeFromLabel(INDATATYPE, "SET_CONTROL_TYPE"),
+                (byte)GetPlutoCodeFromLabel(CONTROLTYPE, controlType)
+            }
+        );
+    }
+
+    public static void setControlTarget(float target)
+    {
+        byte[] targetBytes = BitConverter.GetBytes(target);
+        JediComm.SendMessage(
+            new byte[] {
+                (byte)GetPlutoCodeFromLabel(INDATATYPE, "SET_CONTROL_TARGET"),
+                targetBytes[0],
+                targetBytes[1],
+                targetBytes[2],
+                targetBytes[3]
+            }
+        );
+    }
+}
 
 public static class ConnectToRobot
 {

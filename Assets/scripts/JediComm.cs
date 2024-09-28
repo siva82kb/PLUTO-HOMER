@@ -14,7 +14,7 @@ using UnityEngine;
  */
 public static class JediComm
 {
-    private static readonly bool OUTDEBUG = true; // Set this to true or false based on your debugging needs
+    private static readonly bool OUTDEBUG = false; // Set this to true or false based on your debugging needs
     static public bool stop;
     static public bool pause;
     static public SerialPort serPort { get; private set; }
@@ -188,7 +188,6 @@ public static class JediComm
         try
         {
             serPort.Write(outPayload.ToArray(), 0, outPayload.Count);
-            Debug.Log("Message sent to device.");
         }
         catch (Exception ex)
         {

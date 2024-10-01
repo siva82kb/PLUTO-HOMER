@@ -43,7 +43,7 @@ public class Pluto_SceneHandler : MonoBehaviour
         // Attach callbacks
         AttachControlCallbacks();
         // Connect to the robot.
-        ConnectToRobot.Connect("COM5");
+        ConnectToRobot.Connect("COM3");
         // Set to diagnostics mode.
         PlutoComm.setDiagnosticMode();
         // Update the UI when starting
@@ -214,7 +214,7 @@ public class Pluto_SceneHandler : MonoBehaviour
                         sldrTarget.minValue = PlutoComm.getHOCDisplay(0);
                         sldrTarget.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
                         sldrTarget.value = PlutoComm.getHOCDisplay(PlutoComm.angle);
-                    }  
+                    }
                 }
                 _changeSliderLimits = false;
             }

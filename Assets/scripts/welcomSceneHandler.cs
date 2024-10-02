@@ -14,7 +14,7 @@ using UnityEngine.SceneManagement;
 using System.Text.RegularExpressions;
 public class welcomSceneHandler : MonoBehaviour
 {
-   
+
     string filepath_user;
     string filepath_session;
     public Image connectStatu;
@@ -52,30 +52,30 @@ public class welcomSceneHandler : MonoBehaviour
     DateTime startDate;
     // Total time (e.g., 90 minutes)
     public float totalTime = 90f;
-    public bool piChartUpdated = false; 
+    public bool piChartUpdated = false;
     // Elapsed time (e.g., 30 minutes)
-    public float[] elapsedTimeDay = new float[] { 0,0,0,0,0,0,0 };
-    public string[] day = new String[] { "","","","","","",""};
+    public float[] elapsedTimeDay = new float[] { 0, 0, 0, 0, 0, 0, 0 };
+    public string[] day = new String[] { "", "", "", "", "", "", "" };
     public string[] date = new String[] { "", "", "", "", "", "", "" };
 
     // Start is called before the first frame update
     void Start()
     {
         AppData.fileCreation.createFileStructure();
-        filepath_user = AppData.fileCreation.filePath_UserData ;
-        filepath_session = AppData.fileCreation.filePath_SessionData ;
+        filepath_user = AppData.fileCreation.filePath_UserData;
+        filepath_session = AppData.fileCreation.filePath_SessionData;
         //statusText.text = "connecting..";
         ConnectToRobot.Connect("COM3");
-      
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        
 
 
-        if ((AppData.fileCreation.filePath_SessionData != null && !piChartUpdated)&& AppData.fileCreation.filePath_UserData!=null)
+
+        if ((AppData.fileCreation.filePath_SessionData != null && !piChartUpdated) && AppData.fileCreation.filePath_UserData != null)
         {
             dataTableConfig = new DataTable();
             dataTablesession = new DataTable();
@@ -85,25 +85,23 @@ public class welcomSceneHandler : MonoBehaviour
             updateUserData();
             UpdatePieChart();
         }
-        
-        
+
         if (ConnectToRobot.isPLUTO)
         {
-           
+
             connectStatu.color = Color.green;
-            loading.SetActive(false);
+            //loading.SetActive(false);
             PlutoComm.OnButtonReleased += onPlutoButtonReleased;
         }
-       
-        
+
+
     }
     private void updateUserData()
     {
 
         if (dataTableConfig.Rows.Count > 0)
         {
-           
-           
+
             DataRow lastRow = dataTableConfig.Rows[dataTableConfig.Rows.Count - 1];
             DateTime today = DateTime.Now.Date;
             var totalMovTimeToday = dataTablesession.AsEnumerable()
@@ -111,21 +109,24 @@ public class welcomSceneHandler : MonoBehaviour
            .Sum(row => Convert.ToInt32(row["movTime"]));
             float totalMovTimeInMinutes = totalMovTimeToday / 60f;
             float prescribedTime = float.Parse(lastRow.Field<string>("time"));
-          
+
             name.text = lastRow.Field<string>("name");
-           
+
             String end = lastRow.Field<string>("end "); ;
             String start = lastRow.Field<string>("start");
             string dateFormat = "dd-MM-yyyy";
 
-            
+
             startDate = DateTime.ParseExact(start, dateFormat, CultureInfo.InvariantCulture);
             DateTime endDate = DateTime.ParseExact(end, dateFormat, CultureInfo.InvariantCulture);
-           
+
             TimeSpan difference = endDate - startDate;
-            days.text = calculateDaypassed()+"/"+ difference.Days.ToString();
-           
-            timeRemaining.text = (totalMovTimeInMinutes-prescribedTime).ToString("F0");
+            days.text = calculateDaypassed() + "/" + difference.Days.ToString();
+            if ((totalMovTimeInMinutes - prescribedTime) > 0)
+            {
+                timeRemaining.color = Color.green;
+            }
+            timeRemaining.text = (totalMovTimeInMinutes - prescribedTime).ToString("F0");
         }
         else
         {
@@ -159,28 +160,28 @@ public class welcomSceneHandler : MonoBehaviour
         };
         for (int i = 0; i < elapsedTimeDay.Length; i++)
         {
-           
-            
+
+
             float elapsedPercentage = elapsedTimeDay[i] / totalTime;
             weekDays[i].text = day[i];
             dates[i].text = date[i];
-            
+
             greenCircleImages[i].fillAmount = elapsedPercentage;
 
             // Green color for the elapsed portion
-            greenCircleImages[i].color = new Color32(148,234,107,255);
+            greenCircleImages[i].color = new Color32(148, 234, 107, 255);
         }
         piChartUpdated = true;
     }
-    private  void LoadCSV(string filePath,DataTable dataTable)
+    private void LoadCSV(string filePath, DataTable dataTable)
     {
-       
+
         // Read all lines from the CSV file
         var lines = File.ReadAllLines(filePath);
         if (lines.Length == 0) return;
 
         // Read the header line to create columns
-        var headers = lines[0].Split(','); 
+        var headers = lines[0].Split(',');
         foreach (var header in headers)
         {
             dataTable.Columns.Add(header);
@@ -200,10 +201,10 @@ public class welcomSceneHandler : MonoBehaviour
 
         //Debug.Log("CSV loaded into DataTable with " + dataTable.Rows.Count + " rows.");
     }
-    
-    public  void CalculateMovTimePerDayWithLinq()
+
+    public void CalculateMovTimePerDayWithLinq()
     {
-        
+
         DateTime maxDate = dataTablesession.AsEnumerable()
             .Select(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm", CultureInfo.InvariantCulture))
             .Max();
@@ -213,34 +214,34 @@ public class welcomSceneHandler : MonoBehaviour
             .GroupBy(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm", CultureInfo.InvariantCulture).Date) // Group by date only
             .Select(group => new
             {
-                Date = group.Key,      // Format date as "yyyy-MM-dd"
-                DayOfWeek = group.Key.DayOfWeek,   // Get the day of the week
+                Date = group.Key,
+                DayOfWeek = group.Key.DayOfWeek,
                 TotalMovTime = group.Sum(row => Convert.ToInt32(row["movTime"]))
             }).OrderByDescending(item => item.Date) // Order by date descending
             .ToList();
-       
 
-        
+
+
         for (int i = 0; i < movTimePerDay.Count; i++)
         {
             elapsedTimeDay[i] = movTimePerDay[i].TotalMovTime / 60f; // Convert seconds to minutes
             day[i] = GetAbbreviatedDayName(movTimePerDay[i].DayOfWeek);
             date[i] = movTimePerDay[i].Date.ToString("dd/MM");
-           
+
         }
-      
+
     }
-   
+
     private string GetAbbreviatedDayName(DayOfWeek dayOfWeek)
     {
-        
+
         string[] abbreviatedDayNames = CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedDayNames;
 
         return abbreviatedDayNames[(int)dayOfWeek];
     }
     public int calculateDaypassed()
     {
-        
+
         TimeSpan duration = DateTime.Now - startDate;
         daysPassed = (int)duration.TotalDays;
         return daysPassed;
@@ -249,5 +250,5 @@ public class welcomSceneHandler : MonoBehaviour
     {
         ConnectToRobot.disconnect();
     }
-  
+
 }

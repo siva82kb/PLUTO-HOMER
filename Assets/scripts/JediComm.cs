@@ -4,32 +4,30 @@ using System.Collections.Generic;
 using System.IO.Ports;
 using System.Linq;
 using System.Threading;
+using UnityEditor.PackageManager;
 using UnityEngine;
-//using static connection;
 
+/*
+ * JediCom
+ * Class to handle serial communication with a device using the JEDI (Jolly sErial Data Interface)
+ * format for data communication.
+ */
 public static class JediComm
 {
+    private static readonly bool OUTDEBUG = false; // Set this to true or false based on your debugging needs
     static public bool stop;
     static public bool pause;
     static public SerialPort serPort { get; private set; }
     static private Thread reader;
-    static private uint _count;
     static byte[] packet;
-    static int plcnt = 0;
-    static public uint count
-    {
-        get { return _count; }
-    }
-    public static double HOCScale = 3.97 * Math.PI / 180;
+    static private int plCount = 0;
+    static public double HOCScale = 3.97 * Math.PI / 180;
     static private byte[] rawBytes = new byte[256];
-    static private double t0, t1;
+    static private DateTime plTime;
 
-  
- 
+    // Headers for Rx and Tx.
     static public byte HeaderIn = 0xFF;
     static public byte HeaderOut = 0xAA;
-
-
 
     static public void InitSerialComm(string port)
     {
@@ -61,16 +59,10 @@ public static class JediComm
             {
                 Debug.Log("exception: " + ex);
             }
-
+            // Create a new thread to read the serial port data.
             reader = new Thread(serialreaderthread);
-
             reader.Priority = System.Threading.ThreadPriority.AboveNormal;
-            t0 = 0.0;
-            t1 = 0.0;
-            _count = 0;
             reader.Start();
-
-
         }
     }
 
@@ -82,13 +74,6 @@ public static class JediComm
             reader.Abort();
             serPort.Close();
         }
-
-
-    }
-
-    static public void resetCount()
-    {
-        _count = 0;
     }
 
     static private void serialreaderthread()
@@ -103,27 +88,28 @@ public static class JediComm
             {
                 continue;
             }
+            // Check if the serial port is open.
+            if (serPort.IsOpen == false)
+            {
+                Debug.Log("Serial port is not open.");
+                continue;
+            }
             try
             {
                 // Read full packet.
-
                 if (readFullSerialPacket())
                 {
+                    plTime = DateTime.Now;
                     ConnectToRobot.isPLUTO = true;
-                    AppData.PlutoRobotData.parseByteArray(rawBytes, plcnt);
-       
-
+                    PlutoComm.parseByteArray(rawBytes, plCount, plTime);
                 }
                 else
                 {
                     ConnectToRobot.isPLUTO = false;
                 }
-
-                //  Debug.Log("connected");
             }
             catch (TimeoutException)
             {
-
                 continue;
             }
 
@@ -135,40 +121,31 @@ public static class JediComm
     // Read a full serial packet.
     static private bool readFullSerialPacket()
     {
-        plcnt = 0;
+        plCount = 0;
         int chksum = 0;
         int _chksum;
       
         if ((serPort.ReadByte() == HeaderIn) && (serPort.ReadByte() == HeaderIn))
         {
-            plcnt = 0;
-            //SerialPayload.count++;
-            chksum = 255 + 255;
-            //// Number of bytes to read.
-            rawBytes[plcnt++] = (byte)serPort.ReadByte();
-            Debug.Log(rawBytes[0] + "rawbytes0no.ofbytes");
+            plCount = 0;
+            chksum = HeaderIn + HeaderIn;
+            // Number of bytes to read.
+            rawBytes[plCount++] = (byte)serPort.ReadByte();
             chksum += rawBytes[0];
-
-            DateTime now = DateTime.Now;
-            byte[] dateTimeBytes = BitConverter.GetBytes(now.Ticks);
             if (rawBytes[0] != 255)
             {
-                // read payload
+                // Read all the payload bytes.
                 for (int i = 0; i < rawBytes[0] - 1; i++)
                 {
-                    rawBytes[plcnt++] = (byte)serPort.ReadByte();
-                    chksum += rawBytes[plcnt - 1];
+                    rawBytes[plCount++] = (byte)serPort.ReadByte();
+                    chksum += rawBytes[plCount - 1];
                 }
                 _chksum = serPort.ReadByte();
-                // Add timestamp to rawBytes
-                Array.Copy(dateTimeBytes, 0, rawBytes, plcnt, dateTimeBytes.Length);
-                plcnt += dateTimeBytes.Length;
                 return (_chksum == (chksum & 0xFF));
             }
             else
             {
-                Debug.Log("data error");
-                //Disconnect();
+                Debug.Log("Data Error. The number of data packets cannot be 255.");
                 return false;
             }
         }
@@ -180,14 +157,13 @@ public static class JediComm
     }
 
    public static void SendMessage(byte[] outBytes)
-    {
+   {
         // Prepare the payload (with the header, length, message, and checksum)
-        List<byte> outPayload = new List<byte>
-            {
-             HeaderOut, // Header byte 1
-             HeaderOut, // Header byte 2
-             (byte)(outBytes.Length + 1) // Length of the message (+1 for checksum)
-            };
+        List<byte> outPayload = new List<byte> {
+            HeaderOut,                     // Header byte 1
+            HeaderOut,                     // Header byte 2
+            (byte)(outBytes.Length + 1)    // Length of the message (+1 for checksum)
+        };
 
         // Add the message bytes to the payload
         outPayload.AddRange(outBytes);
@@ -199,28 +175,23 @@ public static class JediComm
         outPayload.Add(checksum);
 
         // If debugging is enabled, print the outgoing data
-        bool outDebug = true; // Set this to true or false based on your debugging needs
-        if (outDebug)
+        if (OUTDEBUG)
         {
-            Console.Write("\nOut data: ");
+            Debug.Log("Out data: ");
             foreach (var elem in outPayload)
             {
                 Debug.Log($"{elem} ");
             }
-            Console.WriteLine();
         }
 
         // Send the message to the serial port
         try
         {
             serPort.Write(outPayload.ToArray(), 0, outPayload.Count);
-            Debug.Log("Message sent to device.");
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error sending message: {ex.Message}");
         }
     }
-
-
 }

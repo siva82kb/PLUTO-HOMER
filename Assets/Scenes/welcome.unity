@@ -420,8 +420,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 96880455}
-  - component: {fileID: 96880457}
-  - component: {fileID: 96880456}
   - component: {fileID: 96880458}
   m_Layer: 0
   m_Name: GameObject
@@ -445,30 +443,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &96880456
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 96880453}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 49de5690d41fe9d44934c8bb1e88273a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &96880457
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 96880453}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b02103ceefc9f64fa91a6dd3c467683, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &96880458
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -483,7 +457,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   connectStatu: {fileID: 1174960953}
   loading: {fileID: 1746686002}
-  name: {fileID: 178815889}
+  name_: {fileID: 178815889}
   timeRemaining: {fileID: 2043026768}
   days: {fileID: 1735331544}
   daysPassed: 0

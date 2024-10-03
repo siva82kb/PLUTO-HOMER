@@ -6,7 +6,7 @@ using System.Data;
 using UnityEditor.PackageManager;
 using UnityEngine;
 using System.Globalization;
-using System.Data;
+
 using System.Linq;
 
 
@@ -25,7 +25,7 @@ public static class AppData
         {
             directoryPath = Application.dataPath + "/data";
             directoryPathConfig = directoryPath + "/Configuration";
-            directoryPathSession = directoryPath + "/sessions";
+            directoryPathSession = directoryPath + "/Session";
             directoryPathRawData = directoryPath + "/RawData";
             filePath_UserData = directoryPath + "/config_data.csv";
             filePath_SessionData = directoryPathSession + "/sessions.csv";

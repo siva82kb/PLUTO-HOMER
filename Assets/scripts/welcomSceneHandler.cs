@@ -19,7 +19,7 @@ public class welcomSceneHandler : MonoBehaviour
     string filepath_session;
     public Image connectStatu;
     public GameObject loading;
-    public TextMeshProUGUI name;
+    public TextMeshProUGUI name_;
     public TextMeshProUGUI timeRemaining;
     public TextMeshProUGUI days;
     public int daysPassed;
@@ -58,6 +58,7 @@ public class welcomSceneHandler : MonoBehaviour
     public string[] day = new String[] { "","","","","","",""};
     public string[] date = new String[] { "", "", "", "", "", "", "" };
     public static bool scene = false;
+    public SessionDataHandler sessionDataHandler;
     // Start is called before the first frame update
     void Start()
     {
@@ -65,7 +66,7 @@ public class welcomSceneHandler : MonoBehaviour
         filepath_user = AppData.fileCreation.filePath_UserData ;
         filepath_session = AppData.fileCreation.filePath_SessionData ;
         //statusText.text = "connecting..";
-        ConnectToRobot.Connect("COM5");
+        ConnectToRobot.Connect("COM3");
 
     }
 
@@ -79,9 +80,9 @@ public class welcomSceneHandler : MonoBehaviour
         {
             dataTableConfig = new DataTable();
             dataTablesession = new DataTable();
-            LoadCSV(AppData.fileCreation.filePath_SessionData, dataTablesession);
             LoadCSV(AppData.fileCreation.filePath_UserData, dataTableConfig);
-            CalculateMovTimePerDayWithLinq();
+            sessionDataHandler = new SessionDataHandler(filepath_session);
+            sessionDataHandler.CalculateMovTimePerDayWithLinq();
             updateUserData();
             UpdatePieChart();
         }
@@ -107,8 +108,6 @@ public class welcomSceneHandler : MonoBehaviour
 
         if (dataTableConfig.Rows.Count > 0)
         {
-           
-           
             DataRow lastRow = dataTableConfig.Rows[dataTableConfig.Rows.Count - 1];
             DateTime today = DateTime.Now.Date;
             var totalMovTimeToday = dataTablesession.AsEnumerable()
@@ -116,20 +115,15 @@ public class welcomSceneHandler : MonoBehaviour
            .Sum(row => Convert.ToInt32(row["movTime"]));
             float totalMovTimeInMinutes = totalMovTimeToday / 60f;
             float prescribedTime = float.Parse(lastRow.Field<string>("time"));
-          
-            name.text = lastRow.Field<string>("name");
-           
             String end = lastRow.Field<string>("end "); ;
             String start = lastRow.Field<string>("start");
             string dateFormat = "dd-MM-yyyy";
-
-            
             startDate = DateTime.ParseExact(start, dateFormat, CultureInfo.InvariantCulture);
             DateTime endDate = DateTime.ParseExact(end, dateFormat, CultureInfo.InvariantCulture);
-           
             TimeSpan difference = endDate - startDate;
-            days.text = calculateDaypassed()+"/"+ difference.Days.ToString();
-           
+            //ui update
+            name_.text = lastRow.Field<string>("name");
+            days.text=calculateDaypassed()+"/"+ difference.Days.ToString();
             timeRemaining.text = (totalMovTimeInMinutes - prescribedTime).ToString("F0");
             if ((totalMovTimeInMinutes - prescribedTime) > 0)
             {
@@ -172,13 +166,13 @@ public class welcomSceneHandler : MonoBehaviour
         {
             date1, date2, date3, date4, date5, date6, date7
         };
-        for (int i = 0; i < elapsedTimeDay.Length; i++)
+        for (int i = 0; i < sessionDataHandler.elapsedTimeDay.Length; i++)
         {
            
             
-            float elapsedPercentage = elapsedTimeDay[i] / totalTime;
-            weekDays[i].text = day[i];
-            dates[i].text = date[i];
+            float elapsedPercentage = sessionDataHandler.elapsedTimeDay[i] / totalTime;
+            weekDays[i].text = sessionDataHandler.day[i];
+            dates[i].text = sessionDataHandler.date[i];
             
             greenCircleImages[i].fillAmount = elapsedPercentage;
 
@@ -216,43 +210,7 @@ public class welcomSceneHandler : MonoBehaviour
         //Debug.Log("CSV loaded into DataTable with " + dataTable.Rows.Count + " rows.");
     }
     
-    public  void CalculateMovTimePerDayWithLinq()
-    {
-        
-        DateTime maxDate = dataTablesession.AsEnumerable()
-            .Select(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm", CultureInfo.InvariantCulture))
-            .Max();
-        DateTime sevenDaysAgo = maxDate.AddDays(-7);
-        var movTimePerDay = dataTablesession.AsEnumerable()
-             .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm", CultureInfo.InvariantCulture).Date >= sevenDaysAgo) // Filter the last 7 days
-            .GroupBy(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm", CultureInfo.InvariantCulture).Date) // Group by date only
-            .Select(group => new
-            {
-                Date = group.Key,      // Format date as "yyyy-MM-dd"
-                DayOfWeek = group.Key.DayOfWeek,   // Get the day of the week
-                TotalMovTime = group.Sum(row => Convert.ToInt32(row["movTime"]))
-            }).OrderByDescending(item => item.Date) // Order by date descending
-            .ToList();
-       
-
-        
-        for (int i = 0; i < movTimePerDay.Count; i++)
-        {
-            elapsedTimeDay[i] = movTimePerDay[i].TotalMovTime / 60f; // Convert seconds to minutes
-            day[i] = GetAbbreviatedDayName(movTimePerDay[i].DayOfWeek);
-            date[i] = movTimePerDay[i].Date.ToString("dd/MM");
-           
-        }
-      
-    }
-   
-    private string GetAbbreviatedDayName(DayOfWeek dayOfWeek)
-    {
-        
-        string[] abbreviatedDayNames = CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedDayNames;
-
-        return abbreviatedDayNames[(int)dayOfWeek];
-    }
+    
     public int calculateDaypassed()
     {
         

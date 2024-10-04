@@ -6,7 +6,7 @@ using System.Data;
 using UnityEditor.PackageManager;
 using UnityEngine;
 using System.Globalization;
-using System.Data;
+
 using System.Linq;
 
 
@@ -75,7 +75,13 @@ public static class AppData
             }
         }
 
-    } 
-   
+    }
+
+    public static class MechanismSelection
+    {
+        public static string selectedOption;  
+    }
+
+
 
 }

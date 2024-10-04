@@ -43,7 +43,7 @@ public class Pluto_SceneHandler : MonoBehaviour
         // Attach callbacks
         AttachControlCallbacks();
         // Connect to the robot.
-        ConnectToRobot.Connect("COM3");
+        ConnectToRobot.Connect(AppData.COMPort);
         // Set to diagnostics mode.
         PlutoComm.setDiagnosticMode();
         // Update the UI when starting

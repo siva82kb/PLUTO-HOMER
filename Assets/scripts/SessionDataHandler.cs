@@ -20,14 +20,21 @@ public class SessionDataHandler
     public string[] date = new String[] { "", "", "", "", "", "", "" };
     public float[] summaryElapsedTimeDay;
     public string[] summaryDate;
-    public string DATEFORMAT_INFILE = "dd-MM-yyyy HH:mm";
     public string DATEFORMAT = "dd/MM";
+    //SESSION FILE  HEADER FORMAT AND DATETIME FORMAT
+    public string DATEFORMAT_INFILE = "dd-MM-yyyy HH:mm";
+    public string DATETIME = "DateTime";
+    public string MOVETIME = "movTime";
+    public string STARTTIME = "StartTime";
+    public string STOPTIME = "StopTime";
+    public string MECHANISM = "mech";
+
     public SessionDataHandler(string path)
     {
         filePath = path;
         LoadSessionData();
     }
-
+    //TO LOAD THE SESSION FILE IN DATA TABLE
     private void LoadSessionData()
     {
         sessionTable = new DataTable();
@@ -52,21 +59,22 @@ public class SessionDataHandler
            UnityEngine.Debug.Log("CSV file not found at: " + filePath);
         }
     }
+    // CALCULATE PER DAY MOVE TIME
     public void CalculateMovTimePerDayWithLinq()
     {
 
         DateTime maxDate = sessionTable.AsEnumerable()
-            .Select(row => DateTime.ParseExact(row.Field<string>("DateTime"), DATEFORMAT_INFILE, CultureInfo.InvariantCulture))
+            .Select(row => DateTime.ParseExact(row.Field<string>(DATETIME), DATEFORMAT_INFILE, CultureInfo.InvariantCulture))
             .Max();
         DateTime sevenDaysAgo = maxDate.AddDays(-7);
         var movTimePerDay = sessionTable.AsEnumerable()
-             .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), DATEFORMAT_INFILE, CultureInfo.InvariantCulture).Date >= sevenDaysAgo) // Filter the last 7 days
-            .GroupBy(row => DateTime.ParseExact(row.Field<string>("DateTime"), DATEFORMAT_INFILE, CultureInfo.InvariantCulture).Date) // Group by date only
+             .Where(row => DateTime.ParseExact(row.Field<string>(DATETIME), DATEFORMAT_INFILE, CultureInfo.InvariantCulture).Date >= sevenDaysAgo) // Filter the last 7 days
+            .GroupBy(row => DateTime.ParseExact(row.Field<string>(DATETIME), DATEFORMAT_INFILE, CultureInfo.InvariantCulture).Date) // Group by date only
             .Select(group => new
             {
                 Date = group.Key,      // Format date as "yyyy-MM-dd"
                 DayOfWeek = group.Key.DayOfWeek,   // Get the day of the week
-                TotalMovTime = group.Sum(row => Convert.ToInt32(row["movTime"]))
+                TotalMovTime = group.Sum(row => Convert.ToInt32(row[MOVETIME]))
             }).OrderByDescending(item => item.Date) // Order by date descending
             .ToList();
 
@@ -81,16 +89,17 @@ public class SessionDataHandler
         }
 
     }
+    //CALCULATE OVERALL DATA
     public void summaryCalculateMovTimePerDayWithLinq()
     {
         // Group by date and calculate the total movement time for each day
         var movTimePerDay = sessionTable.AsEnumerable()
-            .GroupBy(row => DateTime.ParseExact(row.Field<string>("DateTime"), DATEFORMAT_INFILE, CultureInfo.InvariantCulture).Date) // Group by date only
+            .GroupBy(row => DateTime.ParseExact(row.Field<string>(DATETIME), DATEFORMAT_INFILE, CultureInfo.InvariantCulture).Date) // Group by date only
             .Select(group => new
             {
                 Date = group.Key,
                 DayOfWeek = group.Key.DayOfWeek,   // Get the day of the week
-                TotalMovTime = group.Sum(row => Convert.ToInt32(row["movTime"]))
+                TotalMovTime = group.Sum(row => Convert.ToInt32(row[MOVETIME]))
             })
             .ToList();
 
@@ -99,14 +108,13 @@ public class SessionDataHandler
         // Initialize arrays with the correct size
         summaryElapsedTimeDay = new float[movTimePerDay.Count];
         summaryDate = new string[movTimePerDay.Count];
-        //day = new string[movTimePerDay.Count];
-
+       
         for (int i = 0; i < movTimePerDay.Count; i++)
         {
             summaryElapsedTimeDay[i] = movTimePerDay[i].TotalMovTime / 60f; // Convert seconds to minutes
-            //day[i] = GetAbbreviatedDayName(movTimePerDay[i].DayOfWeek);     // Get abbreviated day name
+           
             summaryDate[i] = movTimePerDay[i].Date.ToString(DATEFORMAT);       // Format date as "dd/MM"
-            //Debug.Log(summaryElapsedTimeDay[i]);
+           
         }
     }
 
@@ -115,11 +123,11 @@ public class SessionDataHandler
     {
         // Filter session data for the specified mechanism
         var filteredData = sessionTable.AsEnumerable()
-            .Where(row => row.Field<string>("mech") == mechanism)
+            .Where(row => row.Field<string>(MECHANISM) == mechanism)
             .Select(row => new
             {
-                Date = DateTime.ParseExact(row.Field<string>("DateTime"), DATEFORMAT , CultureInfo.InvariantCulture).Date,
-                MovTime = Convert.ToDouble(row["movTime"])
+                Date = DateTime.ParseExact(row.Field<string>(DATETIME), DATEFORMAT_INFILE , CultureInfo.InvariantCulture).Date,
+                MovTime = Convert.ToDouble(row[MOVETIME])
             })
             .GroupBy(entry => entry.Date)
             .Select(group => new
@@ -145,7 +153,7 @@ public class SessionDataHandler
     }
 
 
-
+    // GET DAYS IN SHORT FORM[MON,TUE...]
     private string GetAbbreviatedDayName(DayOfWeek dayOfWeek)
     {
 
@@ -153,6 +161,7 @@ public class SessionDataHandler
 
         return abbreviatedDayNames[(int)dayOfWeek];
     }
+    //TO CALCULATE HOW MANY DAYS GONE FROM THE PRESCRIBED DATE
     public int calculateDaypassed()
     {
 
@@ -161,19 +170,19 @@ public class SessionDataHandler
         return daysPassed;
     }
 
-    //for today
+   
     public Dictionary<string, double> CalculateTotalTimeForMechanisms(DateTime currentDate)
     {
 
         var mechanismTime = new Dictionary<string, double>();
         var rowsForCurrentDate = sessionTable.AsEnumerable()
-            .Where(row => DateTime.TryParse(row["DateTime"].ToString(), out DateTime rowDate) && rowDate.Date == currentDate.Date);
+            .Where(row => DateTime.TryParse(row[DATETIME].ToString(), out DateTime rowDate) && rowDate.Date == currentDate.Date);
 
         foreach (DataRow row in rowsForCurrentDate)
         {
-            string startTimeStr = row["StartTime"].ToString();
-            string stopTimeStr = row["StopTime"].ToString();
-            string mechanism = row["mech"].ToString();
+            string startTimeStr = row[STARTTIME].ToString();
+            string stopTimeStr = row[STOPTIME].ToString();
+            string mechanism = row[MECHANISM].ToString();
             if (DateTime.TryParse(startTimeStr, out DateTime startTime) && DateTime.TryParse(stopTimeStr, out DateTime stopTime))
             {
                 double sessionMinutes = (stopTime - startTime).TotalMinutes;

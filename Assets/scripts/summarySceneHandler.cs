@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -11,7 +12,6 @@ public class summarySceneHandler : MonoBehaviour
 {
     public SessionDataHandler sessionDataHandler;
     public BarChart barchart;
-    public Button updateButton; // Reference to the UI Button
     public string title;
     
     public void Start()
@@ -26,7 +26,8 @@ public class summarySceneHandler : MonoBehaviour
     {
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
     }
-    //To load particular Mechanism data in bargraph
+
+    // To load the data for a specific mechanism into the bar graph.
     public void mechanismClicked(Button button)
     {
         title = button.gameObject.name.ToUpper();
@@ -71,7 +72,7 @@ public class summarySceneHandler : MonoBehaviour
         xAxis.type = Axis.AxisType.Category; // Set x-axis type to Category
         yAxis.type = Axis.AxisType.Value; // Set y-axis type to Value
         yAxis.min = 0; // Make sure bars start from the y=0 line
-        yAxis.max = 90; // You can adjust the maximum value as needed
+        yAxis.max = sessionDataHandler.summaryElapsedTimeDay.Max(); // You can adjust the maximum value as needed
 
         // Set zoom properties
         var dataZoom = barchart.EnsureChartComponent<DataZoom>();
@@ -81,7 +82,7 @@ public class summarySceneHandler : MonoBehaviour
         dataZoom.start = 0;
         dataZoom.end = 100;
 
-        // Initial population of the chart
+        
         UpdateChartData();
     }
     //To update chart with data
@@ -112,23 +113,14 @@ public class summarySceneHandler : MonoBehaviour
         // Update the y-axis data (movement time)
         var yAxis = barchart.GetChartComponent<YAxis>();
         yAxis.data.Clear();
-        //for (int i = 0; i < sessionDataHandler.summaryDate.Length; i++)
-        //{
-        //    barchart.AddData(0, sessionDataHandler.summaryElapsedTimeDay[i]); // Add y-axis values
-
-        //}
-        // Update the y-axis data (movement time)
+      
         for (int i = 0; i < sessionDataHandler.summaryDate.Length; i++)
         {
             float yValue = sessionDataHandler.summaryElapsedTimeDay[i];
-
-            // Add data and set the color based on the value
             barchart.AddData(0, yValue);
         
         }
         
-
-        // Force the chart to refresh and display the updated data
         barchart.RefreshAllComponent();
         
     }

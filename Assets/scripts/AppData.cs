@@ -18,17 +18,22 @@ public static class AppData
         static string directoryPathConfig;
         static string directoryPathSession;
         static string directoryPathRawData;
-        public static string filePath_UserData { get; set; }
-        public static string filePath_SessionData { get; set; }
-
-        public static void createFileStructure()
+        public static string filePathUserData { get; set; }
+        public static string filePathSessionData { get; set; }
+        public static void initializeFilePath()
         {
             directoryPath = Application.dataPath + "/data";
             directoryPathConfig = directoryPath + "/Configuration";
             directoryPathSession = directoryPath + "/Session";
             directoryPathRawData = directoryPath + "/RawData";
-            filePath_UserData = directoryPath + "/config_data.csv";
-            filePath_SessionData = directoryPathSession + "/sessions.csv";
+            filePathUserData = directoryPath + "/config_data.csv";
+            filePathSessionData = directoryPathSession + "/sessions.csv";
+
+        }
+
+        public static void createFileStructure()
+        {
+            
             // Check if the directory exists
             if (Directory.Exists(directoryPath))
             {
@@ -41,12 +46,12 @@ public static class AppData
                 Directory.CreateDirectory(directoryPathConfig);
                 Directory.CreateDirectory(directoryPathSession);
                 Directory.CreateDirectory(directoryPathRawData);
-                File.Create(filePath_UserData).Dispose(); // Ensure the file handle is released
-                File.Create(filePath_SessionData).Dispose(); // Ensure the file handle is released
+                File.Create(filePathUserData).Dispose(); // Ensure the file handle is released
+                File.Create(filePathSessionData).Dispose(); // Ensure the file handle is released
                 Debug.Log("Directory created at: " + directoryPath);
             }
 
-            writeHeader(filePath_SessionData);
+            writeHeader(filePathSessionData);
         }
 
         public static void writeHeader(string path)

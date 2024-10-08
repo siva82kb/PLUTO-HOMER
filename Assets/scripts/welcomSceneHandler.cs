@@ -15,8 +15,7 @@ using System.Text.RegularExpressions;
 public class welcomSceneHandler : MonoBehaviour
 {
    
-    string filepath_user;
-    string filepath_session;
+
     public Image connectStatu;
     public GameObject loading;
     public TextMeshProUGUI name_;
@@ -25,35 +24,15 @@ public class welcomSceneHandler : MonoBehaviour
     public int daysPassed;
     public DataTable dataTablesession;
     public DataTable dataTableConfig;
-    public TextMeshProUGUI day1;
-    public TextMeshProUGUI day2;
-    public TextMeshProUGUI day3;
-    public TextMeshProUGUI day4;
-    public TextMeshProUGUI day5;
-    public TextMeshProUGUI day6;
-    public TextMeshProUGUI day7;
-    public TextMeshProUGUI date1;
-    public TextMeshProUGUI date2;
-    public TextMeshProUGUI date3;
-    public TextMeshProUGUI date4;
-    public TextMeshProUGUI date5;
-    public TextMeshProUGUI date6;
-    public TextMeshProUGUI date7;
-    public Image greenCircleImageDay1; // Partially filled green circle
-    public Image greenCircleImageDay2; // Partially filled green circle
-    public Image greenCircleImageDay3; // Partially filled green circle
-    public Image greenCircleImageDay4; // Partially filled green circle
-    public Image greenCircleImageDay5; // Partially filled green circle
-    public Image greenCircleImageDay6; // Partially filled green circle
-    public Image greenCircleImageDay7; // Partially filled green circle
-    public Image[] greenCircleImages;
-    public TextMeshProUGUI[] weekDays;
-    public TextMeshProUGUI[] dates;
+  
+    public Transform chartContainer;      // Parent container to hold the UI elements
+    public GameObject dayEntryPrefab;
+    private List<GameObject> createdElements = new List<GameObject>();
     DateTime startDate;
-    // Total time (e.g., 90 minutes)
+   
     public float totalTime = 90f;
     public bool piChartUpdated = false; 
-    // Elapsed time (e.g., 30 minutes)
+   
     public float[] elapsedTimeDay = new float[] { 0,0,0,0,0,0,0 };
     public string[] day = new String[] { "","","","","","",""};
     public string[] date = new String[] { "", "", "", "", "", "", "" };
@@ -62,32 +41,30 @@ public class welcomSceneHandler : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        AppData.fileCreation.initializeFilePath();
         AppData.fileCreation.createFileStructure();
-        filepath_user = AppData.fileCreation.filePath_UserData ;
-        filepath_session = AppData.fileCreation.filePath_SessionData ;
-        //statusText.text = "connecting..";
         ConnectToRobot.Connect("COM3");
+        dayEntryPrefab.SetActive(false);
 
     }
 
     // Update is called once per frame
     void Update()
     {
-        
-
-        // 
-        if ((AppData.fileCreation.filePath_SessionData != null && !piChartUpdated)&& AppData.fileCreation.filePath_UserData!=null)
+        //To update pi chart
+        if ((AppData.fileCreation.filePathSessionData != null && !piChartUpdated)&& AppData.fileCreation.filePathUserData!=null)
         {
             dataTableConfig = new DataTable();
             dataTablesession = new DataTable();
-            LoadCSV(AppData.fileCreation.filePath_UserData, dataTableConfig);
-            sessionDataHandler = new SessionDataHandler(filepath_session);
+            LoadCSV(AppData.fileCreation.filePathUserData, dataTableConfig);
+            sessionDataHandler = new SessionDataHandler(AppData.fileCreation.filePathSessionData);
             sessionDataHandler.CalculateMovTimePerDayWithLinq();
             updateUserData();
             UpdatePieChart();
+            piChartUpdated = true;
         }
-        
-        
+       
+        //To load mech scene
         if (ConnectToRobot.isPLUTO)
         {
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
@@ -101,11 +78,32 @@ public class welcomSceneHandler : MonoBehaviour
             
         }
        
-        
+    }
+    private void UpdatePieChart()
+    {
+        for (int i = 0; i < sessionDataHandler.elapsedTimeDay.Length; i++)
+        {
+            // Instantiate the prefab for each day
+            GameObject dayEntry = Instantiate(dayEntryPrefab, chartContainer);
+            dayEntry.SetActive(true);
+            // Get references to the components in the prefab
+            Image greenCircle = dayEntry.transform.Find("greencircle").GetComponent<Image>();
+            TextMeshProUGUI dayText = dayEntry.transform.Find("day").GetComponent<TextMeshProUGUI>();
+            TextMeshProUGUI dateText = dayEntry.transform.Find("date").GetComponent<TextMeshProUGUI>();
+
+            // Set the day and date texts
+            dayText.text = sessionDataHandler.day[i];
+            dateText.text = sessionDataHandler.date[i];
+
+            // Calculate the fill amount based on the elapsed time
+            float elapsedPercentage = sessionDataHandler.elapsedTimeDay[i] / totalTime;
+            greenCircle.fillAmount = elapsedPercentage;
+            greenCircle.color = new Color32(148, 234, 107, 255); // Set to green
+            //Debug.Log("woring");
+        }
     }
     private void updateUserData()
     {
-
         if (dataTableConfig.Rows.Count > 0)
         {
             DataRow lastRow = dataTableConfig.Rows[dataTableConfig.Rows.Count - 1];
@@ -136,6 +134,7 @@ public class welcomSceneHandler : MonoBehaviour
         }
 
     }
+    //once pluto button  presses To load the mech scene
     public void onPlutoButtonReleased()
     {
         scene = true;
@@ -146,42 +145,9 @@ public class welcomSceneHandler : MonoBehaviour
     {
     SceneManager.LoadScene("chooseMech");
     }
-    private void UpdatePieChart()
-    {
-        greenCircleImages = new Image[7]
-       {
-            greenCircleImageDay1, // Day 1
-            greenCircleImageDay2, // Day 2
-            greenCircleImageDay3, // Day 3
-            greenCircleImageDay4, // Day 4
-            greenCircleImageDay5, // Day 5
-            greenCircleImageDay6, // Day 6
-            greenCircleImageDay7  // Day 7
-       };
-        weekDays = new TextMeshProUGUI[7]
-        {
-            day1, day2, day3, day4, day5, day6, day7
-        };
-        dates = new TextMeshProUGUI[7]
-        {
-            date1, date2, date3, date4, date5, date6, date7
-        };
-        for (int i = 0; i < sessionDataHandler.elapsedTimeDay.Length; i++)
-        {
-           
-            
-            float elapsedPercentage = sessionDataHandler.elapsedTimeDay[i] / totalTime;
-            weekDays[i].text = sessionDataHandler.day[i];
-            dates[i].text = sessionDataHandler.date[i];
-            
-            greenCircleImages[i].fillAmount = elapsedPercentage;
-
-            // Green color for the elapsed portion
-            greenCircleImages[i].color = new Color32(148,234,107,255);
-        }
-        piChartUpdated = true;
-    }
-    private  void LoadCSV(string filePath,DataTable dataTable)
+   
+   //To read csv file and make it into dataTable
+    private void LoadCSV(string filePath,DataTable dataTable)
     {
        
         // Read all lines from the CSV file
@@ -210,7 +176,7 @@ public class welcomSceneHandler : MonoBehaviour
         //Debug.Log("CSV loaded into DataTable with " + dataTable.Rows.Count + " rows.");
     }
     
-    
+    //To calculate how much days gone from the prescibed date
     public int calculateDaypassed()
     {
         

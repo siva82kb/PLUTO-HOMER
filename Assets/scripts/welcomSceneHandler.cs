@@ -15,78 +15,56 @@ using System.Text.RegularExpressions;
 public class welcomSceneHandler : MonoBehaviour
 {
    
-    string filepath_user;
-    string filepath_session;
+
     public Image connectStatu;
     public GameObject loading;
-    public TextMeshProUGUI name;
+    public TextMeshProUGUI name_;
     public TextMeshProUGUI timeRemaining;
     public TextMeshProUGUI days;
     public int daysPassed;
     public DataTable dataTablesession;
     public DataTable dataTableConfig;
-    public TextMeshProUGUI day1;
-    public TextMeshProUGUI day2;
-    public TextMeshProUGUI day3;
-    public TextMeshProUGUI day4;
-    public TextMeshProUGUI day5;
-    public TextMeshProUGUI day6;
-    public TextMeshProUGUI day7;
-    public TextMeshProUGUI date1;
-    public TextMeshProUGUI date2;
-    public TextMeshProUGUI date3;
-    public TextMeshProUGUI date4;
-    public TextMeshProUGUI date5;
-    public TextMeshProUGUI date6;
-    public TextMeshProUGUI date7;
-    public Image greenCircleImageDay1; // Partially filled green circle
-    public Image greenCircleImageDay2; // Partially filled green circle
-    public Image greenCircleImageDay3; // Partially filled green circle
-    public Image greenCircleImageDay4; // Partially filled green circle
-    public Image greenCircleImageDay5; // Partially filled green circle
-    public Image greenCircleImageDay6; // Partially filled green circle
-    public Image greenCircleImageDay7; // Partially filled green circle
-    public Image[] greenCircleImages;
-    public TextMeshProUGUI[] weekDays;
-    public TextMeshProUGUI[] dates;
+  
+    public Transform chartContainer;      // Parent container to hold the UI elements
+    public GameObject dayEntryPrefab;
+    private List<GameObject> createdElements = new List<GameObject>();
     DateTime startDate;
-    // Total time (e.g., 90 minutes)
+   
     public float totalTime = 90f;
     public bool piChartUpdated = false; 
-    // Elapsed time (e.g., 30 minutes)
+   
     public float[] elapsedTimeDay = new float[] { 0,0,0,0,0,0,0 };
     public string[] day = new String[] { "","","","","","",""};
     public string[] date = new String[] { "", "", "", "", "", "", "" };
     public static bool scene = false;
+    public SessionDataHandler sessionDataHandler;
     // Start is called before the first frame update
     void Start()
     {
+        AppData.fileCreation.initializeFilePath();
         AppData.fileCreation.createFileStructure();
-        filepath_user = AppData.fileCreation.filePath_UserData ;
-        filepath_session = AppData.fileCreation.filePath_SessionData ;
-        //statusText.text = "connecting..";
-        ConnectToRobot.Connect("COM5");
+        ConnectToRobot.Connect("COM3");
+        dayEntryPrefab.SetActive(false);
 
     }
 
     // Update is called once per frame
     void Update()
     {
-        
-
-        // 
-        if ((AppData.fileCreation.filePath_SessionData != null && !piChartUpdated)&& AppData.fileCreation.filePath_UserData!=null)
+        //To update pi chart
+        if ((AppData.fileCreation.filePathSessionData != null && !piChartUpdated)&& AppData.fileCreation.filePathUserData!=null)
         {
             dataTableConfig = new DataTable();
             dataTablesession = new DataTable();
-            LoadCSV(AppData.fileCreation.filePath_SessionData, dataTablesession);
-            LoadCSV(AppData.fileCreation.filePath_UserData, dataTableConfig);
-            CalculateMovTimePerDayWithLinq();
+            LoadCSV(AppData.fileCreation.filePathUserData, dataTableConfig);
+            sessionDataHandler = new SessionDataHandler(AppData.fileCreation.filePathSessionData);
+            sessionDataHandler.CalculateMovTimePerDayWithLinq();
             updateUserData();
             UpdatePieChart();
+            piChartUpdated = true;
         }
-        
-        
+       
+        //To load mech scene
         if (ConnectToRobot.isPLUTO)
         {
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
@@ -100,15 +78,34 @@ public class welcomSceneHandler : MonoBehaviour
             
         }
        
-        
+    }
+    private void UpdatePieChart()
+    {
+        for (int i = 0; i < sessionDataHandler.elapsedTimeDay.Length; i++)
+        {
+            // Instantiate the prefab for each day
+            GameObject dayEntry = Instantiate(dayEntryPrefab, chartContainer);
+            dayEntry.SetActive(true);
+            // Get references to the components in the prefab
+            Image greenCircle = dayEntry.transform.Find("greencircle").GetComponent<Image>();
+            TextMeshProUGUI dayText = dayEntry.transform.Find("day").GetComponent<TextMeshProUGUI>();
+            TextMeshProUGUI dateText = dayEntry.transform.Find("date").GetComponent<TextMeshProUGUI>();
+
+            // Set the day and date texts
+            dayText.text = sessionDataHandler.day[i];
+            dateText.text = sessionDataHandler.date[i];
+
+            // Calculate the fill amount based on the elapsed time
+            float elapsedPercentage = sessionDataHandler.elapsedTimeDay[i] / totalTime;
+            greenCircle.fillAmount = elapsedPercentage;
+            greenCircle.color = new Color32(148, 234, 107, 255); // Set to green
+            //Debug.Log("woring");
+        }
     }
     private void updateUserData()
     {
-
         if (dataTableConfig.Rows.Count > 0)
         {
-           
-           
             DataRow lastRow = dataTableConfig.Rows[dataTableConfig.Rows.Count - 1];
             DateTime today = DateTime.Now.Date;
             var totalMovTimeToday = dataTablesession.AsEnumerable()
@@ -116,20 +113,15 @@ public class welcomSceneHandler : MonoBehaviour
            .Sum(row => Convert.ToInt32(row["movTime"]));
             float totalMovTimeInMinutes = totalMovTimeToday / 60f;
             float prescribedTime = float.Parse(lastRow.Field<string>("time"));
-          
-            name.text = lastRow.Field<string>("name");
-           
             String end = lastRow.Field<string>("end "); ;
             String start = lastRow.Field<string>("start");
             string dateFormat = "dd-MM-yyyy";
-
-            
             startDate = DateTime.ParseExact(start, dateFormat, CultureInfo.InvariantCulture);
             DateTime endDate = DateTime.ParseExact(end, dateFormat, CultureInfo.InvariantCulture);
-           
             TimeSpan difference = endDate - startDate;
-            days.text = calculateDaypassed()+"/"+ difference.Days.ToString();
-           
+            //ui update
+            name_.text = lastRow.Field<string>("name");
+            days.text=calculateDaypassed()+"/"+ difference.Days.ToString();
             timeRemaining.text = (totalMovTimeInMinutes - prescribedTime).ToString("F0");
             if ((totalMovTimeInMinutes - prescribedTime) > 0)
             {
@@ -142,6 +134,7 @@ public class welcomSceneHandler : MonoBehaviour
         }
 
     }
+    //once pluto button  presses To load the mech scene
     public void onPlutoButtonReleased()
     {
         scene = true;
@@ -152,42 +145,9 @@ public class welcomSceneHandler : MonoBehaviour
     {
     SceneManager.LoadScene("chooseMech");
     }
-    private void UpdatePieChart()
-    {
-        greenCircleImages = new Image[7]
-       {
-            greenCircleImageDay1, // Day 1
-            greenCircleImageDay2, // Day 2
-            greenCircleImageDay3, // Day 3
-            greenCircleImageDay4, // Day 4
-            greenCircleImageDay5, // Day 5
-            greenCircleImageDay6, // Day 6
-            greenCircleImageDay7  // Day 7
-       };
-        weekDays = new TextMeshProUGUI[7]
-        {
-            day1, day2, day3, day4, day5, day6, day7
-        };
-        dates = new TextMeshProUGUI[7]
-        {
-            date1, date2, date3, date4, date5, date6, date7
-        };
-        for (int i = 0; i < elapsedTimeDay.Length; i++)
-        {
-           
-            
-            float elapsedPercentage = elapsedTimeDay[i] / totalTime;
-            weekDays[i].text = day[i];
-            dates[i].text = date[i];
-            
-            greenCircleImages[i].fillAmount = elapsedPercentage;
-
-            // Green color for the elapsed portion
-            greenCircleImages[i].color = new Color32(148,234,107,255);
-        }
-        piChartUpdated = true;
-    }
-    private  void LoadCSV(string filePath,DataTable dataTable)
+   
+   //To read csv file and make it into dataTable
+    private void LoadCSV(string filePath,DataTable dataTable)
     {
        
         // Read all lines from the CSV file
@@ -216,43 +176,7 @@ public class welcomSceneHandler : MonoBehaviour
         //Debug.Log("CSV loaded into DataTable with " + dataTable.Rows.Count + " rows.");
     }
     
-    public  void CalculateMovTimePerDayWithLinq()
-    {
-        
-        DateTime maxDate = dataTablesession.AsEnumerable()
-            .Select(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm", CultureInfo.InvariantCulture))
-            .Max();
-        DateTime sevenDaysAgo = maxDate.AddDays(-7);
-        var movTimePerDay = dataTablesession.AsEnumerable()
-             .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm", CultureInfo.InvariantCulture).Date >= sevenDaysAgo) // Filter the last 7 days
-            .GroupBy(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm", CultureInfo.InvariantCulture).Date) // Group by date only
-            .Select(group => new
-            {
-                Date = group.Key,      // Format date as "yyyy-MM-dd"
-                DayOfWeek = group.Key.DayOfWeek,   // Get the day of the week
-                TotalMovTime = group.Sum(row => Convert.ToInt32(row["movTime"]))
-            }).OrderByDescending(item => item.Date) // Order by date descending
-            .ToList();
-       
-
-        
-        for (int i = 0; i < movTimePerDay.Count; i++)
-        {
-            elapsedTimeDay[i] = movTimePerDay[i].TotalMovTime / 60f; // Convert seconds to minutes
-            day[i] = GetAbbreviatedDayName(movTimePerDay[i].DayOfWeek);
-            date[i] = movTimePerDay[i].Date.ToString("dd/MM");
-           
-        }
-      
-    }
-   
-    private string GetAbbreviatedDayName(DayOfWeek dayOfWeek)
-    {
-        
-        string[] abbreviatedDayNames = CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedDayNames;
-
-        return abbreviatedDayNames[(int)dayOfWeek];
-    }
+    //To calculate how much days gone from the prescibed date
     public int calculateDaypassed()
     {
         

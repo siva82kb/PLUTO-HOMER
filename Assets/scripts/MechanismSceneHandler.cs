@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 using static AppData;
 using System.Collections;
+using System.Collections.Concurrent;
 
 public class MechanismSceneHandler : MonoBehaviour
 {
@@ -23,11 +24,12 @@ public class MechanismSceneHandler : MonoBehaviour
     public TMP_Text hocVal;
     public TMP_Text fktVal;
 
-    public Button exitButton;
+    //public Button exitButton;
     public Button nextButton;
+    public Button exit;
     private static bool scene = false;
     public static readonly string[] MECHANISMS = new string[] { "WFE", "WUD", "FPS", "HOC"};
-
+  
     private string filePath = Application.dataPath + "/data/config_data.csv";
 
     private bool toggleSelected = false;  // Variable to track toggle selection state
@@ -38,7 +40,7 @@ public class MechanismSceneHandler : MonoBehaviour
         string csvPath = Application.dataPath + "/data/sessions/sessions.csv";
         SessionDataHandler sessionHandler = new SessionDataHandler(csvPath);
         Dictionary<string, double> mechanismTimes = sessionHandler.CalculateTotalTimeForMechanisms(DateTime.Now);
-
+        Time.timeScale = 1;
         foreach (var kvp in mechanismTimes)
         {
             Debug.Log($"{kvp.Key} - {kvp.Value} mins");
@@ -48,9 +50,9 @@ public class MechanismSceneHandler : MonoBehaviour
         updateTogglesBasedOnCSV();
 
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
-
-        if (exitButton != null)
-            exitButton.onClick.AddListener(ExitScene);
+        exit.onClick.AddListener(OnExitButtonClicked);
+        //if (exitButton != null)
+        //    exitButton.onClick.AddListener(ExitScene);
 
         if (nextButton != null)
             nextButton.onClick.AddListener(() =>
@@ -274,6 +276,35 @@ public class MechanismSceneHandler : MonoBehaviour
     {
         Debug.Log(MechanismSelection.selectedOption + " selected Option");
         SceneManager.LoadScene("calibration");
+        DeselectAllToggles();
+
     }
+    IEnumerator LoadSummaryScene()
+    {
+        // Asynchronously load the summary scene
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("summaryScene");
+
+        // Wait until the new scene is fully loaded
+        while (!asyncLoad.isDone)
+        {
+            yield return null;
+        }
+
+        // Once the new scene is loaded, you don't need to unload the old scene manually
+        Debug.Log("summaryScene loaded successfully.");
+    }
+
+    private void OnExitButtonClicked()
+    {
+        Debug.Log("Exit button pressed, loading summaryScene.");
+        StartCoroutine(LoadSummaryScene());
+    }
+
+
+    //void LoadsummaryScene()
+    //{
+    //    //Debug.Log(MechanismSelection.selectedOption + " selected Option");
+    //    SceneManager.LoadScene("summaryScene");
+    //}
 }
 

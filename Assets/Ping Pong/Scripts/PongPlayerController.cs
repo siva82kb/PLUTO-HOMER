@@ -22,15 +22,7 @@ public class PongPlayerController : MonoBehaviour
     public static int reps;
 
 
-    private void Awake()
-    {
-        //AppData.game = "PING PONG";
-        //if(AppData.subjd.side == "LEFT")
-        //{
-        //    this.transform.position = new Vector2(-6,0);
-        //}
-
-    }
+ 
     // Use this for initialization
     void Start()
     {
@@ -50,15 +42,7 @@ public class PongPlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //Debug.Log(Angle2Screen(AppData.plutoData.angle));
-        //if (Time.time != 0)
-        //{
-        //    AppData.timeOnTrail += Time.deltaTime;
-
-        //    AppData.sessionDuration += Time.deltaTime;
-        //}
        
-
         this.transform.position = new Vector2(this.transform.position.x, Angle2Screen(PlutoComm.angle));
 
 

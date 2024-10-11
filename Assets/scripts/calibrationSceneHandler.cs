@@ -33,10 +33,10 @@ public class calibrationSceneHandler : MonoBehaviour
          PerformCalibration();
         }
 
-        if (ConnectToRobot.isPLUTO && !connect)
+        if (ConnectToRobot.isPLUTO )
         {
             PlutoComm.OnButtonReleased += onPlutoButtonReleased;
-            connect = true;
+           
         }
 
         if (isCalibrating)

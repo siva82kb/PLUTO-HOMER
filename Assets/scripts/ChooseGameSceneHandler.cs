@@ -176,10 +176,18 @@ public class ChooseGameSceneHandler : MonoBehaviour
             Debug.Log("No game selected. Please select a game.");
         }
     }
+
     private void OnExitButtonClicked()
     {
-        SceneManager.LoadScene("summaryScene");
+        //StartCoroutine(LoadSummaryScene());
+        SceneManager.LoadScene("chooseMech");
+        PlutoComm.calibrate(PlutoComm.MECHANISMS[4]);
     }
+
+
+
+
+
 
     // Load the corresponding scene based on selected game
     private void LoadSelectedGameScene(string game)

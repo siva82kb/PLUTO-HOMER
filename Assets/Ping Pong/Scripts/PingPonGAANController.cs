@@ -10,10 +10,7 @@
 
 //public class PingPonGAANController : MonoBehaviour
 //{
-
 //    public static PingPonGAANController instance;
-
-
 //    AAN aan = new AAN();
 
 //    // static int trailNumber;
@@ -46,8 +43,6 @@
 //    public int count = 0;
 //    GameObject target;
 //    GameObject player;
-
-
 //    public float blockduration = 10;
 //    public static bool stopAssistance = true;
 //    public float initialDirection;
@@ -89,14 +84,10 @@
 //        targetAngle = -999;
 //        //AppData.plutoData.mechIndex = 0;
 //        //Debug.Log(AppData.plutoData.mechs[AppData.plutoData.mechIndex]);
-
-
 //        //ActiveRangeOfMotion activeRange = new ActiveRangeOfMotion(AppData.subjHospNum,
 //        //           mech);
 //        //PassiveRangeOfMotion passiveRange = new PassiveRangeOfMotion(AppData.subjHospNum,
 //        //           mech);
-
-
 //        stopClock = trailDuration;
 //        stepSize = (pRom[1] - pRom[0]) / steps;
 //        for (int i = 0; i < assistanceAngle.Length; i++)
@@ -104,9 +95,6 @@
 //            assistanceAngle[i] = pRom[0] + stepSize * i;
 //            //Debug.Log(assistanceAngle[i]);
 //        }
-
-
-
 //        //for (int i = 0; i < assistanceTorque.Length; i++)
 //        //{
 //        //    assistanceTorque[i] = 0.2F;
@@ -116,11 +104,8 @@
 //        //SendToRobot.ControlParam(mech, ControlType.TORQUE, false, true);
 //        //AppData.plutoData.desTorq = 0;
 //        //SendToRobot.ControlParam(mech, ControlType.TORQUE, true, false);
-
-
 //        //foreach (var val in assistanceTorque){
 //        //    val =val +0.1f
-
 //        //}
 
 //        /// read previous game performace

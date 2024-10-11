@@ -1,6 +1,7 @@
 
 using Newtonsoft.Json.Linq;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -13,8 +14,14 @@ public class summarySceneHandler : MonoBehaviour
     public SessionDataHandler sessionDataHandler;
     public BarChart barchart;
     public string title;
+   
+    // Existing variables...
+    private ConcurrentQueue<System.Action> _actionQueue = new ConcurrentQueue<System.Action>();
+
     
-    public void Start()
+
+
+public void Start()
     {
        
         title = "summary";
@@ -24,6 +31,11 @@ public class summarySceneHandler : MonoBehaviour
 
     void Update()
     {
+        while (_actionQueue.TryDequeue(out var action))
+        {
+            action.Invoke(); // Execute the action
+        }
+
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
     }
 
@@ -40,12 +52,27 @@ public class summarySceneHandler : MonoBehaviour
     //To disconnect the Robot 
     public void onPlutoButtonReleased()
     {
-        ConnectToRobot.disconnect();
+        Debug.Log("pressed");
+
+        // Enqueue the disconnect and quit actions
+        _actionQueue.Enqueue(() =>
+        {
+            ConnectToRobot.disconnect();
+            Application.Quit();
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false; // Stop play mode if in editor
+#endif
+        });
     }
+
+
+
     //To initialize the barchart with whole data of moveTime per day
     public void initializeChart()
     {
         AppData.fileCreation.initializeFilePath();
+        Debug.Log("Is bar chart active: " + barchart.gameObject.activeSelf);
+
         sessionDataHandler = new SessionDataHandler(AppData.fileCreation.filePathSessionData);
         sessionDataHandler.summaryCalculateMovTimePerDayWithLinq();
         // Get or add the BarChart component

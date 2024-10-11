@@ -143,13 +143,13 @@ public class UIManagerPP : MonoBehaviour
     //Reloads the Level
     public void LoadScene(string sceneName)
     {
-        Application.LoadLevel(sceneName);
+        SceneManager.LoadScene(sceneName);
     }
 
     //Reloads the Level
     public void Reload()
     {
-        Application.LoadLevel(Application.loadedLevel);
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
     void playAudio(int clipNumber)
     {

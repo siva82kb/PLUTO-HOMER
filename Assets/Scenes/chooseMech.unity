@@ -313,7 +313,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Exit
+  m_text: Quit
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: d80eac371b0d4004bbaad7ac6feb89df, type: 2}
   m_sharedMaterial: {fileID: -4265605587139576553, guid: d80eac371b0d4004bbaad7ac6feb89df, type: 2}
@@ -1074,7 +1074,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0.34399772, b: 0.3490566, a: 1}
+  m_Color: {r: 0.6528301, g: 0.041493442, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1120,13 +1120,13 @@ MonoBehaviour:
     m_SelectOnRight: {fileID: 0}
   m_Transition: 1
   m_Colors:
-    m_NormalColor: {r: 0.17328231, g: 0.6226415, b: 0.44317868, a: 1}
-    m_HighlightedColor: {r: 0.01690993, g: 0.7169812, b: 0.45169094, a: 1}
+    m_NormalColor: {r: 0.9547169, g: 0.10670216, b: 0.084663525, a: 1}
+    m_HighlightedColor: {r: 1, g: 0.030145546, b: 0.020754695, a: 1}
     m_PressedColor: {r: 0, g: 1, b: 0.6210525, a: 1}
     m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
-    m_ColorMultiplier: 1
-    m_FadeDuration: 0.1
+    m_ColorMultiplier: 1.46
+    m_FadeDuration: 0.2
   m_SpriteState:
     m_HighlightedSprite: {fileID: 0}
     m_PressedSprite: {fileID: 0}
@@ -4166,8 +4166,8 @@ MonoBehaviour:
   psVal: {fileID: 680841855}
   hocVal: {fileID: 1556983985}
   fktVal: {fileID: 0}
-  exitButton: {fileID: 241951478}
   nextButton: {fileID: 735278275}
+  exit: {fileID: 241951478}
 --- !u!1 &1107631388
 GameObject:
   m_ObjectHideFlags: 0

@@ -53,6 +53,7 @@ public class welcomSceneHandler : MonoBehaviour
     public float[] elapsedTimeDay = new float[] { 0,0,0,0,0,0,0 };
     public string[] day = new String[] { "","","","","","",""};
     public string[] date = new String[] { "", "", "", "", "", "", "" };
+    private DaySummary[] daySummaries;
     public static bool scene = false;
 
     // Private variables
@@ -62,20 +63,17 @@ public class welcomSceneHandler : MonoBehaviour
     void Start()
     {
         DataManager.createFileStructure();
-        ConnectToRobot.Connect(AppData.COMPort);
+        //ConnectToRobot.Connect(AppData.COMPort);
 
         // Update summary display
         if ((DataManager.filePathSessionData != null && !piChartUpdated) && DataManager.filePathConfigData != null)
         {
+            // Read all the user data
             AppData.UserData.readAllUserData();
-            //dataTableConfig = new DataTable();
-            //dataTablesession = new DataTable();
-            //DataManager.loadCSV(DataManager.filePathSessionData, dataTablesession);
-            //DataManager.loadCSV(DataManager.filePathConfigData, dataTableConfig);
-            CalculateMovTimePerDayWithLinq();
+            // Compute the total movement time for every training day so far.
+            daySummaries = AppData.UserData.CalculateMoveTimePerDay();
             updateUserData();
             UpdatePieChart();
-            Debug.Log("Total Previous Move Time: " + $"{AppData.UserData.prevTotalMoveTime}");
         }
     }
 
@@ -175,7 +173,6 @@ public class welcomSceneHandler : MonoBehaviour
         }
         piChartUpdated = true;
     }
-    
     
     public  void CalculateMovTimePerDayWithLinq()
     {

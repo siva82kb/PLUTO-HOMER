@@ -10,6 +10,20 @@ using System.Data;
 using System.Linq;
 
 
+/*
+ * Summary Data Class
+ */
+public struct DaySummary
+{
+    public string Day { get; set; }
+    public string Date { get; set; }
+    public float MoveTime { get; set; }
+    //public float TotalTime { get; set; }
+    //public float RemainingTime { get; set; }
+    //public float Percentage { get; set; }
+    //public bool IsCompleted { get; set; }
+}
+
 public static class DataManager
 {
     static string directoryPath;

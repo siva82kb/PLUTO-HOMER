@@ -20,9 +20,9 @@ public static class AppData
     {
         public static DataTable dTableConfig;
         public static DataTable dTableSession;
-        // Movement time related data.
-        public static float prevTotalMoveTime = -1f;
-        public static float currTotalMoveTime = 0f;
+        // Movement time related data for the current day.
+        public static float prevTodayMoveTime = -1f;
+        public static float currTodayMoveTime = 0f;
 
         // Function to read all the user data.
         public static void readAllUserData()
@@ -32,10 +32,11 @@ public static class AppData
             // Read the session data
             dTableSession = DataManager.loadCSV(DataManager.filePathSessionData);
             // Get total previous movement time
-            prevTotalMoveTime = getPrevTotalMoveTime();
+            prevTodayMoveTime = getPrevTodayMoveTime();
         }
 
-        private static float getPrevTotalMoveTime()
+        // Returns today's total movement time in minutes.
+        public static float getPrevTodayMoveTime()
         {
             var _totalMoveTimeToday = dTableSession.AsEnumerable()
                 .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == DateTime.Now.Date)
@@ -43,8 +44,42 @@ public static class AppData
             Debug.Log(_totalMoveTimeToday);
             return _totalMoveTimeToday / 60f;
         }
-    }
 
+        //// Returns the most recent training date so far.
+        //private static DateTime getRecentTrainingDay()
+        //{
+        //    return dTableSession.AsEnumerable()
+        //        .Select(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture))
+        //        .Where(date => date.Date < DateTime.Now.Date)
+        //        .Max();
+        //}
+
+        /*
+         * Calculate the movement time for each training day.
+         */
+        public static DaySummary[] CalculateMoveTimePerDay(int noOfPostDays=7)
+        {
+            DateTime today = DateTime.Now.Date;
+            DaySummary[] daySummaries = new DaySummary[noOfPostDays];
+            // Find the move times for the last seven days excluding today. If the date is missing, then the move time is set to zero.
+            for (int  i = 1; i <= noOfPostDays; i++)
+            {
+                DateTime _day = today.AddDays(-i);
+                // Get the summary data for this date.
+                var _moveTime = dTableSession.AsEnumerable()
+                    .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == _day)
+                    .Sum(row => Convert.ToInt32(row["MoveTime"]));
+                // Create the day summary.
+                daySummaries[i - 1] = new DaySummary
+                {
+                    Day = Miscellaneous.GetAbbreviatedDayName(_day.DayOfWeek),
+                    Date = _day.ToString("dd/MM"),
+                    MoveTime = _moveTime / 60f
+                };  
+            }
+            return daySummaries;
+        }
+    }
 
     //public static class fileCreation
     //{
@@ -104,4 +139,12 @@ public static class AppData
     //        }
     //    }
     //}
+}
+
+public static class Miscellaneous
+{
+    public static string GetAbbreviatedDayName(DayOfWeek dayOfWeek)
+    {
+        return dayOfWeek.ToString().Substring(0, 3);
+    }
 }

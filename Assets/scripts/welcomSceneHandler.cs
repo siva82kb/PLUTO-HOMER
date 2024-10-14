@@ -72,8 +72,8 @@ public class welcomSceneHandler : MonoBehaviour
             AppData.UserData.readAllUserData();
             // Compute the total movement time for every training day so far.
             daySummaries = AppData.UserData.CalculateMoveTimePerDay();
-            updateUserData();
-            UpdatePieChart();
+            //updateUserData();
+            //UpdatePieChart();
         }
     }
 
@@ -92,6 +92,7 @@ public class welcomSceneHandler : MonoBehaviour
             scene = false;
         }
     }
+
     private void updateUserData()
     {
         //if (dataTableConfig.Rows.Count > 0)
@@ -129,6 +130,7 @@ public class welcomSceneHandler : MonoBehaviour
         //}
 
     }
+
     public void onPlutoButtonReleased()
     {
         scene = true;

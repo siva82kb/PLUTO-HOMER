@@ -8,7 +8,18 @@ using UnityEngine;
 using System.Globalization;
 using System.Data;
 using System.Linq;
+using Unity.VisualScripting;
 
+
+public static class PlutoDefs
+{
+    public static readonly string[] Mechanisms = new string[] { "WFE", "WURD", "FPS", "HOC", "FME1", "FME2" };
+
+    public static int getMechanimsIndex(string mech)
+    {
+        return Array.IndexOf(Mechanisms, mech);
+    }
+}
 
 public static class AppData
 {
@@ -18,11 +29,68 @@ public static class AppData
     // UserData Class
     public static class UserData
     {
-        public static DataTable dTableConfig;
-        public static DataTable dTableSession;
-        // Movement time related data for the current day.
-        public static float prevTodayMoveTime = -1f;
-        public static float currTodayMoveTime = 0f;
+        public static DataTable dTableConfig = null;
+        public static DataTable dTableSession = null;
+        public static string hospNumber;
+        public static float[] mechMoveTimePrsc { get; private set; } // Prescribed movement time
+        public static float[] mechMoveTimePrev { get; private set; } // Previous movement time
+        public static float[] mechMoveTimeCurr { get; private set; } // Current movement time
+
+        // Total movement times.
+        public static float totalMoveTimePrsc
+        {
+            get
+            {
+                if (mechMoveTimePrsc == null)
+                {
+                    return -1f;
+                }
+                else
+                {
+                    return mechMoveTimePrsc.Sum();
+                }
+            }
+        }
+        public static float totalMoveTimePrev
+        {
+            get
+            {
+                if (mechMoveTimePrev == null)
+                {
+                    return -1f;
+                }
+                else
+                {
+                    return mechMoveTimePrev.Sum();
+                }
+            }
+        }
+        public static float totalMoveTimeCurr
+        {
+            get
+            {
+                if (mechMoveTimeCurr == null)
+                {
+                    return -1f;
+                }
+                else
+                {
+                    return mechMoveTimeCurr.Sum();
+                }
+            }
+        }
+        public static float totalMoveTimeRemaining // Retuns the 
+        {
+            get
+            {
+                float _total = 0f;
+                for (int i = 0; i < PlutoDefs.Mechanisms.Length; i++)
+                {
+                    _total += mechMoveTimePrsc[i] - mechMoveTimePrev[i] - mechMoveTimeCurr[i];
+                }
+                return _total;
+            }
+        }
 
         // Function to read all the user data.
         public static void readAllUserData()
@@ -31,9 +99,53 @@ public static class AppData
             dTableConfig = DataManager.loadCSV(DataManager.filePathConfigData);
             // Read the session data
             dTableSession = DataManager.loadCSV(DataManager.filePathSessionData);
+            // Initialize to 0.
+            mechMoveTimeCurr = new float[PlutoDefs.Mechanisms.Length];
+            // Read the therapy configuration data.
+            parseTherapyConfigData();
             // Get total previous movement time
-            prevTodayMoveTime = getPrevTodayMoveTime();
+            parseMechanismMoveTimePrev();
         }
+
+        public static float getRemainingMoveTime(string mechanism)
+        {
+            int mechInx = PlutoDefs.getMechanimsIndex(mechanism);
+            return mechMoveTimePrsc[mechInx] - mechMoveTimePrev[mechInx] - mechMoveTimeCurr[mechInx];
+        }
+
+        private static void parseMechanismMoveTimePrev()
+        {
+            mechMoveTimePrev = new float[PlutoDefs.Mechanisms.Length];
+            for (int i = 0; i < PlutoDefs.Mechanisms.Length; i++)
+            {
+                // Get the total movement time for each mechanism
+                var _totalMoveTime = dTableSession.AsEnumerable()
+                    .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == DateTime.Now.Date)
+                    .Where(row => row.Field<string>("Mechanism") == PlutoDefs.Mechanisms[i])
+                    .Sum(row => Convert.ToInt32(row["MoveTime"]));
+                mechMoveTimePrev[i] = _totalMoveTime / 60f;
+            }
+        }
+
+        private static void parseTherapyConfigData()
+        {
+            DataRow lastRow = dTableConfig.Rows[dTableConfig.Rows.Count - 1];
+            // Hospital number
+            hospNumber = lastRow.Field<string>("hospno");
+            Debug.Log("HostNumber: " + hospNumber);
+            // Prescribed movement time
+            mechMoveTimePrsc = new float[PlutoDefs.Mechanisms.Length];
+            for (int i = 0; i < PlutoDefs.Mechanisms.Length; i++)
+            {
+                mechMoveTimePrsc[i] = float.Parse(lastRow.Field<string>(PlutoDefs.Mechanisms[i]));
+            }
+        }
+
+        // Read the remaining time.
+        //public static float getRemainingTime()
+        //{
+        //    return prescrivedMoveTime - currTodayMoveTime;
+        //}
 
         // Returns today's total movement time in minutes.
         public static float getPrevTodayMoveTime()

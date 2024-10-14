@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.IO;
 using System.Collections;
 using System.Collections.Generic;
@@ -23,6 +24,7 @@ public struct DaySummary
     //public float Percentage { get; set; }
     //public bool IsCompleted { get; set; }
 }
+
 
 public static class DataManager
 {

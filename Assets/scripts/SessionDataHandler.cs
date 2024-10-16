@@ -22,7 +22,7 @@ public class SessionDataHandler
     public string[] summaryDate;
     public string DATEFORMAT = "dd/MM";
     //SESSION FILE  HEADER FORMAT AND DATETIME FORMAT
-    public string DATEFORMAT_INFILE = "dd-MM-yyyy HH:mm";
+    public string DATEFORMAT_INFILE = "dd-MM-yyyy HH:mm:ss";
     public string DATETIME = "DateTime";
     public string MOVETIME = "movTime";
     public string STARTTIME = "StartTime";

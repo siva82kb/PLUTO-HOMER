@@ -12,23 +12,34 @@ using System.Linq;
 
 public static class AppData
 {
+    public static string game;
+    public static int gameScore;
+    public static int reps;
+
     public static class fileCreation
     {
         static string directoryPath;
         static string directoryPathConfig;
         static string directoryPathSession;
         static string directoryPathRawData;
-        public static string filePath_UserData { get; set; }
-        public static string filePath_SessionData { get; set; }
-
-        public static void createFileStructure()
+        public static string directoryMechConfig;
+        public static string filePathUserData { get; set; }
+        public static string filePathSessionData { get; set; }
+        public static void initializeFilePath()
         {
             directoryPath = Application.dataPath + "/data";
             directoryPathConfig = directoryPath + "/Configuration";
             directoryPathSession = directoryPath + "/sessions";
             directoryPathRawData = directoryPath + "/RawData";
-            filePath_UserData = directoryPath + "/config_data.csv";
-            filePath_SessionData = directoryPathSession + "/sessions.csv";
+            filePathUserData = directoryPath + "/config_data.csv";
+            directoryMechConfig = directoryPath + "/mech";
+            filePathSessionData = directoryPathSession + "/sessions.csv";
+            directoryPathConfig = directoryPath + "/Configuration";
+        }
+
+        public static void createFileStructure()
+        {
+            
             // Check if the directory exists
             if (Directory.Exists(directoryPath))
             {
@@ -41,12 +52,12 @@ public static class AppData
                 Directory.CreateDirectory(directoryPathConfig);
                 Directory.CreateDirectory(directoryPathSession);
                 Directory.CreateDirectory(directoryPathRawData);
-                File.Create(filePath_UserData).Dispose(); // Ensure the file handle is released
-                File.Create(filePath_SessionData).Dispose(); // Ensure the file handle is released
+                File.Create(filePathUserData).Dispose(); // Ensure the file handle is released
+                File.Create(filePathSessionData).Dispose(); // Ensure the file handle is released
                 Debug.Log("Directory created at: " + directoryPath);
             }
 
-            writeHeader(filePath_SessionData);
+            writeHeader(filePathSessionData);
         }
 
         public static void writeHeader(string path)
@@ -76,12 +87,80 @@ public static class AppData
         }
 
     }
-
     public static class MechanismSelection
     {
-        public static string selectedOption;  
+        public static string selectedOption;
     }
 
+    public class MechanismData
+    {
+        // Class attributes to store data read from the file
+        public string datetime;
+        public string side;
+        public float tmin;
+        public float tmax;
+        public string mech;
+        public string filePath = fileCreation.directoryMechConfig;
 
+        // Constructor that reads the file and initializes values based on the mechanism
+        public MechanismData(string mechanismName)
+        {
+            string lastLine = "";
+            string[] values;
+            string fileName = $"{filePath}/{mechanismName}.csv";
+            Debug.Log(fileName);
+
+            try
+            {
+                // Read the entire file and capture the last line containing the desired data
+                using (StreamReader file = new StreamReader(fileName))
+                {
+                    while (!file.EndOfStream)
+                    {
+                        lastLine = file.ReadLine();
+                    }
+                }
+
+                // Split the last line and process the data
+                values = lastLine.Split(','); // Change to comma or other delimiter as necessary
+                if (values[0].Trim() != null)
+                {
+                    // Assign values if mechanism matches
+                    datetime = values[0].Trim();
+                    Debug.Log(datetime + "_ datetime");
+                    side = values[1].Trim();
+                    Debug.Log(side + "_ side");
+
+                    tmin = float.Parse(values[2].Trim());
+                    Debug.Log(tmin + "_ min");
+
+                    tmax = float.Parse(values[3].Trim());
+                    Debug.Log(tmax + "max");
+
+                    mech = mechanismName;
+                }
+                else
+                {
+                    // Handle case when no matching mechanism is found
+                    datetime = null;
+                    side = null;
+                    tmin = 0;
+                    tmax = 0;
+                    mech = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error reading the file: " + ex.Message);
+            }
+        }
+
+        // Method to return tmin and tmax as a tuple
+        public (float tmin, float tmax) GetTminTmax()
+        {
+            return (tmin, tmax);
+        }
+
+    }
 
 }

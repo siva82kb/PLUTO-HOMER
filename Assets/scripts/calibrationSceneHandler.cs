@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using static AppData;
 
 public class calibrationSceneHandler : MonoBehaviour
@@ -13,12 +15,15 @@ public class calibrationSceneHandler : MonoBehaviour
     public TextMeshProUGUI textMessage;
     public TextMeshProUGUI mechText;
     private static bool connect = false;
+   
+
 
     void Start()
     {
         selectedMechanism = MechanismSelection.selectedOption;
         int mechNumber = PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, selectedMechanism);
         mechText.text = PlutoComm.MECHANISMSTEXT[mechNumber];
+        
     }
 
     void Update()
@@ -28,10 +33,10 @@ public class calibrationSceneHandler : MonoBehaviour
          PerformCalibration();
         }
 
-        if (ConnectToRobot.isPLUTO && !connect)
+        if (ConnectToRobot.isPLUTO )
         {
             PlutoComm.OnButtonReleased += onPlutoButtonReleased;
-            connect = true;
+           
         }
 
         if (isCalibrating)
@@ -107,8 +112,15 @@ public class calibrationSceneHandler : MonoBehaviour
         textMessage.text = "Calibration Done";
         textMessage.color = new Color32(62, 214, 111, 255);
         PlutoComm.setControlType(PlutoComm.CONTROLTYPE[0]);
+        //SceneManager.LoadScene("choosegame");
+
+        Invoke("LoadNextScene", 2.0f);
     }
 
+    void LoadNextScene()
+    {
+        SceneManager.LoadScene("choosegame");
+    }
     private void ApplyTorqueToMoveHandles(float currentPos, float targetPos)
     {
         float distance = targetPos - currentPos;

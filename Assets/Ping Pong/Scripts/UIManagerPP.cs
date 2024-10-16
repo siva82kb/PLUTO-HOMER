@@ -13,6 +13,7 @@ public class UIManagerPP : MonoBehaviour
     public AudioClip[] audioClips; // winlevel loose
     public int winScore = 7;
     public int win;
+    public bool onButtonPressed = false;
     // Use this for initialization
     void Start()
     {
@@ -24,7 +25,7 @@ public class UIManagerPP : MonoBehaviour
         //vdc.filePath = AppData.GameVideoLog(AppData.subjHospNum, AppData.plutoData.mechs[AppData.plutoData.mechIndex], AppData.game, AppData.regime);
         ////   Debug.Log(vdc.filePath);
         //vdc.StartCapture();
-
+        PlutoComm.OnButtonReleased += onPlutoButtonPressed;
     }
 
     // Update is called once per frame
@@ -99,7 +100,7 @@ public class UIManagerPP : MonoBehaviour
         //    }
         //}
 
-        if (Input.GetKeyDown(KeyCode.P) && !isFinished)
+        if (onButtonPressed && !isFinished)
         {
             Debug.Log("P key pressed. Current Time.timeScale: " + Time.timeScale);
             if (Time.timeScale == 1)
@@ -107,12 +108,14 @@ public class UIManagerPP : MonoBehaviour
                 Time.timeScale = 0; // Pause the game
                 Debug.Log("Game Paused");
                 showPaused();
+                onButtonPressed = false;
             }
             else if (Time.timeScale == 0)
             {
                 Time.timeScale = 1; // Unpause the game
                 Debug.Log("Game Unpaused");
                 hidePaused();
+                onButtonPressed = false;
             }
         }
 
@@ -139,6 +142,10 @@ public class UIManagerPP : MonoBehaviour
                     g.SetActive(false);
             }
         }
+    }
+    public void onPlutoButtonPressed()
+    {
+        onButtonPressed = true;
     }
     //Reloads the Level
     public void LoadScene(string sceneName)

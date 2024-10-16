@@ -101,7 +101,6 @@ public class BallController : MonoBehaviour
             Vector2 d = new Vector2(1, y).normalized;
             initVelocity(d * speed);
 
-
             //_projection.SimulateTrajectory( transform.position, d * speed * 1.5F);
         }
 

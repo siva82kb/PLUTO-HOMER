@@ -1,100 +1,3 @@
-//using System.Collections;
-//using System.Collections.Generic;
-//using UnityEngine;
-//using UnityEngine.SceneManagement;  // Required for scene management
-//using UnityEngine.UI;  // Required for UI elements like Toggle
-
-//public class ChooseGameSceneHandler : MonoBehaviour
-//{
-//    public GameObject toggleGroup;  // Reference to the GameObject containing the toggles
-//    public Button playButton;   // Reference to the Play Button
-
-//    private string selectedGame;  // Stores the currently selected game
-
-//    // Start is called before the first frame update
-//    void Start()
-//    {
-//        // Add listener for Play Button click event
-//        playButton.onClick.AddListener(OnPlayButtonClicked);
-//    }
-
-//    void Update()
-//    {
-//        // Check if a new game option is selected
-//        selectedGame = GetSelectedToggleName();
-//    }
-
-//    private string GetSelectedToggleName()
-//    {
-//        // Get all toggles under the toggleGroup GameObject
-//        Toggle[] toggles = toggleGroup.GetComponentsInChildren<Toggle>();
-
-//        foreach (Toggle toggle in toggles)
-//        {
-//            Debug.Log("Processing Toggle: " + toggle.name + ", isOn: " + toggle.isOn);
-//            if (toggle.isOn)
-//            {
-//                AppData.game = toggle.name;
-//                Debug.Log("Selected Toggle: " + toggle.name);
-//                return toggle.name;
-//            }
-//        }
-//        return null;
-//    }
-
-//    private void OnPlutoButtonClicked()
-//    {
-//        if (!string.IsNullOrEmpty(selectedGame))
-//        {
-//            Debug.Log("Pluto Button Pressed. Selected Game: " + selectedGame);
-//            // Add logic here if Pluto button has a special function related to the selected game
-//        }
-//        else
-//        {
-//            Debug.Log("No game selected. Please select a game.");
-//        }
-//    }
-
-//    // Event handler for Play Button click
-//    private void OnPlayButtonClicked()
-//    {
-//        if (!string.IsNullOrEmpty(selectedGame))
-//        {
-//            Debug.Log("Play Button Pressed. Selected Game: " + selectedGame);
-
-//            switch (selectedGame)
-//            {
-//                case "pingPong":
-//                    SceneManager.LoadScene("pong_menu");
-//                    break;
-
-//                case "Game2":
-//                    SceneManager.LoadScene("Game2Scene");
-//                    break;
-
-//                case "Game3":
-//                    SceneManager.LoadScene("Game3Scene");
-//                    break;
-
-//                default:
-//                    Debug.LogWarning("Unknown game selected: " + selectedGame);
-//                    break;
-//            }
-//        }
-//        else
-//        {
-//            Debug.Log("No game selected. Please select a game.");
-//        }
-//    }
-//}
-
-
-
-
-
-
-
-
 
 using UnityEngine;
 using UnityEngine.SceneManagement;  // Required for scene management
@@ -109,16 +12,28 @@ public class ChooseGameSceneHandler : MonoBehaviour
     public Button exit;
     private bool toggleSelected = false;  // Variable to track if any toggle is selected
     private string selectedGame;  // Stores the currently selected game
-
+    private bool scene = false;
     void Start()
     {
+        PlutoComm.OnButtonReleased += onPlutoButtonReleased;
         // Attach listeners to the toggles and Play button
         AttachToggleListeners();
         playButton.onClick.AddListener(OnPlayButtonClicked);
         exit.onClick.AddListener(OnExitButtonClicked);
         DeselectAllToggles();  // Reset all toggles at the start
+        
     }
 
+    
+
+    private void Update()
+    {
+        if (scene)
+        {
+            LoadSelectedGameScene(selectedGame);
+            scene = false;
+        }
+    }
     // Resets all toggles to off
     void DeselectAllToggles()
     {
@@ -162,7 +77,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
             }
         }
     }
-
+   
     // Event handler for Play Button click
     private void OnPlayButtonClicked()
     {
@@ -185,7 +100,10 @@ public class ChooseGameSceneHandler : MonoBehaviour
     }
 
 
-
+    public void onPlutoButtonReleased()
+    {
+            scene = true;
+    }
 
 
 

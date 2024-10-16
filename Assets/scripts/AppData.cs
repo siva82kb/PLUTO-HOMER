@@ -8,14 +8,35 @@ using UnityEngine;
 using System.Globalization;
 
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
+using XCharts.Runtime;
+using System.Text;
 
 
 public static class AppData
 {
+
     public static string game;
     public static int gameScore;
     public static int reps;
+    // Data logging related stuff.
+    private static string[] _dheader = new string[] {
+        "time",
+        "ang", "ang_vel", "torque", "m_curr", "control", "desired",
+        "status", "error1", "erro2", "ctype", "dtye"
+    };
 
+    private static string[] _perforamceHeader = new string[]
+    {
+        "start_difficulty_rom",  "start_difficulty_speed","start_performance","end_performace", "end_difficulty_rom","end_difficulty_speed","reps","time_on_trial", "log_file"
+    };
+
+    private static string[] _gameheader = gameLogHeader();
+    private static DataLogger _dlog;
+    private static DataLogger _gamelog;
+
+    public static bool isLogging { get; private set; }
+    public static bool isGameLogging { get; private set; }
     public static class fileCreation
     {
         static string directoryPath;
@@ -162,5 +183,165 @@ public static class AppData
         }
 
     }
+    static public void StartDataLog(string fname)
+    {
+        // If you are already logging.
+        if (_dlog != null)
+        {
+            StopLogging();
+        }
+        // Start new logger
+        if (fname != "")
+        {
+            _dlog = new DataLogger(fname, String.Join(", ", _dheader) + "\n");
+            isLogging = true;
+        }
+        else
+        {
+            _dlog = null;
+            isLogging = false;
+        }
+    }
+    static public void StartGameDataLog(string fname)
+    {
+        // If you are already logging.
+        if (_gamelog != null)
+        {
+            StopLogging();
+        }
+        // Start new logger
+        if (fname != "")
+        {
+            _gamelog = new DataLogger(fname, String.Join(", ", _gameheader) + "\n");
+            isGameLogging = true;
+        }
+        else
+        {
+            _gamelog = null;
+            isGameLogging = false;
+        }
+        AppData.gameScore = 0;
+        //AppData.trailNumber = 0;
+    }
+    static public void StopLogging()
+    {
+        if (_dlog != null)
+        {
+            _dlog.stopDataLog(true);
+            _dlog = null;
+            isLogging = false;
+        }
+        else
+            UnityEngine.Debug.Log("Null log");
+    }
+
+    static string[] gameLogHeader()
+    {
+        string target = "targetpos";
+        string player = "playerpos";
+        string[] _header = new string[]
+        {
+            "time" ,
+             player,
+             target,
+             "trail",
+             "isAssistedTrail",
+             "isFlacccid",
+               "score",
+            "ang",
+            "actualtorque",
+            "desiredTorque",
+            "aan",
+        };
+        return _header;
+    }
+
+    static public void LogGameData()
+    {
+
+
+        if (AppData.isGameLogging)
+        {
+
+
+            string[] _data = new string[] {
+               // CurrentTime.ToString("G17"),
+               // PlayerPos, //defined Above in APPData
+               // TargetPos, //defined Above in APPData      
+               // trailNumber.ToString(),
+               // isAssisted.ToString(),
+               // isflalccidControl.ToString(),
+               // gameScore.ToString(),
+               // plutoData.angle.ToString("G17"),
+               // //plutoData.angvel.ToString("G17"),
+               // plutoData.torq.ToString("G17"),
+               // //plutoData.mcurr.ToString("G17"),
+               //// plutoData.control.ToString("G17"),
+               // plutoData.desTorq.ToString("G17"),
+                
+                //aanProfile,//defined Above in APPData
+                //plutoData.ctrl.ToString("G17"),
+                //plutoData.lc1.ToString("G17"),
+                //plutoData.lc2.ToString("G17"),
+                //plutoData.lc3.ToString("G17"),
+            };
+            string _gstring = String.Join(",", _data);
+            _gstring += "\n";
+            _gamelog.logData(_gstring);
+            //UnityEngine.Debug.Log(_gstring);
+        }
+
+    }
+    static public void StopGameLogging()
+    {
+        if (_gamelog != null)
+        {
+            AppData.gameScore = 0;
+            //AppData.trailNumber = 0;
+            _gamelog.stopDataLog(true);
+            _gamelog = null;
+            isGameLogging = false;
+
+        }
+        else
+            UnityEngine.Debug.Log("NULL GAMELOG");
+
+    }
+    public class DataLogger
+    {
+        public string curr_fname { get; private set; }
+        public StringBuilder _filedata;
+        public bool stillLogging
+        {
+            get { return (_filedata != null); }
+        }
+
+        public DataLogger(string filename, string header)
+        {
+            curr_fname = filename;
+
+            _filedata = new StringBuilder(header);
+        }
+
+        public void stopDataLog(bool log = true)
+        {
+            if (log)
+            {
+                //  UnityEngine.Debug.Log(curr_fname);
+                File.AppendAllText(curr_fname, _filedata.ToString());
+            }
+            curr_fname = "";
+            _filedata = null;
+        }
+
+        public void logData(string data)
+        {
+            if (_filedata != null)
+            {
+                _filedata.Append(data);
+            }
+        }
+    }
+
 
 }

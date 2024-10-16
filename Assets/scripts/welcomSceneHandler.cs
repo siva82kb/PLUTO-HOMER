@@ -45,7 +45,7 @@ public class welcomSceneHandler : MonoBehaviour
         AppData.fileCreation.createFileStructure();
         ConnectToRobot.Connect("COM3");
         dayEntryPrefab.SetActive(false);
-
+     
     }
 
     // Update is called once per frame
@@ -67,8 +67,8 @@ public class welcomSceneHandler : MonoBehaviour
         //To load mech scene
         if (ConnectToRobot.isPLUTO)
         {
-        PlutoComm.OnButtonReleased += onPlutoButtonReleased;
 
+            PlutoComm.OnButtonReleased += onPlutoButtonReleased;
             connectStatu.color = Color.green;
             loading.SetActive(false);
             if (scene == true ) {

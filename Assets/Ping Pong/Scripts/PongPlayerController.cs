@@ -45,9 +45,6 @@ public class PongPlayerController : MonoBehaviour
        
         this.transform.position = new Vector2(this.transform.position.x, Angle2Screen(PlutoComm.angle));
 
-
-
-
     }
     public static float Angle2Screen(float angle)
     {

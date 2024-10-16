@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.SceneManagement;
+using static AppData;
+using UnityEditor.SearchService;
 
 public class UIManager1 : MonoBehaviour
 {
@@ -13,31 +15,29 @@ public class UIManager1 : MonoBehaviour
     public AudioClip[] audioClips; // winlevel loose
     public int winScore = 7;
     public int win;
+    public static bool isButtonPressed = false;
     // Use this for initialization
     void Start()
     {
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
         finishObjects = GameObject.FindGameObjectsWithTag("ShowOnFinish");
+        isButtonPressed = false;
         hideFinished();
     }
 
     // Update is called once per frame
     void Update()
     {
-
-        //Debug.Log(AppData.inputPressed());
-
-
-
-        //if (AppData.inputPressed() || Input.GetKeyDown(KeyCode.Return))
-        //{
-
-
-
-        //    LoadLevel("pong_game");
-        //}
-
-
+        if (ConnectToRobot.isPLUTO)
+        {
+            PlutoComm.OnButtonReleased += onPlutoButtonReleased;
+            //connect = true;
+        }
+        if (isButtonPressed)
+        {
+            LoadNextScene();
+            isButtonPressed = false;
+        }
 
     }
 
@@ -45,7 +45,7 @@ public class UIManager1 : MonoBehaviour
     //Reloads the Level
     public void Reload()
     {
-        Application.LoadLevel(Application.loadedLevel);
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
     void playAudio(int clipNumber)
     {
@@ -113,6 +113,24 @@ public class UIManager1 : MonoBehaviour
     {
 
         SceneManager.LoadSceneAsync(level);
+    }
+    public void onPlutoButtonReleased()
+    {
+
+        isButtonPressed = true;
+
+    }
+    void LoadNextScene()
+    {
+        SceneManager.LoadScene("pong_game");
+
+    }
+    private void OnDestroy()
+    {
+        if (ConnectToRobot.isPLUTO)
+        {
+            PlutoComm.OnButtonReleased -= onPlutoButtonReleased;
+        }
     }
 
 }

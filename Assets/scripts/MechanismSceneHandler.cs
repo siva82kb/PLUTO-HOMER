@@ -30,17 +30,18 @@ public class MechanismSceneHandler : MonoBehaviour
     private static bool scene = false;
     public static readonly string[] MECHANISMS = new string[] { "WFE", "WUD", "FPS", "HOC"};
   
-    private string filePath = Application.dataPath + "/data/config_data.csv";
+    
 
     private bool toggleSelected = false;  // Variable to track toggle selection state
 
     void Start()
     {
-        //AttachToggleListeners();
+        
         string csvPath = Application.dataPath + "/data/sessions/sessions.csv";
         SessionDataHandler sessionHandler = new SessionDataHandler(csvPath);
         Dictionary<string, double> mechanismTimes = sessionHandler.CalculateTotalTimeForMechanisms(DateTime.Now);
         Time.timeScale = 1;
+        scene = false;
         foreach (var kvp in mechanismTimes)
         {
             Debug.Log($"{kvp.Key} - {kvp.Value} mins");
@@ -110,7 +111,7 @@ public class MechanismSceneHandler : MonoBehaviour
             if (toggleComponent != null && toggleComponent.isOn)
             {
                 toggleSelected = true;
-                MechanismSelection.selectedOption = child.name;  // Store the selected toggle name
+                AppData.selectedOption = child.name;  // Store the selected toggle name
                 break;
             }
         }
@@ -211,9 +212,9 @@ public class MechanismSceneHandler : MonoBehaviour
 
     void updateTogglesBasedOnCSV()
     {
-        if (File.Exists(filePath))
+        if (File.Exists(DataManager.filePathConfigData))
         {
-            string[] lines = File.ReadAllLines(filePath);
+            string[] lines = File.ReadAllLines(DataManager.filePathConfigData);
             if (lines.Length > 1)
             {
                 string lastLine = lines[lines.Length - 1];
@@ -240,7 +241,7 @@ public class MechanismSceneHandler : MonoBehaviour
         }
         else
         {
-            Debug.LogError("CSV file not found at path: " + filePath);
+            Debug.LogError("CSV file not found at path: " + DataManager.filePathConfigData);
         }
     }
 
@@ -274,7 +275,7 @@ public class MechanismSceneHandler : MonoBehaviour
 
     void LoadNextScene()
     {
-        Debug.Log(MechanismSelection.selectedOption + " selected Option");
+       
         SceneManager.LoadScene("calibration");
         DeselectAllToggles();
 
@@ -301,10 +302,5 @@ public class MechanismSceneHandler : MonoBehaviour
     }
 
 
-    //void LoadsummaryScene()
-    //{
-    //    //Debug.Log(MechanismSelection.selectedOption + " selected Option");
-    //    SceneManager.LoadScene("summaryScene");
-    //}
 }
 

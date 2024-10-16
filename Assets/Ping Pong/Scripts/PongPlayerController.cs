@@ -51,7 +51,7 @@ public class PongPlayerController : MonoBehaviour
     }
     public static float Angle2Screen(float angle)
     {
-        AppData.MechanismData mechanismData = new AppData.MechanismData(AppData.MechanismSelection.selectedOption);
+        MechanismData mechanismData = new MechanismData(AppData.selectedOption);
         float tmin = mechanismData.tmin;
         float tmax = mechanismData.tmax;
         Debug.Log("tmin_"+ tmin +"tmax_"+tmax);

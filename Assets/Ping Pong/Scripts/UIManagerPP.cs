@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.SceneManagement;
+using UnityEngine.SocialPlatforms;
 
 public class UIManagerPP : MonoBehaviour
 {
@@ -9,68 +10,51 @@ public class UIManagerPP : MonoBehaviour
     public BoundController rightBound;
     public BoundController leftBound;
     public bool isFinished;
+    public bool isPressed = false;
     public bool playerWon, enemyWon;
     public AudioClip[] audioClips; // winlevel loose
-    public int winScore = 7;
+    public int winningScore = 7;
     public int win;
     // Use this for initialization
     void Start()
     {
+        PlutoComm.OnButtonReleased += onPlutoButtonReleased;
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
         finishObjects = GameObject.FindGameObjectsWithTag("ShowOnFinish");
         hideFinished();
-        //vdc.customPath = false;
-        //vdc.customPathFolder = "";
-        //vdc.filePath = AppData.GameVideoLog(AppData.subjHospNum, AppData.plutoData.mechs[AppData.plutoData.mechIndex], AppData.game, AppData.regime);
-        ////   Debug.Log(vdc.filePath);
-        //vdc.StartCapture();
-
     }
 
     // Update is called once per frame
     void Update()
     {
 
-
-        if (rightBound.enemyScore >= winScore && !isFinished)
+        Debug.Log("SCORE" + winningScore);
+        if (rightBound.enemyScore >= winningScore && !isFinished)
         {
+
+            Debug.Log("WINSCORE" + winningScore);
+            Debug.Log("rXWINSCORE" + rightBound.enemyScore);
             isFinished = true;
             enemyWon = true;
             Camera.main.GetComponent<AudioSource>().Stop();
             win = -1;
-            isFinished = true;
-            //Debug.Log(HatGameController.instance.score + "," + 0.8 * HT_spawnTargets1.instance.count);
-            //AppData.plutoData.desTorq = 0;
-            //AppData.DifficultyManager(-1);
-            //AppData.writeGamePerformace();
-
-            //AppData.StopGameLogging();
-            //AppData.WriteTrainingSummaryFile(AppData.reps, AppData.timeOnTrail);
+            isFinished = true;  
             playAudio(1);
-            playerWon = false;
-            //AppData.timeOnTrail = 0;
+            playerWon = false;         
             AppData.reps = 0;
         }
-        else if (leftBound.playerScore >= winScore && !isFinished
-            )
+        else if (leftBound.playerScore >= winningScore && !isFinished)
         {
+            Debug.Log("WINSCORE" + winningScore);
+            Debug.Log("XWINSCORE" + leftBound.playerScore);
+
             Camera.main.GetComponent<AudioSource>().Stop();
-            //AppData.DifficultyManager(1);
-            //AppData.writeGamePerformace();
-
-            //string data = AppData.startGamePerformace.ToString() + "," + AppData.startGameLevel.ToString() + "," + AppData.endGamePerformace.ToString() + "," + AppData.endGameLevel.ToString() + "," + AppData.gameLogFileName + "\n";
-            // AppData.CreateGamePerformacelog(data);
-
-            //AppData.StopGameLogging();
-            //AppData.WriteTrainingSummaryFile(AppData.reps, AppData.timeOnTrail);
-
-            //playAudio(1);
+       
             playAudio(0);
             isFinished = true;
             enemyWon = false;
             win = 1;
             playerWon = true;
-            //AppData.timeOnTrail = 0;
             AppData.reps = 0;
         }
 
@@ -78,26 +62,7 @@ public class UIManagerPP : MonoBehaviour
         {
             showFinished();
         }
-        //if (isFinished && AppData.inputPressed())
-        //{
-        //    LoadScene("pong_menu");
-        //}
 
-
-        //uses the p button to pause and unpause the game
-        //if ((AppData.inputPressed() || Input.GetKeyDown(KeyCode.P)) && !isFinished)
-        //{
-        //    if (Time.timeScale == 1)
-        //    {
-        //        Time.timeScale = 0;
-        //        showPaused();
-        //    }
-        //    else if (Time.timeScale == 0)
-        //    {
-        //        Time.timeScale = 1;
-        //        hidePaused();
-        //    }
-        //}
 
         if (Input.GetKeyDown(KeyCode.P) && !isFinished)
         {
@@ -107,12 +72,38 @@ public class UIManagerPP : MonoBehaviour
                 Time.timeScale = 0; // Pause the game
                 Debug.Log("Game Paused");
                 showPaused();
+
+
+
             }
             else if (Time.timeScale == 0)
             {
                 Time.timeScale = 1; // Unpause the game
                 Debug.Log("Game Unpaused");
                 hidePaused();
+            }
+        }
+
+        if (isPressed && !isFinished)
+        {
+            Debug.Log("P key pressed. Current Time.timeScale: " + Time.timeScale);
+            if (Time.timeScale == 1)
+            {
+                Time.timeScale = 0; // Pause the game
+                Debug.Log("Game Paused");
+                isPressed = false;
+                showPaused();
+                AppData.isGameLogging = false;
+
+            }
+            else if (Time.timeScale == 0)
+            {
+                Time.timeScale = 1; // Unpause the game
+                Debug.Log("Game Unpaused");
+                isPressed = false;
+                hidePaused();
+                AppData.isGameLogging = true;
+
             }
         }
 
@@ -127,6 +118,9 @@ public class UIManagerPP : MonoBehaviour
                 if (g.name == "PauseText")
                     //makes PauseText to Active
                     g.SetActive(true);
+                AppData.isGameLogging = false;
+
+
             }
         }
         else
@@ -137,8 +131,15 @@ public class UIManagerPP : MonoBehaviour
                 if (g.name == "PauseText")
                     //makes PauseText to Inactive
                     g.SetActive(false);
+                AppData.isGameLogging = true;
+
+
             }
         }
+    }
+    private void onPlutoButtonReleased()
+    {
+        isPressed = true;
     }
     //Reloads the Level
     public void LoadScene(string sceneName)
@@ -156,7 +157,6 @@ public class UIManagerPP : MonoBehaviour
         AudioSource audio = GetComponent<AudioSource>();
         audio.clip = audioClips[clipNumber];
         audio.Play();
-
     }
     //controls the pausing of the scene
     public void pauseControl()
@@ -165,11 +165,15 @@ public class UIManagerPP : MonoBehaviour
         {
             Time.timeScale = 0;
             showPaused();
+
+
         }
         else if (Time.timeScale == 0)
         {
             Time.timeScale = 1;
             hidePaused();
+
+
         }
     }
 
@@ -179,6 +183,8 @@ public class UIManagerPP : MonoBehaviour
         foreach (GameObject g in pauseObjects)
         {
             g.SetActive(true);
+
+
         }
     }
 
@@ -188,17 +194,18 @@ public class UIManagerPP : MonoBehaviour
         foreach (GameObject g in pauseObjects)
         {
             g.SetActive(false);
+
         }
     }
 
     //shows objects with ShowOnFinish tag
     public void showFinished()
     {
-
-
         foreach (GameObject g in finishObjects)
         {
             g.SetActive(true);
+            AppData.isGameLogging = false;
+
         }
     }
 
@@ -208,6 +215,14 @@ public class UIManagerPP : MonoBehaviour
         foreach (GameObject g in finishObjects)
         {
             g.SetActive(false);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (ConnectToRobot.isPLUTO)
+        {
+            PlutoComm.OnButtonReleased -= onPlutoButtonReleased;
         }
     }
 

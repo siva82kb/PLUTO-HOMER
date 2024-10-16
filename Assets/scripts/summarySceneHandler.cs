@@ -70,10 +70,12 @@ public void Start()
     //To initialize the barchart with whole data of moveTime per day
     public void initializeChart()
     {
-        AppData.fileCreation.initializeFilePath();
+        //DataManager.initializeFilePath();
         Debug.Log("Is bar chart active: " + barchart.gameObject.activeSelf);
 
-        sessionDataHandler = new SessionDataHandler(AppData.fileCreation.filePathSessionData);
+        sessionDataHandler = new SessionDataHandler(DataManager.filePathSessionData);
+
+
         sessionDataHandler.summaryCalculateMovTimePerDayWithLinq();
         // Get or add the BarChart component
         barchart = gameObject.GetComponent<BarChart>();
@@ -109,7 +111,6 @@ public void Start()
         dataZoom.start = 0;
         dataZoom.end = 100;
 
-        
         UpdateChartData();
     }
     //To update chart with data

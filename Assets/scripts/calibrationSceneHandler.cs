@@ -20,7 +20,7 @@ public class calibrationSceneHandler : MonoBehaviour
 
     void Start()
     {
-        selectedMechanism = MechanismSelection.selectedOption;
+        selectedMechanism = AppData.selectedOption;
         int mechNumber = PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, selectedMechanism);
         mechText.text = PlutoComm.MECHANISMSTEXT[mechNumber];
         
@@ -114,7 +114,7 @@ public class calibrationSceneHandler : MonoBehaviour
         PlutoComm.setControlType(PlutoComm.CONTROLTYPE[0]);
         //SceneManager.LoadScene("choosegame");
 
-        Invoke("LoadNextScene", 2.0f);
+        Invoke("LoadNextScene", 0.4f);
     }
 
     void LoadNextScene()

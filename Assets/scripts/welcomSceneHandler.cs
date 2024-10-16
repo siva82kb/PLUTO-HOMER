@@ -27,6 +27,7 @@ public class welcomSceneHandler : MonoBehaviour
     public bool piChartUpdated = false; 
     private DaySummary[] daySummaries;
     public static bool scene = false;
+    public Image connectStatus;
 
     // Private variables
     private bool attachPlutoButtonEvent = false;
@@ -35,7 +36,7 @@ public class welcomSceneHandler : MonoBehaviour
     void Start()
     {
         DataManager.createFileStructure();
-        //ConnectToRobot.Connect(AppData.COMPort);
+        ConnectToRobot.Connect(AppData.COMPort);
 
         // Update summary display
         if ((DataManager.filePathSessionData != null && !piChartUpdated) && DataManager.filePathConfigData != null)
@@ -56,11 +57,19 @@ public class welcomSceneHandler : MonoBehaviour
             attachPlutoButtonEvent = true;
             PlutoComm.OnButtonReleased += onPlutoButtonReleased;
         }
-        
+
+        if (ConnectToRobot.isPLUTO)
+        {
+            connectStatus.color = Color.green;
+            loading.SetActive(false);
+        }
+
+
         if (scene == true ) {
             LoadTargetScene();
             scene = false;
         }
+
     }
 
     public void onPlutoButtonReleased()

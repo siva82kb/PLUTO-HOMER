@@ -32,8 +32,11 @@ public static class DataManager
     static string directoryPathConfig;
     static string directoryPathSession;
     static string directoryPathRawData;
+    public static string directoryMechData;
     public static string filePathConfigData { get; set; }
     public static string filePathSessionData { get; set; }
+    
+
 
     public static void createFileStructure()
     {
@@ -41,6 +44,7 @@ public static class DataManager
         directoryPathConfig = directoryPath + "/configuration";
         directoryPathSession = directoryPath + "/sessions";
         directoryPathRawData = directoryPath + "/rawdata";
+        directoryMechData = directoryPath + "/mech";
         filePathConfigData = directoryPath + "/configdata.csv";
         filePathSessionData = directoryPathSession + "/sessions.csv";
         // Check if the directory exists

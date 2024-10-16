@@ -1,3 +1,4 @@
+
 using System;
 using System.IO;
 using System.Collections;
@@ -24,7 +25,17 @@ public static class PlutoDefs
 public static class AppData
 {
     // COM Port for the device
-    public static readonly string COMPort = "COM3";
+    public static readonly string COMPort = "COM5";
+
+    //Options to drive 
+    public static string selectedOption;
+    public static string selectedGame;
+    public static string game;
+    public static int gameScore;
+    public static int reps;
+
+    //game
+    public static bool isGameLogging;
 
     // UserData Class
     public static class UserData
@@ -117,7 +128,7 @@ public static class AppData
         public static int getCurrentDayOfTraining()
         {
             TimeSpan duration = DateTime.Now - startDate;
-            return (int) duration.TotalDays;
+            return (int)duration.TotalDays;
         }
 
         private static void parseMechanismMoveTimePrev()
@@ -161,12 +172,12 @@ public static class AppData
         /*
          * Calculate the movement time for each training day.
          */
-        public static DaySummary[] CalculateMoveTimePerDay(int noOfPostDays=7)
+        public static DaySummary[] CalculateMoveTimePerDay(int noOfPostDays = 7)
         {
             DateTime today = DateTime.Now.Date;
             DaySummary[] daySummaries = new DaySummary[noOfPostDays];
             // Find the move times for the last seven days excluding today. If the date is missing, then the move time is set to zero.
-            for (int  i = 1; i <= noOfPostDays; i++)
+            for (int i = 1; i <= noOfPostDays; i++)
             {
                 DateTime _day = today.AddDays(-i);
                 // Get the summary data for this date.
@@ -179,7 +190,7 @@ public static class AppData
                     Day = Miscellaneous.GetAbbreviatedDayName(_day.DayOfWeek),
                     Date = _day.ToString("dd/MM"),
                     MoveTime = _moveTime / 60f
-                };  
+                };
             }
             return daySummaries;
         }
@@ -193,3 +204,74 @@ public static class Miscellaneous
         return dayOfWeek.ToString().Substring(0, 3);
     }
 }
+public class MechanismData
+    {
+        // Class attributes to store data read from the file
+        public string datetime;
+        public string side;
+        public float tmin;
+        public float tmax;
+        public string mech;
+        public string filePath = DataManager.directoryMechData;
+
+        // Constructor that reads the file and initializes values based on the mechanism
+        public MechanismData(string mechanismName)
+        {
+            string lastLine = "";
+            string[] values;
+            string fileName = $"{filePath}/{mechanismName}.csv";
+            Debug.Log(fileName);
+
+            try
+            {
+                // Read the entire file and capture the last line containing the desired data
+                using (StreamReader file = new StreamReader(fileName))
+                {
+                    while (!file.EndOfStream)
+                    {
+                        lastLine = file.ReadLine();
+                    }
+                }
+
+                // Split the last line and process the data
+                values = lastLine.Split(','); // Change to comma or other delimiter as necessary
+                if (values[0].Trim() != null)
+                {
+                    // Assign values if mechanism matches
+                    datetime = values[0].Trim();
+                    Debug.Log(datetime + "_ datetime");
+                    side = values[1].Trim();
+                    Debug.Log(side + "_ side");
+
+                    tmin = float.Parse(values[2].Trim());
+                    Debug.Log(tmin + "_ min");
+
+                    tmax = float.Parse(values[3].Trim());
+                    Debug.Log(tmax + "max");
+
+                    mech = mechanismName;
+                }
+                else
+                {
+                    // Handle case when no matching mechanism is found
+                    datetime = null;
+                    side = null;
+                    tmin = 0;
+                    tmax = 0;
+                    mech = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error reading the file: " + ex.Message);
+            }
+        }
+
+        // Method to return tmin and tmax as a tuple
+        public (float tmin, float tmax) GetTminTmax()
+        {
+            return (tmin, tmax);
+        }
+
+    }
+

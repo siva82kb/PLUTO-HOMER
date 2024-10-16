@@ -5,7 +5,9 @@ using TMPro;
 using System;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
-
+using static AppData;
+using System.Collections;
+using System.Collections.Concurrent;
 
 public class MechanismSceneHandler : MonoBehaviour
 {
@@ -22,21 +24,24 @@ public class MechanismSceneHandler : MonoBehaviour
     public TMP_Text hocVal;
     public TMP_Text fktVal;
 
-    public Button exitButton;   
+    //public Button exitButton;
     public Button nextButton;
-    private string filePath = Application.dataPath+"/data/config_data.csv";
+    public Button exit;
+    private static bool scene = false;
+    public static readonly string[] MECHANISMS = new string[] { "WFE", "WUD", "FPS", "HOC"};
+  
+    
+
+    private bool toggleSelected = false;  // Variable to track toggle selection state
 
     void Start()
     {
-        string csvPath =Application.dataPath+ "/data/sessions/sessions.csv";
-
-       
-        SessionDataHandler sessionHandler = new SessionDataHandler(csvPath);
-
-       
-        Dictionary<string, double> mechanismTimes = sessionHandler.CalculateTotalTimeForMechanisms(DateTime.Now);
-
         
+        string csvPath = Application.dataPath + "/data/sessions/sessions.csv";
+        SessionDataHandler sessionHandler = new SessionDataHandler(csvPath);
+        Dictionary<string, double> mechanismTimes = sessionHandler.CalculateTotalTimeForMechanisms(DateTime.Now);
+        Time.timeScale = 1;
+        scene = false;
         foreach (var kvp in mechanismTimes)
         {
             Debug.Log($"{kvp.Key} - {kvp.Value} mins");
@@ -45,18 +50,83 @@ public class MechanismSceneHandler : MonoBehaviour
         updateMechanismTimeBoxes(mechanismTimes);
         updateTogglesBasedOnCSV();
 
-        if (exitButton != null)
-            exitButton.onClick.AddListener(ExitScene);
+        PlutoComm.OnButtonReleased += onPlutoButtonReleased;
+        exit.onClick.AddListener(OnExitButtonClicked);
+        //if (exitButton != null)
+        //    exitButton.onClick.AddListener(ExitScene);
 
         if (nextButton != null)
-            nextButton.onClick.AddListener(LoadNextScene);
+            nextButton.onClick.AddListener(() =>
+            {
+                if (toggleSelected)  // Check the toggleSelected boolean
+                    LoadNextScene();
+                else
+                    Debug.LogWarning("Select at least one toggle to proceed.");
+            });
+        DeselectAllToggles();
+        // Attach listeners to the toggles to update the toggleSelected variable
+        StartCoroutine(DelayedAttachListeners());
+
+    }
+
+    IEnumerator DelayedAttachListeners()
+    {
+        yield return new WaitForSeconds(1f);  // Allow UI to fully initialize
+        AttachToggleListeners();
+    }
+
+    void DeselectAllToggles()
+    {
+        foreach (Transform child in toggleGroup.transform)
+        {
+            Toggle toggleComponent = child.GetComponent<Toggle>();
+            if (toggleComponent != null)
+            {
+                toggleComponent.isOn = false;  // Reset all toggles to off
+            }
+        }
+    }
+
+    void AttachToggleListeners()
+    {
+        // Attach onValueChanged listener to each toggle in the toggle group
+        foreach (Transform child in toggleGroup.transform)
+        {
+            Toggle toggleComponent = child.GetComponent<Toggle>();
+            if (toggleComponent != null)
+            {
+                // Update toggleSelected whenever a toggle's value changes
+                toggleComponent.onValueChanged.AddListener(delegate { CheckToggleStates(); });
+            }
+        }
+    }
+
+    void CheckToggleStates()
+    {
+        // Check if any toggle in the group is currently selected
+        toggleSelected = false;
+        foreach (Transform child in toggleGroup.transform)
+        {
+            Toggle toggleComponent = child.GetComponent<Toggle>();
+            if (toggleComponent != null && toggleComponent.isOn)
+            {
+                toggleSelected = true;
+                AppData.selectedOption = child.name;  // Store the selected toggle name
+                break;
+            }
+        }
     }
 
     void Update()
     {
-
+        if (scene == true)
+        {
+            LoadNextScene();
+            scene = false;
+        }
     }
-        void SetToggleState(string toggleName, string value)
+
+    void SetToggleState(string toggleName, string value)
     {
         Toggle targetToggle = FindToggleByName(toggleName);
 
@@ -112,25 +182,24 @@ public class MechanismSceneHandler : MonoBehaviour
         }
         return null;
     }
-            
 
     void updateMechanismTimeBoxes(Dictionary<string, double> mechanismTimes)
     {
         if (timePh_FE != null && mechanismTimes.ContainsKey("WFE"))
         {
             timePh_FE.text = $"Time: {mechanismTimes["WFE"]}";
-            timePh_FE.ForceMeshUpdate(); // Force the text box to refresh
+            timePh_FE.ForceMeshUpdate();
         }
 
         if (timePh_URD != null && mechanismTimes.ContainsKey("WURD"))
         {
             timePh_URD.text = $"Time: {mechanismTimes["WURD"]}";
-            timePh_URD.ForceMeshUpdate(); 
+            timePh_URD.ForceMeshUpdate();
         }
 
         if (timePh_PS != null && mechanismTimes.ContainsKey("PS"))
         {
-            timePh_PS.text = $"Time: {mechanismTimes["PS"]} ";
+            timePh_PS.text = $"Time: {mechanismTimes["PS"]}";
             timePh_PS.ForceMeshUpdate();
         }
 
@@ -139,24 +208,22 @@ public class MechanismSceneHandler : MonoBehaviour
             timePh_HOC.text = $"Time: {mechanismTimes["HOC"]}";
             timePh_HOC.ForceMeshUpdate();
         }
-
     }
 
     void updateTogglesBasedOnCSV()
     {
-        if (File.Exists(filePath))
+        if (File.Exists(DataManager.filePathConfigData))
         {
-            string[] lines = File.ReadAllLines(filePath);
+            string[] lines = File.ReadAllLines(DataManager.filePathConfigData);
             if (lines.Length > 1)
             {
                 string lastLine = lines[lines.Length - 1];
                 string[] values = lastLine.Split(',');
 
-                SetToggleState("wfe", values[7]);
-                SetToggleState("wurd", values[8]);
-                SetToggleState("fps", values[9]);
-                SetToggleState("hoc", values[10]);
-                //SetToggleState("knob", values[11]);
+                SetToggleState("WFE", values[7]);
+                SetToggleState("WUD", values[8]);
+                SetToggleState("FPS", values[9]);
+                SetToggleState("HOC", values[10]);
 
                 if (values.Length >= 10)
                 {
@@ -174,10 +241,10 @@ public class MechanismSceneHandler : MonoBehaviour
         }
         else
         {
-            Debug.LogError("CSV file not found at path: " + filePath);
+            Debug.LogError("CSV file not found at path: " + DataManager.filePathConfigData);
         }
     }
-    
+
     void updateTimeBoxes(string time1, string time2, string time3, string time4)
     {
         if (feVal != null)
@@ -193,14 +260,47 @@ public class MechanismSceneHandler : MonoBehaviour
             hocVal.text = (time4.Trim() == "0" || string.IsNullOrEmpty(time4.Trim())) ? "" : " / " + time4.Trim() + " Mins";
     }
 
-
     void ExitScene()
     {
         SceneManager.LoadScene("welcome");
     }
 
+    public void onPlutoButtonReleased()
+    {
+        if (toggleSelected)  // Use the toggleSelected boolean to verify before scene change
+            scene = true;
+        else
+            Debug.LogWarning("Select at least one toggle to proceed.");
+    }
+
     void LoadNextScene()
     {
-        //SceneManager.LoadScene("NextSceneName");
+       
+        SceneManager.LoadScene("calibration");
+        DeselectAllToggles();
+
     }
-} 
+    IEnumerator LoadSummaryScene()
+    {
+        // Asynchronously load the summary scene
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("summaryScene");
+
+        // Wait until the new scene is fully loaded
+        while (!asyncLoad.isDone)
+        {
+            yield return null;
+        }
+
+        // Once the new scene is loaded, you don't need to unload the old scene manually
+        Debug.Log("summaryScene loaded successfully.");
+    }
+
+    private void OnExitButtonClicked()
+    {
+        Debug.Log("Exit button pressed, loading summaryScene.");
+        StartCoroutine(LoadSummaryScene());
+    }
+
+
+}
+

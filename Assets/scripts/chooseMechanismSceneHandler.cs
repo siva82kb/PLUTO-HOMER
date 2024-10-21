@@ -29,8 +29,6 @@ public class MechanismSceneHandler : MonoBehaviour
     public Button exit;
     private static bool scene = false;
     public static readonly string[] MECHANISMS = new string[] { "WFE", "WUD", "FPS", "HOC"};
-  
-    
 
     private bool toggleSelected = false;  // Variable to track toggle selection state
 

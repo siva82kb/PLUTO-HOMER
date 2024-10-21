@@ -31,6 +31,7 @@ public class welcomSceneHandler : MonoBehaviour
 
     // Private variables
     private bool attachPlutoButtonEvent = false;
+    private bool plutoConnectStatusDisplayed = false;
 
     // Start is called before the first frame update
     void Start()
@@ -57,19 +58,18 @@ public class welcomSceneHandler : MonoBehaviour
             attachPlutoButtonEvent = true;
             PlutoComm.OnButtonReleased += onPlutoButtonReleased;
         }
-
-        if (ConnectToRobot.isPLUTO)
+        // Update connection status
+        if (!plutoConnectStatusDisplayed && ConnectToRobot.isPLUTO)
         {
+            plutoConnectStatusDisplayed = true;
             connectStatus.color = Color.green;
             loading.SetActive(false);
         }
-
-
+        // Check if it time to switch to the next scene
         if (scene == true ) {
             LoadTargetScene();
             scene = false;
         }
-
     }
 
     public void onPlutoButtonReleased()
@@ -79,8 +79,9 @@ public class welcomSceneHandler : MonoBehaviour
 
     private void LoadTargetScene()
     {
-    SceneManager.LoadScene("chooseMech");
+        SceneManager.LoadScene("chooseMechanism");
     }
+
     private void UpdateUserData()
     {
         userName.text = AppData.UserData.hospNumber;
@@ -91,8 +92,10 @@ public class welcomSceneHandler : MonoBehaviour
 
     private void UpdatePieChart()
     {
-        for (int i = 0; i < daySummaries.Length; i++)
+        int N = daySummaries.Length;
+        for (int i = 0; i < N; i++)
         {
+            Debug.Log($"{i} | {daySummaries[i].Day} | {daySummaries[i].Date} | {daySummaries[i].MoveTime}");
             prevDays[i].text = daySummaries[i].Day;
             prevDates[i].text = daySummaries[i].Date;
             pies[i].fillAmount = daySummaries[i].MoveTime / AppData.UserData.totalMoveTimePrsc;
@@ -100,15 +103,7 @@ public class welcomSceneHandler : MonoBehaviour
         }
         piChartUpdated = true;
     }
-   
-    private string GetAbbreviatedDayName(DayOfWeek dayOfWeek)
-    {
-        
-        string[] abbreviatedDayNames = CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedDayNames;
 
-        return abbreviatedDayNames[(int)dayOfWeek];
-    }
-    
     private void OnApplicationQuit()
     {
         ConnectToRobot.disconnect();

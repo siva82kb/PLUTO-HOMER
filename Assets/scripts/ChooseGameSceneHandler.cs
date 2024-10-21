@@ -102,7 +102,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
         switch (game)
         {
             case "pingPong":
-                Debug.Log("Selected game:"+ game)
+                Debug.Log("Selected game:" + game);
                 // SceneManager.LoadScene("pong_menu");
                 break;
 

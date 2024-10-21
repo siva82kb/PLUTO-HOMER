@@ -498,13 +498,13 @@ MonoBehaviour:
   - {fileID: 77664869}
   - {fileID: 904996012}
   prevDates:
-  - {fileID: 897790873}
-  - {fileID: 1666384526}
-  - {fileID: 1458364840}
-  - {fileID: 1223230336}
-  - {fileID: 895249228}
-  - {fileID: 596824838}
   - {fileID: 1213909031}
+  - {fileID: 596824838}
+  - {fileID: 895249228}
+  - {fileID: 1223230336}
+  - {fileID: 1458364840}
+  - {fileID: 1666384526}
+  - {fileID: 897790873}
   pies:
   - {fileID: 1494279675}
   - {fileID: 1430003798}
@@ -1298,7 +1298,7 @@ GameObject:
   - component: {fileID: 596824839}
   - component: {fileID: 596824838}
   m_Layer: 5
-  m_Name: date6
+  m_Name: date2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1903,7 +1903,7 @@ GameObject:
   - component: {fileID: 895249229}
   - component: {fileID: 895249228}
   m_Layer: 5
-  m_Name: date5
+  m_Name: date3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2039,7 +2039,7 @@ GameObject:
   - component: {fileID: 897790874}
   - component: {fileID: 897790873}
   m_Layer: 5
-  m_Name: date1
+  m_Name: date7
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2401,8 +2401,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -430.37, y: 26}
-  m_SizeDelta: {x: 860.7452, y: 195.0483}
+  m_AnchoredPosition: {x: -405.39008, y: 0.0015259}
+  m_SizeDelta: {x: 810.7853, y: 205.79}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1099574228
 MonoBehaviour:
@@ -2459,9 +2459,9 @@ MonoBehaviour:
   m_fontSizeMax: 72
   m_fontStyle: 16
   m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
-  m_characterSpacing: 22
+  m_characterSpacing: 15
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -2489,7 +2489,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_margin: {x: 0, y: 0.00012207031, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -2591,7 +2591,7 @@ GameObject:
   - component: {fileID: 1213909032}
   - component: {fileID: 1213909031}
   m_Layer: 5
-  m_Name: date7
+  m_Name: date1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3210,7 +3210,7 @@ GameObject:
   - component: {fileID: 1458364841}
   - component: {fileID: 1458364840}
   m_Layer: 5
-  m_Name: date3
+  m_Name: date5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3497,7 +3497,7 @@ GameObject:
   - component: {fileID: 1666384527}
   - component: {fileID: 1666384526}
   m_Layer: 5
-  m_Name: date2
+  m_Name: date6
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

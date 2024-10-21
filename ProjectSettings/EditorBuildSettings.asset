@@ -6,13 +6,13 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/plutodiagnostiocs.unity
+    path: Assets/Scenes/plutoDiagnostiocs.unity
     guid: 2cda990e2423bbf4892e6590ba056729
   - enabled: 1
     path: Assets/Scenes/welcome.unity
     guid: 6ca3db99d91ceea4ca68eb55d0550929
   - enabled: 1
-    path: Assets/Scenes/chooseMech.unity
+    path: Assets/Scenes/chooseMechanism.unity
     guid: 066c3fcbb81e1cc4f804ee26f774bb16
   - enabled: 1
     path: Assets/Scenes/calibration.unity

@@ -20,7 +20,7 @@ public class calibrationSceneHandler : MonoBehaviour
 
     void Start()
     {
-        selectedMechanism = AppData.selectedOption;
+        selectedMechanism = AppData.selectMechanism;
         int mechNumber = PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, selectedMechanism);
         mechText.text = PlutoComm.MECHANISMSTEXT[mechNumber];
         

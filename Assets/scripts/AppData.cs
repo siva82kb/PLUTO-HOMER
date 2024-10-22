@@ -28,14 +28,21 @@ public static class AppData
     public static readonly string COMPort = "COM4";
 
     //Options to drive 
-    public static string selectedOption;
-    public static string selectedGame;
+    public static string selectMechanism = null;
+    public static string selectedGame = null;
     public static string game;
     public static int gameScore;
     public static int reps;
 
     //game
     public static bool isGameLogging;
+
+    public static void initializeStuff()
+    {
+        DataManager.createFileStructure();
+        ConnectToRobot.Connect(AppData.COMPort);
+        UserData.readAllUserData();
+    }
 
     // UserData Class
     public static class UserData
@@ -134,9 +141,12 @@ public static class AppData
 
         public static float getRemainingMoveTime(string mechanism)
         {
-            //int mechInx = PlutoDefs.getMechanimsIndex(mechanism);
-            //return mechMoveTimePrsc[mechInx] - mechMoveTimePrev[mechInx] - mechMoveTimeCurr[mechInx];
             return mechMoveTimePrsc[mechanism] - mechMoveTimePrev[mechanism] - mechMoveTimeCurr[mechanism];
+        }
+
+        public static float getTodayMoveTimeForMechanism(string mechanism)
+        {
+            return mechMoveTimePrev[mechanism] + mechMoveTimeCurr[mechanism];
         }
 
         public static int getCurrentDayOfTraining()
@@ -219,74 +229,74 @@ public static class Miscellaneous
         return dayOfWeek.ToString().Substring(0, 3);
     }
 }
+
 public class MechanismData
+{
+    // Class attributes to store data read from the file
+    public string datetime;
+    public string side;
+    public float tmin;
+    public float tmax;
+    public string mech;
+    public string filePath = DataManager.directoryMechData;
+
+    // Constructor that reads the file and initializes values based on the mechanism
+    public MechanismData(string mechanismName)
     {
-        // Class attributes to store data read from the file
-        public string datetime;
-        public string side;
-        public float tmin;
-        public float tmax;
-        public string mech;
-        public string filePath = DataManager.directoryMechData;
+        string lastLine = "";
+        string[] values;
+        string fileName = $"{filePath}/{mechanismName}.csv";
+        Debug.Log(fileName);
 
-        // Constructor that reads the file and initializes values based on the mechanism
-        public MechanismData(string mechanismName)
+        try
         {
-            string lastLine = "";
-            string[] values;
-            string fileName = $"{filePath}/{mechanismName}.csv";
-            Debug.Log(fileName);
-
-            try
+            // Read the entire file and capture the last line containing the desired data
+            using (StreamReader file = new StreamReader(fileName))
             {
-                // Read the entire file and capture the last line containing the desired data
-                using (StreamReader file = new StreamReader(fileName))
+                while (!file.EndOfStream)
                 {
-                    while (!file.EndOfStream)
-                    {
-                        lastLine = file.ReadLine();
-                    }
-                }
-
-                // Split the last line and process the data
-                values = lastLine.Split(','); // Change to comma or other delimiter as necessary
-                if (values[0].Trim() != null)
-                {
-                    // Assign values if mechanism matches
-                    datetime = values[0].Trim();
-                    Debug.Log(datetime + "_ datetime");
-                    side = values[1].Trim();
-                    Debug.Log(side + "_ side");
-
-                    tmin = float.Parse(values[2].Trim());
-                    Debug.Log(tmin + "_ min");
-
-                    tmax = float.Parse(values[3].Trim());
-                    Debug.Log(tmax + "max");
-
-                    mech = mechanismName;
-                }
-                else
-                {
-                    // Handle case when no matching mechanism is found
-                    datetime = null;
-                    side = null;
-                    tmin = 0;
-                    tmax = 0;
-                    mech = null;
+                    lastLine = file.ReadLine();
                 }
             }
-            catch (Exception ex)
+
+            // Split the last line and process the data
+            values = lastLine.Split(','); // Change to comma or other delimiter as necessary
+            if (values[0].Trim() != null)
             {
-                Console.WriteLine("Error reading the file: " + ex.Message);
+                // Assign values if mechanism matches
+                datetime = values[0].Trim();
+                Debug.Log(datetime + "_ datetime");
+                side = values[1].Trim();
+                Debug.Log(side + "_ side");
+
+                tmin = float.Parse(values[2].Trim());
+                Debug.Log(tmin + "_ min");
+
+                tmax = float.Parse(values[3].Trim());
+                Debug.Log(tmax + "max");
+
+                mech = mechanismName;
+            }
+            else
+            {
+                // Handle case when no matching mechanism is found
+                datetime = null;
+                side = null;
+                tmin = 0;
+                tmax = 0;
+                mech = null;
             }
         }
-
-        // Method to return tmin and tmax as a tuple
-        public (float tmin, float tmax) GetTminTmax()
+        catch (Exception ex)
         {
-            return (tmin, tmax);
+            Console.WriteLine("Error reading the file: " + ex.Message);
         }
-
     }
 
+    // Method to return tmin and tmax as a tuple
+    public (float tmin, float tmax) GetTminTmax()
+    {
+        return (tmin, tmax);
+    }
+
+}

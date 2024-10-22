@@ -36,8 +36,6 @@ public static class DataManager
     public static string filePathConfigData { get; set; }
     public static string filePathSessionData { get; set; }
     
-
-
     public static void createFileStructure()
     {
         directoryPath = Application.dataPath + "/data";

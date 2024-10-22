@@ -15,7 +15,7 @@ using System.Text.RegularExpressions;
 
 public class welcomSceneHandler : MonoBehaviour
 {
-    public GameObject loading;
+    //public GameObject loading;
     public TextMeshProUGUI userName;
     public TextMeshProUGUI timeRemainingToday;
     public TextMeshProUGUI todaysDay;
@@ -27,23 +27,21 @@ public class welcomSceneHandler : MonoBehaviour
     public bool piChartUpdated = false; 
     private DaySummary[] daySummaries;
     public static bool scene = false;
-    public Image connectStatus;
+    //public Image connectStatus;
 
     // Private variables
     private bool attachPlutoButtonEvent = false;
-    private bool plutoConnectStatusDisplayed = false;
 
     // Start is called before the first frame update
     void Start()
     {
-        DataManager.createFileStructure();
-        ConnectToRobot.Connect(AppData.COMPort);
+        // Initialize.
+        AppData.initializeStuff();
+        daySummaries = AppData.UserData.CalculateMoveTimePerDay();
 
         // Update summary display
-        if ((DataManager.filePathSessionData != null && !piChartUpdated) && DataManager.filePathConfigData != null)
+        if (!piChartUpdated)
         {
-            AppData.UserData.readAllUserData();
-            daySummaries = AppData.UserData.CalculateMoveTimePerDay();
             UpdateUserData();
             UpdatePieChart();
         }
@@ -58,13 +56,7 @@ public class welcomSceneHandler : MonoBehaviour
             attachPlutoButtonEvent = true;
             PlutoComm.OnButtonReleased += onPlutoButtonReleased;
         }
-        // Update connection status
-        if (!plutoConnectStatusDisplayed && ConnectToRobot.isPLUTO)
-        {
-            plutoConnectStatusDisplayed = true;
-            connectStatus.color = Color.green;
-            loading.SetActive(false);
-        }
+        
         // Check if it time to switch to the next scene
         if (scene == true ) {
             LoadTargetScene();

@@ -23,22 +23,28 @@ public class MechanismSceneHandler : MonoBehaviour
     public TMP_Text hocVal;
     public TMP_Text fktVal;
 
-    //public Button exitButton;
     public Button nextButton;
     public Button exit;
-    private static bool scene = false;
+    private static bool changeScene = false;
     public static readonly string[] MECHANISMS = new string[] { "WFE", "WUD", "FPS", "HOC"};
 
+
     private bool toggleSelected = false;  // Variable to track toggle selection state
+    private string nextScene = "calibration";
+    private string exitScene = "Summary";
 
     void Start()
     {
         // Initialize if needed
         if (AppData.UserData.dTableConfig == null)
         {
+            // Inialize the logger
+            AppLogger.StartLogging(SceneManager.GetActiveScene().name);
             // Initialize.
             AppData.initializeStuff();
         }
+        AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
+        AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
 
         // Attach PLUTO button event
         PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
@@ -63,6 +69,16 @@ public class MechanismSceneHandler : MonoBehaviour
 
         // Attach listeners to the toggles to update the toggleSelected variable
         StartCoroutine(DelayedAttachListeners());
+    }
+
+    void Update()
+    {
+        // Check if a scene change is needed.
+        if (changeScene == true)
+        {
+            LoadNextScene();
+            changeScene = false;
+        }
     }
 
     private void UpdateMechanismToggleButtons()
@@ -140,18 +156,9 @@ public class MechanismSceneHandler : MonoBehaviour
             {
                 toggleSelected = true;
                 AppData.selectMechanism = child.name;
+                AppLogger.LogInfo($"Selected '{AppData.selectMechanism}'.");
                 break;
             }
-        }
-    }
-
-    void Update()
-    {
-        // Check if a scene change is needed.
-        if (scene == true)
-        {
-            LoadNextScene();
-            scene = false;
         }
     }
 
@@ -162,17 +169,23 @@ public class MechanismSceneHandler : MonoBehaviour
 
     public void OnPlutoButtonReleased()
     {
-        if (toggleSelected)  // Use the toggleSelected boolean to verify before scene change
-            scene = true;
+        if (toggleSelected)
+        {
+            changeScene = true;
+        }
         else
+        {
             Debug.LogWarning("Select at least one toggle to proceed.");
+        }
     }
 
     void LoadNextScene()
     {
-        SceneManager.LoadScene("calibration");
+        AppLogger.LogInfo($"Switching scene to '{nextScene}'.");
+        SceneManager.LoadScene(nextScene);
         DeselectAllToggles();
     }
+
     IEnumerator LoadSummaryScene()
     {
         // Asynchronously load the summary scene

@@ -26,8 +26,8 @@ public class welcomSceneHandler : MonoBehaviour
     public Image[] pies = new Image[7];
     public bool piChartUpdated = false; 
     private DaySummary[] daySummaries;
-    public static bool scene = false;
-    //public Image connectStatus;
+    public static bool changeScene = false;
+    public readonly string nextScene = "chooseMechanism";
 
     // Private variables
     private bool attachPlutoButtonEvent = false;
@@ -35,6 +35,11 @@ public class welcomSceneHandler : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        // Inialize the logger
+        AppLogger.StartLogging(SceneManager.GetActiveScene().name);
+        AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
+        AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
+
         // Initialize.
         AppData.initializeStuff();
         daySummaries = AppData.UserData.CalculateMoveTimePerDay();
@@ -58,20 +63,22 @@ public class welcomSceneHandler : MonoBehaviour
         }
         
         // Check if it time to switch to the next scene
-        if (scene == true ) {
+        if (changeScene == true ) {
             LoadTargetScene();
-            scene = false;
+            changeScene = false;
         }
     }
 
     public void onPlutoButtonReleased()
     {
-        scene = true;
+        AppLogger.LogInfo("PLUTO button released.");
+        changeScene = true;
     }
 
     private void LoadTargetScene()
     {
-        SceneManager.LoadScene("chooseMechanism");
+        AppLogger.LogInfo($"Switching to the next scene '{nextScene}'.");
+        SceneManager.LoadScene(nextScene);
     }
 
     private void UpdateUserData()
@@ -99,5 +106,6 @@ public class welcomSceneHandler : MonoBehaviour
     private void OnApplicationQuit()
     {
         ConnectToRobot.disconnect();
+        AppLogger.StopLogging();
     }
 }

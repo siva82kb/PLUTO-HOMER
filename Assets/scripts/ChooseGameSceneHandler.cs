@@ -11,7 +11,8 @@ public class ChooseGameSceneHandler : MonoBehaviour
     public Button changeMech;  
 
     private bool toggleSelected = false;  
-    private string selectedGame; 
+    private string selectedGame;
+    private string changeScene = "chooseMechanism";
     private static bool isButtonPressed = false;
 
 
@@ -92,7 +93,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
 
     private void OnPlayButtonClickedx()
     {
-        SceneManager.LoadScene("chooseMech");
+        SceneManager.LoadScene(changeScene);
      
     }
 
@@ -102,7 +103,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
         switch (game)
         {
             case "pingPong":
-                Debug.Log("Selected game:"+ game)
+                Debug.Log("Selected game:" + game);
                 // SceneManager.LoadScene("pong_menu");
                 break;
 

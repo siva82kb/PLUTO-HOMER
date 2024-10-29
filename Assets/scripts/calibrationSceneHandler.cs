@@ -15,15 +15,26 @@ public class calibrationSceneHandler : MonoBehaviour
     public TextMeshProUGUI textMessage;
     public TextMeshProUGUI mechText;
     private static bool connect = false;
-   
+    public Button exit;
+
+
 
 
     void Start()
     {
-        selectedMechanism = AppData.selectedOption;
+        selectedMechanism = AppData.selectMechanism;
+        Debug.Log("mechanism:"+ selectedMechanism);
         int mechNumber = PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, selectedMechanism);
+     
+        Debug.Log("mechanism:" + mechNumber);
+        Debug.Log(PlutoComm.MECHANISMSTEXT[mechNumber]);
         mechText.text = PlutoComm.MECHANISMSTEXT[mechNumber];
-        
+        Debug.Log("mechanism:"+ mechNumber);
+        exit.onClick.AddListener(() =>
+        {
+            SceneManager.LoadScene("chooseMechanism");
+        });
+
     }
 
     void Update()
@@ -124,7 +135,7 @@ public class calibrationSceneHandler : MonoBehaviour
     private void ApplyTorqueToMoveHandles(float currentPos, float targetPos)
     {
         float distance = targetPos - currentPos;
-        float torqueValue = (distance > 0) ? -0.09f : 0.09f;   // torque values Nm
+        float torqueValue = (distance > 0) ? -0.1f : 0.1f;   // torque values Nm
         PlutoComm.setControlType("TORQUE");
         PlutoComm.setControlTarget(torqueValue);
     }

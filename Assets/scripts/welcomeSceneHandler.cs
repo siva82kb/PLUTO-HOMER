@@ -55,7 +55,6 @@ public class welcomSceneHandler : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Debug.Log("ATT_PLU : " + attachPlutoButtonEvent);
         // Attach PlutoButton release event after 2 seconds if it is not attached already.
         if (!attachPlutoButtonEvent && Time.timeSinceLevelLoad > 2)
         {
@@ -104,6 +103,7 @@ public class welcomSceneHandler : MonoBehaviour
         piChartUpdated = true;
     }
 
+   
     private void OnApplicationQuit()
     {
         ConnectToRobot.disconnect();

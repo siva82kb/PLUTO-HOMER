@@ -16,24 +16,19 @@ public class calibrationSceneHandler : MonoBehaviour
     public TextMeshProUGUI mechText;
     private static bool connect = false;
     public Button exit;
+    private string prevScene = "chooseMechanism";
 
 
 
 
     void Start()
     {
+        AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
+        AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
         selectedMechanism = AppData.selectMechanism;
-        Debug.Log("mechanism:"+ selectedMechanism);
         int mechNumber = PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, selectedMechanism);
-     
-        Debug.Log("mechanism:" + mechNumber);
-        Debug.Log(PlutoComm.MECHANISMSTEXT[mechNumber]);
         mechText.text = PlutoComm.MECHANISMSTEXT[mechNumber];
-        Debug.Log("mechanism:"+ mechNumber);
-        exit.onClick.AddListener(() =>
-        {
-            SceneManager.LoadScene("chooseMechanism");
-        });
+        exit.onClick.AddListener(OnExitButtonClicked);
 
     }
 
@@ -46,7 +41,7 @@ public class calibrationSceneHandler : MonoBehaviour
 
         if (ConnectToRobot.isPLUTO )
         {
-            PlutoComm.OnButtonReleased += onPlutoButtonReleased;
+            PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
            
         }
 
@@ -130,7 +125,7 @@ public class calibrationSceneHandler : MonoBehaviour
 
     void LoadNextScene()
     {
-        SceneManager.LoadScene("choosegame");
+        SceneManager.LoadScene("chooseGame");
     }
     private void ApplyTorqueToMoveHandles(float currentPos, float targetPos)
     {
@@ -140,7 +135,7 @@ public class calibrationSceneHandler : MonoBehaviour
         PlutoComm.setControlTarget(torqueValue);
     }
 
-    private void onPlutoButtonReleased()
+    private void OnPlutoButtonReleased()
     {
         isCalibrating = true;
     }
@@ -177,11 +172,16 @@ public class calibrationSceneHandler : MonoBehaviour
         }
     }
 
+    private void OnExitButtonClicked()
+    {
+        SceneManager.LoadScene(prevScene);
+    }
+
     private void OnDestroy()
     {
         if (ConnectToRobot.isPLUTO)
         {
-            PlutoComm.OnButtonReleased -= onPlutoButtonReleased;
+            PlutoComm.OnButtonReleased -= OnPlutoButtonReleased;
         }
     }
 }

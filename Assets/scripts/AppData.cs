@@ -25,7 +25,7 @@ public static class PlutoDefs
 public static class AppData
 {
     // COM Port for the device
-    public static readonly string COMPort = "COM4";
+    public static readonly string COMPort = "COM3";
 
     //Options to drive 
     public static string selectMechanism = null;
@@ -162,7 +162,7 @@ public static class AppData
             {
                 // Get the total movement time for each mechanism
                 var _totalMoveTime = dTableSession.AsEnumerable()
-                    .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm", CultureInfo.InvariantCulture).Date == DateTime.Now.Date)
+                    .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == DateTime.Now.Date)
                     .Where(row => row.Field<string>("Mechanism") == PlutoDefs.Mechanisms[i])
                     .Sum(row => Convert.ToInt32(row["MoveTime"]));
                 mechMoveTimePrev[PlutoDefs.Mechanisms[i]] = _totalMoveTime / 60f;
@@ -187,7 +187,7 @@ public static class AppData
         public static float getPrevTodayMoveTime()
         {
             var _totalMoveTimeToday = dTableSession.AsEnumerable()
-                .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm", CultureInfo.InvariantCulture).Date == DateTime.Now.Date)
+                .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == DateTime.Now.Date)
                 .Sum(row => Convert.ToInt32(row["MoveTime"]));
             Debug.Log(_totalMoveTimeToday);
             return _totalMoveTimeToday / 60f;
@@ -206,7 +206,7 @@ public static class AppData
                 DateTime _day = today.AddDays(-i);
                 // Get the summary data for this date.
                 var _moveTime = dTableSession.AsEnumerable()
-                    .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm", CultureInfo.InvariantCulture).Date == _day)
+                    .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == _day)
                     .Sum(row => Convert.ToInt32(row["MoveTime"]));
                 // Create the day summary.
                 daySummaries[i - 1] = new DaySummary

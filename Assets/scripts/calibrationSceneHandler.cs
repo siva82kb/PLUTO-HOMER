@@ -17,7 +17,7 @@ public class calibrationSceneHandler : MonoBehaviour
     private static bool connect = false;
     public Button exit;
     private string prevScene = "chooseMechanism";
-
+    private string nextScene = "choosegame";
 
 
 
@@ -125,7 +125,8 @@ public class calibrationSceneHandler : MonoBehaviour
 
     void LoadNextScene()
     {
-        SceneManager.LoadScene("chooseGame");
+        AppLogger.LogInfo($"Switching scene to '{nextScene}'.");
+        SceneManager.LoadScene(nextScene);
     }
     private void ApplyTorqueToMoveHandles(float currentPos, float targetPos)
     {

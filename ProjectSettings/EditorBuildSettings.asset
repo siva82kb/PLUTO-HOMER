@@ -6,16 +6,28 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/plutodiagnostiocs.unity
+    path: Assets/Scenes/plutoDiagnostiocs.unity
     guid: 2cda990e2423bbf4892e6590ba056729
   - enabled: 1
     path: Assets/Scenes/welcome.unity
     guid: 6ca3db99d91ceea4ca68eb55d0550929
   - enabled: 1
-    path: Assets/Scenes/chooseMech.unity
+    path: Assets/Scenes/chooseMechanism.unity
     guid: 066c3fcbb81e1cc4f804ee26f774bb16
   - enabled: 1
     path: Assets/Scenes/calibration.unity
-    guid: d54c4d77b2d27fc45adda5c4e9c4ed2d
+    guid: fa25faef0f7f123479be76a94361a6fd
+  - enabled: 1
+    path: Assets/Scenes/choosegame.unity
+    guid: a290ee357065774418c4a6ac7ae6091e
+  - enabled: 1
+    path: Assets/Scenes/pong_menu.unity
+    guid: c790d31d6177a1a459a946685b8cbdc9
+  - enabled: 1
+    path: Assets/Scenes/pong_game.unity
+    guid: 4526a8640bed28945a91adf24045ec4d
+  - enabled: 1
+    path: Assets/Scenes/summaryScene.unity
+    guid: 9ea6557cdd4880041a1be37a80a05e30
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

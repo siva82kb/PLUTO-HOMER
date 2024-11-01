@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using static AppData;
 
 public class calibrationSceneHandler : MonoBehaviour
@@ -13,12 +15,21 @@ public class calibrationSceneHandler : MonoBehaviour
     public TextMeshProUGUI textMessage;
     public TextMeshProUGUI mechText;
     private static bool connect = false;
+    public Button exit;
+    private string prevScene = "chooseMechanism";
+    private string nextScene = "choosegame";
+
+
 
     void Start()
     {
-        selectedMechanism = MechanismSelection.selectedOption;
+        AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
+        AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
+        selectedMechanism = AppData.selectMechanism;
         int mechNumber = PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, selectedMechanism);
         mechText.text = PlutoComm.MECHANISMSTEXT[mechNumber];
+        exit.onClick.AddListener(OnExitButtonClicked);
+
     }
 
     void Update()
@@ -28,10 +39,10 @@ public class calibrationSceneHandler : MonoBehaviour
          PerformCalibration();
         }
 
-        if (ConnectToRobot.isPLUTO && !connect)
+        if (ConnectToRobot.isPLUTO )
         {
-            PlutoComm.OnButtonReleased += onPlutoButtonReleased;
-            connect = true;
+            PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
+           
         }
 
         if (isCalibrating)
@@ -107,17 +118,25 @@ public class calibrationSceneHandler : MonoBehaviour
         textMessage.text = "Calibration Done";
         textMessage.color = new Color32(62, 214, 111, 255);
         PlutoComm.setControlType(PlutoComm.CONTROLTYPE[0]);
+        //SceneManager.LoadScene("choosegame");
+
+        Invoke("LoadNextScene", 0.4f);
     }
 
+    void LoadNextScene()
+    {
+        AppLogger.LogInfo($"Switching scene to '{nextScene}'.");
+        SceneManager.LoadScene(nextScene);
+    }
     private void ApplyTorqueToMoveHandles(float currentPos, float targetPos)
     {
         float distance = targetPos - currentPos;
-        float torqueValue = (distance > 0) ? -0.09f : 0.09f;   // torque values Nm
+        float torqueValue = (distance > 0) ? -0.1f : 0.1f;   // torque values Nm
         PlutoComm.setControlType("TORQUE");
         PlutoComm.setControlTarget(torqueValue);
     }
 
-    private void onPlutoButtonReleased()
+    private void OnPlutoButtonReleased()
     {
         isCalibrating = true;
     }
@@ -154,11 +173,16 @@ public class calibrationSceneHandler : MonoBehaviour
         }
     }
 
+    private void OnExitButtonClicked()
+    {
+        SceneManager.LoadScene(prevScene);
+    }
+
     private void OnDestroy()
     {
         if (ConnectToRobot.isPLUTO)
         {
-            PlutoComm.OnButtonReleased -= onPlutoButtonReleased;
+            PlutoComm.OnButtonReleased -= OnPlutoButtonReleased;
         }
     }
 }

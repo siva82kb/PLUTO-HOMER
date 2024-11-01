@@ -11,41 +11,31 @@ public class ChooseGameSceneHandler : MonoBehaviour
     public Button changeMech;  
 
     private bool toggleSelected = false;  
-    private string selectedGame; 
+    private string selectedGame;
+    private string changeScene = "chooseMechanism";
     private static bool isButtonPressed = false;
 
 
     void Start()
     {
-        PlutoComm.OnButtonReleased += onPlutoButtonReleased;
-
-        isButtonPressed = false;
+        AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
+        AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
+        PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
         AttachToggleListeners();
         playButton.onClick.AddListener(OnPlayButtonClicked);
-        changeMech.onClick.AddListener(OnPlayButtonClickedx);
-        DeselectAllToggles(); 
+        changeMech.onClick.AddListener(OnMechButtonClicked);
     }
     void Update()
     {
-        AppData.selectedGame = selectedGame;  
+         
         if (isButtonPressed)
         {
             LoadSelectedGameScene(selectedGame);
+            isButtonPressed = false;
         }
     }
 
-    // Resets all toggles to off
-    void DeselectAllToggles()
-    {
-        foreach (Transform child in toggleGroup.transform)
-        {
-            Toggle toggleComponent = child.GetComponent<Toggle>();
-            if (toggleComponent != null)
-            {
-                toggleComponent.isOn = false; 
-            }
-        }
-    }
+   
 
     
     void AttachToggleListeners()
@@ -62,8 +52,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
 
     
     void CheckToggleStates()
-    {
-        toggleSelected = false;  
+    { 
 
         foreach (Transform child in toggleGroup.transform)
         {
@@ -71,6 +60,8 @@ public class ChooseGameSceneHandler : MonoBehaviour
             if (toggleComponent != null && toggleComponent.isOn)
             {
                 selectedGame = toggleComponent.name;  
+                AppData.selectedGame = selectedGame;
+                AppLogger.LogInfo($"Selected game '{AppData.selectedGame}'.");
                 toggleSelected = true; 
                 break; 
             }
@@ -81,8 +72,8 @@ public class ChooseGameSceneHandler : MonoBehaviour
     {
         if (toggleSelected)
         {
-            Debug.Log("Play Button Pressed. Selected Game: " + selectedGame);
             LoadSelectedGameScene(selectedGame);
+            toggleSelected = false;
         }
         else
         {
@@ -90,20 +81,19 @@ public class ChooseGameSceneHandler : MonoBehaviour
         }
     }
 
-    private void OnPlayButtonClickedx()
+    private void OnMechButtonClicked()
     {
-        SceneManager.LoadScene("chooseMech");
+        SceneManager.LoadScene(changeScene);
      
     }
 
     private void LoadSelectedGameScene(string game)
     {
-        Debug.Log("ASG : " + AppData.selectedGame);
         switch (game)
         {
             case "pingPong":
                 Debug.Log("Selected game:" + game);
-                // SceneManager.LoadScene("pong_menu");
+                //SceneManager.LoadScene("pong_menu");
                 break;
 
             case "Game2":
@@ -120,13 +110,25 @@ public class ChooseGameSceneHandler : MonoBehaviour
         }
     }
 
-    public void onPlutoButtonReleased()
+    public void OnPlutoButtonReleased()
     {
         if (toggleSelected)
         {
-            isButtonPressed = true;
+            isButtonPressed=true;
+            toggleSelected = false;
+        }
+        else
+        {
+            Debug.Log("No game selected. Please select a game.");
         }
     }
 
+    private void OnDestroy()
+    {
+        if (ConnectToRobot.isPLUTO)
+        {
+            PlutoComm.OnButtonReleased -= OnPlutoButtonReleased;
+        }
+    }
 
 }

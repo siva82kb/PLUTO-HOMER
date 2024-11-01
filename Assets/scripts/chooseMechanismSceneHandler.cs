@@ -26,10 +26,7 @@ public class MechanismSceneHandler : MonoBehaviour
     public Button nextButton;
     public Button exit;
     private static bool changeScene = false;
-    public static readonly string[] MECHANISMS = new string[] { "WFE", "WUD", "FPS", "HOC"};
-
-
-    private bool toggleSelected = false;  // Variable to track toggle selection state
+    private bool toggleSelected = false;
     private string nextScene = "calibration";
     private string exitScene = "Summary";
 
@@ -45,27 +42,18 @@ public class MechanismSceneHandler : MonoBehaviour
         }
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
-
+        
         // Attach PLUTO button event
         PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
 
-        // Attach a callback to the exit button
-        exit.onClick.AddListener(OnExitButtonClicked);
-        // Attach a callback to the next button
-        if (nextButton != null)
+        //checking time scale 
+        if (Time.timeScale == 0)
         {
-            nextButton.onClick.AddListener(() =>
-            {
-                if (toggleSelected)
-                {
-                    LoadNextScene();
-                }
-            });
+            Time.timeScale = 1;
         }
-
-        // Update toggle buttons.
+        exit.onClick.AddListener(OnExitButtonClicked);
+        nextButton.onClick.AddListener(OnNextButtonClicked);
         UpdateMechanismToggleButtons();
-        DeselectAllToggles();
 
         // Attach listeners to the toggles to update the toggleSelected variable
         StartCoroutine(DelayedAttachListeners());
@@ -113,26 +101,14 @@ public class MechanismSceneHandler : MonoBehaviour
         }
     }
 
-    void DeselectAllToggles()
-    {
-        foreach (Transform child in mehcanismSelectGroup.transform)
-        {
-            Toggle toggleComponent = child.GetComponent<Toggle>();
-            if (toggleComponent != null)
-            {
-                toggleComponent.isOn = false;  // Reset all toggles to off
-            }
-        }
-    }
     IEnumerator DelayedAttachListeners()
     {
-        yield return new WaitForSeconds(1f);  // Allow UI to fully initialize
+        yield return new WaitForSeconds(1f);  
         AttachToggleListeners();
     }
 
     void AttachToggleListeners()
     {
-        // Attach onValueChanged listener to each toggle in the toggle group
         foreach (Transform child in mehcanismSelectGroup.transform)
         {
             Toggle toggleComponent = child.GetComponent<Toggle>();
@@ -146,9 +122,6 @@ public class MechanismSceneHandler : MonoBehaviour
 
     void CheckToggleStates()
     {
-        // Check if any toggle in the group is currently selected
-        toggleSelected = false;
-        AppData.selectMechanism = null;
         foreach (Transform child in mehcanismSelectGroup.transform)
         {
             Toggle toggleComponent = child.GetComponent<Toggle>();
@@ -162,16 +135,12 @@ public class MechanismSceneHandler : MonoBehaviour
         }
     }
 
-    void ExitScene()
-    {
-        SceneManager.LoadScene("welcome");
-    }
-
     public void OnPlutoButtonReleased()
     {
         if (toggleSelected)
         {
             changeScene = true;
+            toggleSelected = false;
         }
         else
         {
@@ -183,28 +152,35 @@ public class MechanismSceneHandler : MonoBehaviour
     {
         AppLogger.LogInfo($"Switching scene to '{nextScene}'.");
         SceneManager.LoadScene(nextScene);
-        DeselectAllToggles();
     }
 
     IEnumerator LoadSummaryScene()
     {
-        // Asynchronously load the summary scene
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("summaryScene");
-
-        // Wait until the new scene is fully loaded
         while (!asyncLoad.isDone)
         {
             yield return null;
         }
-
-        // Once the new scene is loaded, you don't need to unload the old scene manually
-        Debug.Log("summaryScene loaded successfully.");
     }
 
     private void OnExitButtonClicked()
     {
-        Debug.Log("Exit button pressed, loading summaryScene.");
         StartCoroutine(LoadSummaryScene());
+    }
+    private void OnNextButtonClicked()
+    {
+        if (toggleSelected)
+        {
+            LoadNextScene();
+            toggleSelected = false;
+        }
+    }
+    private void OnDestroy()
+    {
+        if (ConnectToRobot.isPLUTO)
+        {
+            PlutoComm.OnButtonReleased -= OnPlutoButtonReleased;
+        }
     }
 }
 

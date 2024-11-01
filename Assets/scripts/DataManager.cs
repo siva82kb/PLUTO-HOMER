@@ -79,7 +79,6 @@ public static class DataManager
         }
         catch (Exception ex)
         {
-            // Catch any other generic exceptions
             Debug.LogError("An error occurred while writing the header: " + ex.Message);
         }
     }
@@ -151,10 +150,19 @@ public static class AppLogger
             return;
         }
         // Not logging right now. Create a new one.
-        logFilePath = DataManager.directoryPath + $"/applog/log-{DateTime.Now:dd-MM-yyyy-HH-mm-ss}.log";
+        string logDirectory = Path.Combine(DataManager.directoryPath, "applog");
+        if (!Directory.Exists(logDirectory))
+        {
+            Directory.CreateDirectory(logDirectory);
+        }
+        logFilePath = Path.Combine(logDirectory, $"log-{DateTime.Now:dd-MM-yyyy-HH-mm-ss}.log");
+
+        //logFilePath = DataManager.directoryPath + $"/applog/log-{DateTime.Now:dd-MM-yyyy-HH-mm-ss}.log";
         if (!File.Exists(logFilePath))
         {
-            using (File.Create(logFilePath)) { }
+            using (File.Create(logFilePath)) {
+                Debug.Log("created"); 
+            }
         }
         logWriter = new StreamWriter(logFilePath, true);
         currentScene = scene;

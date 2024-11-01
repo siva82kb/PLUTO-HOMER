@@ -298,5 +298,4 @@ public class MechanismData
     {
         return (tmin, tmax);
     }
-
 }

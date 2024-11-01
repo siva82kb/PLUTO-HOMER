@@ -8,12 +8,14 @@ public static class PlutoComm
 {
     // Device Level Constants
     public static readonly string[] OUTDATATYPE = new string[] { "SENSORSTREAM", "CONTROLPARAM", "DIAGNOSTICS" };
-    public static readonly string[] MECHANISMS = new string[] { "WFE", "WUD", "FPS", "HOC", "NOMECH" };
+    public static readonly string[] MECHANISMS = new string[] { "WFE", "WURD", "FPS", "HOC", "FME1", "FME2", "NOMECH" };
     public static readonly string[] MECHANISMSTEXT = new string[] {
         "Wrist Flex/Extension",
         "Wrist Ulnar/Radial Deviation",
         "Forearm Pron/Supination",
         "Hand Open/Closing",
+        "FME1",
+        "FME2",
         "NO Mechanism"
     };
     public static readonly string[] CALIBRATION = new string[] { "NOCALLIB", "YESCALLIB" };

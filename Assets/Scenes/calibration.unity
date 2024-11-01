@@ -389,8 +389,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -523.5195, y: 199.72}
-  m_SizeDelta: {x: 684.006, y: 132}
+  m_AnchoredPosition: {x: -111.65228, y: 199.72}
+  m_SizeDelta: {x: 1507.7404, y: 132}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &381258295
 MonoBehaviour:
@@ -760,7 +760,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   textMessage: {fileID: 707591900}
-  mechText: {fileID: 0}
+  mechText: {fileID: 381258295}
+  exit: {fileID: 120802118}
 --- !u!1 &805643426
 GameObject:
   m_ObjectHideFlags: 0

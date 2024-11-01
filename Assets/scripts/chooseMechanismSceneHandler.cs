@@ -26,8 +26,7 @@ public class MechanismSceneHandler : MonoBehaviour
     public Button nextButton;
     public Button exit;
     private static bool changeScene = false;
-    
-    private bool toggleSelected = false;  
+    private bool toggleSelected = false;
     private string nextScene = "calibration";
     private string exitScene = "Summary";
 
@@ -43,7 +42,7 @@ public class MechanismSceneHandler : MonoBehaviour
         }
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
-       
+        
         // Attach PLUTO button event
         PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
 
@@ -55,6 +54,8 @@ public class MechanismSceneHandler : MonoBehaviour
         exit.onClick.AddListener(OnExitButtonClicked);
         nextButton.onClick.AddListener(OnNextButtonClicked);
         UpdateMechanismToggleButtons();
+
+        // Attach listeners to the toggles to update the toggleSelected variable
         StartCoroutine(DelayedAttachListeners());
     }
 
@@ -100,7 +101,6 @@ public class MechanismSceneHandler : MonoBehaviour
         }
     }
 
-
     IEnumerator DelayedAttachListeners()
     {
         yield return new WaitForSeconds(1f);  
@@ -114,6 +114,7 @@ public class MechanismSceneHandler : MonoBehaviour
             Toggle toggleComponent = child.GetComponent<Toggle>();
             if (toggleComponent != null)
             {
+                // Update toggleSelected whenever a toggle's value changes
                 toggleComponent.onValueChanged.AddListener(delegate { CheckToggleStates(); });
             }
         }
@@ -134,7 +135,6 @@ public class MechanismSceneHandler : MonoBehaviour
         }
     }
 
-
     public void OnPlutoButtonReleased()
     {
         if (toggleSelected)
@@ -152,15 +152,11 @@ public class MechanismSceneHandler : MonoBehaviour
     {
         AppLogger.LogInfo($"Switching scene to '{nextScene}'.");
         SceneManager.LoadScene(nextScene);
-
-       
-
     }
 
     IEnumerator LoadSummaryScene()
     {
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("summaryScene");
-
         while (!asyncLoad.isDone)
         {
             yield return null;

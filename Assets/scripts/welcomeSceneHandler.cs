@@ -103,7 +103,6 @@ public class welcomSceneHandler : MonoBehaviour
         piChartUpdated = true;
     }
 
-   
     private void OnApplicationQuit()
     {
         ConnectToRobot.disconnect();

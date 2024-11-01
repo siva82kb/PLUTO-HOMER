@@ -150,7 +150,6 @@ public static class AppLogger
             return;
         }
         // Not logging right now. Create a new one.
-
         string logDirectory = Path.Combine(DataManager.directoryPath, "applog");
         if (!Directory.Exists(logDirectory))
         {

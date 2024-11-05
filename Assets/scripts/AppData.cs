@@ -30,12 +30,6 @@ public static class AppData
     //Options to drive 
     public static string selectMechanism = null;
     public static string selectedGame = null;
-    public static string game;
-    public static int gameScore;
-    public static int reps;
-
-    //game
-    public static bool isGameLogging;
 
     public static void initializeStuff()
     {
@@ -298,4 +292,25 @@ public class MechanismData
     {
         return (tmin, tmax);
     }
+}
+public static class gameData
+{
+    //game
+    public static bool isGameLogging;
+    public static string game;
+    public static int gameScore;
+    public static int reps;
+    public static int playerScore;
+    public static int enemyScore;
+    public static string playerPos = "0";
+    public static string enemyPos;
+    public static string playerHit = "0";
+    public static string enemyHit = "0";
+    public static string wallBounce = "0";
+    public static string enemyFail = "0";
+    public static string playerFail = "0";
+    public static int winningScore = 7;
+    public static float moveTime;
+    public static readonly string[] pongEvents = new string[] { "moving", "wallBounce", "playerHit", "enemyHit", "playerFail", "enemyFail" };
+    public static int events;
 }

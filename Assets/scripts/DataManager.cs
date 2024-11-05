@@ -29,7 +29,7 @@ public static class DataManager
 {
     public static readonly string directoryPath = Application.dataPath + "/data";
     static string directoryPathConfig;
-    static string directoryPathSession;
+    public static string directoryPathSession;
     static string directoryPathRawData;
     public static string directoryMechData;
     public static string filePathConfigData { get; private set; }
@@ -156,8 +156,6 @@ public static class AppLogger
             Directory.CreateDirectory(logDirectory);
         }
         logFilePath = Path.Combine(logDirectory, $"log-{DateTime.Now:dd-MM-yyyy-HH-mm-ss}.log");
-
-        //logFilePath = DataManager.directoryPath + $"/applog/log-{DateTime.Now:dd-MM-yyyy-HH-mm-ss}.log";
         if (!File.Exists(logFilePath))
         {
             using (File.Create(logFilePath)) {

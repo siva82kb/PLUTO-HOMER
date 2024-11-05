@@ -43,6 +43,7 @@ public void Start()
     public void mechanismClicked(Button button)
     {
         title = button.gameObject.name.ToUpper();
+        Debug.Log("button name:" + title);
         int n = PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, title);
         title = PlutoComm.MECHANISMSTEXT[n];
         sessionDataHandler.CalculateMovTimeForMechanism(button.gameObject.name.ToUpper());

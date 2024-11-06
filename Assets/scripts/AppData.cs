@@ -10,7 +10,7 @@ using System.Globalization;
 using System.Data;
 using System.Linq;
 using Unity.VisualScripting;
-
+using NeuroRehabLibrary;
 
 public static class PlutoDefs
 {
@@ -36,6 +36,7 @@ public static class AppData
         DataManager.createFileStructure();
         ConnectToRobot.Connect(AppData.COMPort);
         UserData.readAllUserData();
+    
     }
 
     // UserData Class
@@ -111,16 +112,30 @@ public static class AppData
         // Function to read all the user data.
         public static void readAllUserData()
         {
-            // Read the configuration da
-            dTableConfig = DataManager.loadCSV(DataManager.filePathConfigData);
-            // Read the session data
+            //if (Directory.Exists(DataManager.filePathConfigData)) {
+            //    // Read the configuration da
+            //    dTableConfig = DataManager.loadCSV(DataManager.filePathConfigData);
+            //}
+            //if (Directory.Exists(DataManager.filePathSessionData))
+            //{
+            //    // Read the session data
+            //    dTableSession = DataManager.loadCSV(DataManager.filePathSessionData);
+            //}  
+            
+               dTableConfig = DataManager.loadCSV(DataManager.filePathConfigData);
             dTableSession = DataManager.loadCSV(DataManager.filePathSessionData);
+
+
             // Initialize the mechanism current movement time dictionary
             mechMoveTimeCurr = createMoveTimeDictionary();
             // Read the therapy configuration data.
             parseTherapyConfigData();
             // Get total previous movement time
-            parseMechanismMoveTimePrev();
+            if (File.Exists(DataManager.filePathSessionData))
+            {
+                parseMechanismMoveTimePrev();
+            }
+
         }
 
         private static Dictionary<string, float> createMoveTimeDictionary()
@@ -186,31 +201,38 @@ public static class AppData
             Debug.Log(_totalMoveTimeToday);
             return _totalMoveTimeToday / 60f;
         }
-
-        /*
-         * Calculate the movement time for each training day.
-         */
         public static DaySummary[] CalculateMoveTimePerDay(int noOfPastDays = 7)
         {
+            // Check if the session file has been loaded and has rows
+            if (dTableSession == null || dTableSession.Rows.Count == 0)
+            {
+                Debug.LogWarning("Session data is not available or the file is empty.");
+                return new DaySummary[0]; // Return an empty array if no data is found
+            }
             DateTime today = DateTime.Now.Date;
             DaySummary[] daySummaries = new DaySummary[noOfPastDays];
-            // Find the move times for the last seven days excluding today. If the date is missing, then the move time is set to zero.
+
+            // Loop through each day, starting from the day before today, going back `noOfPastDays`
             for (int i = 1; i <= noOfPastDays; i++)
             {
                 DateTime _day = today.AddDays(-i);
-                // Get the summary data for this date.
-                var _moveTime = dTableSession.AsEnumerable()
+
+                // Calculate the total move time for the given day. If no data is found, _moveTime will be zero.
+                int _moveTime = dTableSession.AsEnumerable()
                     .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == _day)
                     .Sum(row => Convert.ToInt32(row["MoveTime"]));
-                // Create the day summary.
+
+                // Populate the day summary
                 daySummaries[i - 1] = new DaySummary
                 {
                     Day = Miscellaneous.GetAbbreviatedDayName(_day.DayOfWeek),
                     Date = _day.ToString("dd/MM"),
-                    MoveTime = _moveTime / 60f
+                    MoveTime = _moveTime / 60f // Convert move time to minutes
                 };
+
                 Debug.Log($"{i} | {daySummaries[i - 1].Day} | {daySummaries[i - 1].Date} | {daySummaries[i - 1].MoveTime}");
             }
+
             return daySummaries;
         }
     }

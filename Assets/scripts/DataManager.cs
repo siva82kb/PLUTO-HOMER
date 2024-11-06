@@ -88,6 +88,12 @@ public static class DataManager
      */
     public static DataTable loadCSV(string filePath)
     {
+        // Check if the file exists. If not, return null.
+        if (!File.Exists(filePath))
+        {
+            Debug.LogWarning($"File not found: {filePath}");
+            return null;
+        }
         DataTable dTable = new DataTable();
 
         // Read all lines from the CSV file

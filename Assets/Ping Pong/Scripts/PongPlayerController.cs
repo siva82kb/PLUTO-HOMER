@@ -29,10 +29,10 @@ public class PongPlayerController : MonoBehaviour
     void Update()
     {
         checkPlayerMovement();
-        this.transform.position = new Vector2(this.transform.position.x, playerMovement(PlutoComm.angle));
+        this.transform.position = new Vector2(this.transform.position.x, playerMovementArea(PlutoComm.angle));
     }
 
-    public static float playerMovement(float angle)
+    public static float playerMovementArea(float angle)
     {
         MechanismData mechanismData = new MechanismData(AppData.selectMechanism);
         float tmin = mechanismData.tmin;

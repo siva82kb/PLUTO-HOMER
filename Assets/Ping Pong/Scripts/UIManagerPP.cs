@@ -3,10 +3,12 @@ using System.Collections;
 using UnityEngine.SceneManagement;
 using UnityEngine.SocialPlatforms;
 using UnityEditor.SceneManagement;
+using NeuroRehabLibrary;
+
 
 public class UIManagerPP : MonoBehaviour
 {
-    GameObject[] pauseObjects, finishObjects,hideGameObjects;
+    GameObject[] pauseObjects, finishObjects;
     public BoundController rightBound;
     public BoundController leftBound;
     public bool isFinished;
@@ -15,15 +17,16 @@ public class UIManagerPP : MonoBehaviour
     public AudioClip[] audioClips; 
     public int win;
     private bool isPaused = true;
+    private GameSession currentGameSession;
 
     void Start()
     {
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
         finishObjects = GameObject.FindGameObjectsWithTag("ShowOnFinish");
-        hideGameObjects = new GameObject[] { GameObject.FindGameObjectWithTag("Target"), GameObject.FindGameObjectWithTag("Player"), 
-                                                GameObject.FindGameObjectWithTag("Enemy"), GameObject.FindGameObjectWithTag("hideOnFinish") };
         hideFinished();
+        StartNewGameSession();
+
 
     }
     void Update()
@@ -32,6 +35,7 @@ public class UIManagerPP : MonoBehaviour
         if (isFinished)
         {
             showFinished();
+           gameData.isGameLogging = false;
         }
         if ((Input.GetKeyDown(KeyCode.P) && !isFinished) || (isPressed && !isFinished))
         {
@@ -47,11 +51,7 @@ public class UIManagerPP : MonoBehaviour
         }
     }
 
-    //private IEnumerator WaitAndStopGameLogging()
-    //{
-    //    yield return new WaitForSeconds(2.0f);
-    //    AppData.isGameLogging = false;
-    //}
+
     private void CheckGameEndConditions()
     {
         if (rightBound.enemyScore >= gameData.winningScore && !isFinished)
@@ -75,6 +75,7 @@ public class UIManagerPP : MonoBehaviour
         playAudio(enemyWon ? 1 : 0);
         gameData.reps = 0;
         showFinished();
+        EndCurrentGameSession();
     }
  private void pauseGame()
     {
@@ -102,12 +103,14 @@ public class UIManagerPP : MonoBehaviour
         //Reloads the Level
   public void LoadScene(string sceneName)
     {
+        EndCurrentGameSession();
        SceneManager.LoadScene(sceneName);
     }
 
     //Reloads the Level
     public void Reload()
     {
+        EndCurrentGameSession();
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
     void playAudio(int clipNumber)
@@ -154,6 +157,48 @@ public class UIManagerPP : MonoBehaviour
         if (ConnectToRobot.isPLUTO)
         {
             PlutoComm.OnButtonReleased -= onPlutoButtonReleased;
+        }
+    }
+    void StartNewGameSession()
+    {
+        currentGameSession = new GameSession
+        {
+            GameName = "PING-PONG",
+            Assessment = 0 // Example assessment value, adjust as needed
+        };
+
+        SessionManager.Instance.StartGameSession(currentGameSession);
+        Debug.Log($"Started new game session with session number: {currentGameSession.SessionNumber}");
+
+        SetSessionDetails();
+    }
+    private void SetSessionDetails()
+    {
+        string device = "PLUTO"; 
+        string assistMode = "Null"; 
+        string assistModeParameters = "Null"; 
+        string deviceSetupLocation = "Null"; // Set the device setup location
+        string gameParameter = "YourGameParameter"; // Set the game parameter
+        string trialdata = "YourGameParameter"; // Set the game parameter
+
+        string mech = AppData.selectMechanism;
+        SessionManager.Instance.SetDevice(device, currentGameSession);
+        SessionManager.Instance.SetAssistMode(assistMode, assistModeParameters, currentGameSession);
+        SessionManager.Instance.SetDeviceSetupLocation(deviceSetupLocation, currentGameSession);
+        SessionManager.Instance.SetGameParameter(gameParameter, currentGameSession);
+        SessionManager.Instance.mechanism(mech, currentGameSession);
+        SessionManager.Instance.SetTrialDataFileLocation(trialdata, currentGameSession);
+
+
+
+    }
+    void EndCurrentGameSession()
+    {
+        if (currentGameSession != null)
+        {
+            string movetime = gameData.moveTime.ToString("F0");
+            SessionManager.Instance.moveTime(movetime, currentGameSession);
+            SessionManager.Instance.EndGameSession(currentGameSession);
         }
     }
 }

@@ -91,7 +91,6 @@ public class GameLog : MonoBehaviour
         else
         {
             _dlog = null;
-
             isLogging = false;
         }
     }

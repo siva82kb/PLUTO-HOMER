@@ -24,7 +24,7 @@ public class SessionDataHandler
     //SESSION FILE  HEADER FORMAT AND DATETIME FORMAT
     public string DATEFORMAT_INFILE = "dd-MM-yyyy HH:mm:ss";
     public string DATETIME = "DateTime";
-    public string MOVETIME = "movTime";
+    public string MOVETIME = "moveTime";
     public string STARTTIME = "StartTime";
     public string STOPTIME = "StopTime";
     public string MECHANISM = "mech";

@@ -62,7 +62,7 @@ namespace NeuroRehabLibrary
             {
                 _currentSessionNumber = GetLastSessionNumber() + 1;
                 Debug.Log($"Session number incremented to: {_currentSessionNumber}");
-
+                AppData.currentSessionNumber = _currentSessionNumber;
                 _loginCalled = true;
             }
             _sessionStarted = false;

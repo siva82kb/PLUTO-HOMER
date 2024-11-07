@@ -153,6 +153,7 @@ public class calibrationSceneHandler : MonoBehaviour
             textMessage.text = $"Error: Together Position NOT reached! Current: {currentPosition}";
             textMessage.color = Color.red;
             isCalibrating = false;
+            PlutoComm.setControlType(PlutoComm.CONTROLTYPE[0]);
             return false;
         }
     }
@@ -169,6 +170,7 @@ public class calibrationSceneHandler : MonoBehaviour
             textMessage.text = $"Error: Separation Position NOT reached! Current: {currentPosition}";
             textMessage.color = Color.red;
             isCalibrating = false;
+            PlutoComm.setControlType(PlutoComm.CONTROLTYPE[0]);
             return false;
         }
     }

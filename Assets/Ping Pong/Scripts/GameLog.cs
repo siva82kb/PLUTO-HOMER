@@ -9,13 +9,15 @@ using System.Diagnostics;
 using Unity.VisualScripting;
 using System.Drawing;
 
+
 public class GameLog : MonoBehaviour
 {
     public static GameLog instance;
     GameObject Player, Target, Enemy;
     public static string dateTime;
     public static string date;
-   
+    public static string sessionNum;
+
     string _fname;
     float time;
     bool logged = false;
@@ -24,58 +26,31 @@ public class GameLog : MonoBehaviour
     // Game data logging Items
     public static string playerPos;
     public static string enemyPos;
-   
     public static string TargetPos;
-
     private static string[] _dheader = new string[] {
         "time","controltype","error","buttonState","angle","control",
         "target","playerPosY","enemyPosY","events","playerScore","enemyScore"
     };
-
-    
-
-   
     private static DataLogger _dlog;
-  
-
-    public static bool isLogging { get; private set; }
-  
-
+    public static bool isLogging { get; private set;}
     void Start()
     {
         dateTime = DateTime.Now.ToString("Dyyyy-MM-ddTHH-mm-ss");
         date = DateTime.Now.ToString("yyyy-MM-dd");
-        //File = Directory.CreateDirectory(Path.Combine(AppData.fileCreation.directoryPathSession, dateTime));
-        string dir = Path.Combine(DataManager.directoryPathSession, date);
+        sessionNum = "Session"+AppData.currentSessionNumber.ToString();
+        string dir = Path.Combine(DataManager.directoryPathSession, date, sessionNum);
         Directory.CreateDirectory(dir);
-        
-        //if(SessionDataHandler.lastSessionNumber== 0)
-        //{
-        //    int snNum = 001;
-        //}
-        //else
-        //{
-        //    int x = (int) SessionDataHandler.lastSessionNumber;
-        //    int snNum = x + 1;
-        //}
-        _fname = Path.Combine(dir,dateTime+".csv");
+        _fname = Path.Combine(dir,AppData.selectMechanism+"_"+ AppData.selectedGame+"_"+dateTime+".csv");
+        AppData.trialDataFileLocation = _fname;
         File.Create(_fname).Dispose();
         UnityEngine.Debug.Log(_fname+ "Created successfully");
         StartDataLog(_fname);
 
-
-
-
-
-
     }
-
     static public void StartDataLog(string fname)
     {
-        // If you are already logging.
         if (_dlog != null)
         {
-
             StopLogging();
         }
         // Start new logger
@@ -85,8 +60,6 @@ public class GameLog : MonoBehaviour
             string headerWithInstructions = instructionLine + String.Join(", ", _dheader) + "\n";
             _dlog = new DataLogger(fname, headerWithInstructions);
             isLogging = true;
-            UnityEngine.Debug.Log("kickuhbcreated");
-
         }
         else
         {
@@ -119,16 +92,8 @@ public class GameLog : MonoBehaviour
         get { return stp_watch.IsRunning; }
     }
  
-
-    
-   
     void Update()
     {
-
-        if (!gameData.isGameLogging) {
-            UnityEngine.Debug.Log("AppData.isGameLogging set to: " + gameData.isGameLogging);
-        }
-
         if (gameData.isGameLogging)
         {
             UnityEngine.Debug.Log(gameData.isGameLogging + "logging");
@@ -147,12 +112,10 @@ public class GameLog : MonoBehaviour
                 if (Player != null)
                 {
                     playerPos = Player.transform.position.y.ToString();
-                    UnityEngine.Debug.Log("Player Position Updated: " + playerPos);
                 }
                 else
                 {
                     playerPos = "\"" + "XXX" + "," + "XXX" + "\"";
-                    UnityEngine.Debug.Log("Player not found!");
                 }
 
                 if (Target != null)
@@ -161,33 +124,14 @@ public class GameLog : MonoBehaviour
                     TargetPos = "\"" + "XXX" + "," + "XXX" + "\"";
                 if (Enemy != null) {
                     enemyPos =  Enemy.transform.position.y.ToString();
-                    UnityEngine.Debug.Log("enemy Position Updated: " + enemyPos);
                 }
-                   
-
                 else
                     enemyPos = "\"" + "XXX" + "," + "XXX" + "\"";
             }
         
             LogData();
-
         }
         time += Time.deltaTime;
-
-        //if (time > 10)
-        //{
-        //    // 
-        //    if (!logged)
-        //    {
-        //        UnityEngine.Debug.Log(_fname);
-        //        //  AppData.StopLogging();
-        //        logged = true;
-        //    }
-        //}
-
-
-
-
     }
     static public void LogData()
     {
@@ -235,7 +179,6 @@ public class GameLog : MonoBehaviour
         {
             if (log)
             {
-                //  UnityEngine.Debug.Log(curr_fname);
                 File.AppendAllText(curr_fname, _filedata.ToString());
             }
             curr_fname = "";

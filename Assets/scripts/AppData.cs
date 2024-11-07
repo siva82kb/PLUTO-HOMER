@@ -30,6 +30,8 @@ public static class AppData
     //Options to drive 
     public static string selectMechanism = null;
     public static string selectedGame = null;
+    public static int currentSessionNumber;
+    public static string trialDataFileLocation;
 
     public static void initializeStuff()
     {
@@ -61,17 +63,19 @@ public static class AppData
                 }
                 else
                 {
-                    // Add all entries of the mechanism move time dictionary
                     return mechMoveTimePrsc.Values.Sum();
-
-                    //return mechMoveTimePrsc.Sum();
                 }
             }
         }
+
         public static float totalMoveTimePrev
         {
             get
             {
+                if (!File.Exists(DataManager.filePathSessionData))
+                {
+                    return -1f;
+                }
                 if (mechMoveTimePrev == null)
                 {
                     return -1f;
@@ -82,10 +86,15 @@ public static class AppData
                 }
             }
         }
+
         public static float totalMoveTimeCurr
         {
             get
             {
+                if (!File.Exists(DataManager.filePathSessionData))
+                {
+                    return -1f;
+                }
                 if (mechMoveTimeCurr == null)
                 {
                     return -1f;
@@ -96,48 +105,50 @@ public static class AppData
                 }
             }
         }
-        public static float totalMoveTimeRemaining // Retuns the 
+
+        public static float totalMoveTimeRemaining
         {
             get
             {
                 float _total = 0f;
-                foreach (string mech in PlutoDefs.Mechanisms)
+
+                if (mechMoveTimePrsc != null && (mechMoveTimePrev == null || mechMoveTimeCurr == null))
                 {
-                    _total += mechMoveTimePrsc[mech] - mechMoveTimePrev[mech] - mechMoveTimeCurr[mech];
+                    foreach (string mech in PlutoDefs.Mechanisms)
+                    {
+                        _total += mechMoveTimePrsc[mech];
+                    }
+                    return _total; 
                 }
-                return _total;
+                else {
+                    foreach (string mech in PlutoDefs.Mechanisms)
+                    {
+                        _total += mechMoveTimePrsc[mech] - mechMoveTimePrev[mech] - mechMoveTimeCurr[mech];
+                    }
+                    return _total;
+                }
+
+               
             }
         }
-
-        // Function to read all the user data.
         public static void readAllUserData()
         {
-            //if (Directory.Exists(DataManager.filePathConfigData)) {
-            //    // Read the configuration da
-            //    dTableConfig = DataManager.loadCSV(DataManager.filePathConfigData);
-            //}
-            //if (Directory.Exists(DataManager.filePathSessionData))
-            //{
-            //    // Read the session data
-            //    dTableSession = DataManager.loadCSV(DataManager.filePathSessionData);
-            //}  
-            
-               dTableConfig = DataManager.loadCSV(DataManager.filePathConfigData);
-            dTableSession = DataManager.loadCSV(DataManager.filePathSessionData);
-
-
-            // Initialize the mechanism current movement time dictionary
+            if (File.Exists(DataManager.filePathConfigData))
+            {
+                dTableConfig = DataManager.loadCSV(DataManager.filePathConfigData);
+            }
+            if (File.Exists(DataManager.filePathSessionData))
+            {
+                dTableSession = DataManager.loadCSV(DataManager.filePathSessionData);
+            }
             mechMoveTimeCurr = createMoveTimeDictionary();
             // Read the therapy configuration data.
             parseTherapyConfigData();
-            // Get total previous movement time
             if (File.Exists(DataManager.filePathSessionData))
             {
                 parseMechanismMoveTimePrev();
             }
-
         }
-
         private static Dictionary<string, float> createMoveTimeDictionary()
         {
             Dictionary<string, float> _temp = new Dictionary<string, float>();
@@ -155,9 +166,16 @@ public static class AppData
 
         public static float getTodayMoveTimeForMechanism(string mechanism)
         {
-            return mechMoveTimePrev[mechanism] + mechMoveTimeCurr[mechanism];
+            if ((mechMoveTimePrev == null || mechMoveTimeCurr == null))
+            {
+                return 0f;
+            }
+            else 
+            {
+                return mechMoveTimePrev[mechanism] + mechMoveTimeCurr[mechanism];
+            }
+            
         }
-
         public static int getCurrentDayOfTraining()
         {
             TimeSpan duration = DateTime.Now - startDate;
@@ -181,11 +199,9 @@ public static class AppData
         private static void parseTherapyConfigData()
         {
             DataRow lastRow = dTableConfig.Rows[dTableConfig.Rows.Count - 1];
-            // Hospital number
             hospNumber = lastRow.Field<string>("hospno");
             startDate = DateTime.ParseExact(lastRow.Field<string>("startdate"), "dd-MM-yyyy", CultureInfo.InvariantCulture);
-            // Prescribed movement time
-            mechMoveTimePrsc = createMoveTimeDictionary();
+            mechMoveTimePrsc = createMoveTimeDictionary();//prescribed time
             for (int i = 0; i < PlutoDefs.Mechanisms.Length; i++)
             {
                 mechMoveTimePrsc[PlutoDefs.Mechanisms[i]] = float.Parse(lastRow.Field<string>(PlutoDefs.Mechanisms[i]));
@@ -266,7 +282,6 @@ public class MechanismData
 
         try
         {
-            // Read the entire file and capture the last line containing the desired data
             using (StreamReader file = new StreamReader(fileName))
             {
                 while (!file.EndOfStream)
@@ -274,23 +289,14 @@ public class MechanismData
                     lastLine = file.ReadLine();
                 }
             }
-
-            // Split the last line and process the data
-            values = lastLine.Split(','); // Change to comma or other delimiter as necessary
+            values = lastLine.Split(','); 
             if (values[0].Trim() != null)
             {
                 // Assign values if mechanism matches
                 datetime = values[0].Trim();
-                Debug.Log(datetime + "_ datetime");
                 side = values[1].Trim();
-                Debug.Log(side + "_ side");
-
                 tmin = float.Parse(values[2].Trim());
-                Debug.Log(tmin + "_ min");
-
                 tmax = float.Parse(values[3].Trim());
-                Debug.Log(tmax + "max");
-
                 mech = mechanismName;
             }
             else
@@ -308,13 +314,127 @@ public class MechanismData
             Console.WriteLine("Error reading the file: " + ex.Message);
         }
     }
-
-    // Method to return tmin and tmax as a tuple
     public (float tmin, float tmax) GetTminTmax()
     {
         return (tmin, tmax);
     }
 }
+
+/* Application Level Logger Class */
+public enum LogMessageType
+{
+    INFO,
+    WARNING,
+    ERROR
+}
+
+public static class AppLogger
+{
+    private static string logFilePath;
+    private static StreamWriter logWriter = null;
+    private static readonly object logLock = new object();
+    public static string currentScene { get; private set; } = "";
+    public static string currentMechanism { get; private set; } = "";
+    public static string currentGame { get; private set; } = "";
+
+    public static bool isLogging
+    {
+        get
+        {
+            return logFilePath != null;
+        }
+    }
+
+    public static void StartLogging(string scene)
+    {
+        // Start Log file only if we are not already logging.
+        if (isLogging)
+        {
+            return;
+        }
+        string logDirectory = Path.Combine(DataManager.directoryPath, "applog");
+        if (!Directory.Exists(logDirectory))
+        {
+            Directory.CreateDirectory(logDirectory);
+        }
+        logFilePath = Path.Combine(logDirectory, $"log-{DateTime.Now:dd-MM-yyyy-HH-mm-ss}.log");
+        if (!File.Exists(logFilePath))
+        {
+            using (File.Create(logFilePath))
+            {
+                Debug.Log("created");
+            }
+        }
+        logWriter = new StreamWriter(logFilePath, true);
+        currentScene = scene;
+        LogInfo("Created PLUTO log file.");
+    }
+
+    public static void SetCurrentScene(string scene)
+    {
+        if (isLogging)
+        {
+            currentScene = scene;
+        }
+    }
+
+    public static void SetCurrentMechanism(string mechanism)
+    {
+        if (isLogging)
+        {
+            currentMechanism = mechanism;
+        }
+    }
+
+    public static void SetCurrentGame(string game)
+    {
+        if (isLogging)
+        {
+            currentGame = game;
+        }
+    }
+
+    public static void StopLogging()
+    {
+        if (logWriter != null)
+        {
+            LogInfo("Closing log file.");
+            logWriter.Close();
+            logWriter = null;
+            logFilePath = null;
+            currentScene = "";
+        }
+    }
+
+    public static void LogMessage(string message, LogMessageType logMsgType)
+    {
+        lock (logLock)
+        {
+            if (logWriter != null)
+            {
+                logWriter.WriteLine($"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} [{currentScene}] [{currentMechanism}] [{currentGame}] {message}");
+                logWriter.Flush();
+            }
+        }
+    }
+
+    public static void LogInfo(string message)
+    {
+        LogMessage(message, LogMessageType.INFO);
+    }
+
+    public static void LogWarning(string message)
+    {
+        LogMessage(message, LogMessageType.WARNING);
+    }
+
+    public static void LogError(string message)
+    {
+        LogMessage(message, LogMessageType.ERROR);
+    }
+}
+
+
 public static class gameData
 {
     //game
@@ -331,7 +451,7 @@ public static class gameData
     public static string wallBounce = "0";
     public static string enemyFail = "0";
     public static string playerFail = "0";
-    public static int winningScore = 7;
+    public static int winningScore = 3;
     public static float moveTime;
     public static readonly string[] pongEvents = new string[] { "moving", "wallBounce", "playerHit", "enemyHit", "playerFail", "enemyFail" };
     public static int events;

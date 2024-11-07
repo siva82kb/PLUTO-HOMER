@@ -158,6 +158,8 @@ public class UIManagerPP : MonoBehaviour
         {
             PlutoComm.OnButtonReleased -= onPlutoButtonReleased;
         }
+
+        EndCurrentGameSession();
     }
     void StartNewGameSession()
     {
@@ -177,9 +179,9 @@ public class UIManagerPP : MonoBehaviour
         string device = "PLUTO"; 
         string assistMode = "Null"; 
         string assistModeParameters = "Null"; 
-        string deviceSetupLocation = "Null"; // Set the device setup location
+        string deviceSetupLocation = "CMC-Bioeng-dpt"; // Set the device setup location
         string gameParameter = "YourGameParameter"; // Set the game parameter
-        string trialdata = "YourGameParameter"; // Set the game parameter
+       // Set the game parameter
 
         string mech = AppData.selectMechanism;
         SessionManager.Instance.SetDevice(device, currentGameSession);
@@ -187,16 +189,14 @@ public class UIManagerPP : MonoBehaviour
         SessionManager.Instance.SetDeviceSetupLocation(deviceSetupLocation, currentGameSession);
         SessionManager.Instance.SetGameParameter(gameParameter, currentGameSession);
         SessionManager.Instance.mechanism(mech, currentGameSession);
-        SessionManager.Instance.SetTrialDataFileLocation(trialdata, currentGameSession);
-
-
-
     }
     void EndCurrentGameSession()
     {
         if (currentGameSession != null)
         {
+            string trialdata = AppData.trialDataFileLocation;
             string movetime = gameData.moveTime.ToString("F0");
+            SessionManager.Instance.SetTrialDataFileLocation(trialdata, currentGameSession);
             SessionManager.Instance.moveTime(movetime, currentGameSession);
             SessionManager.Instance.EndGameSession(currentGameSession);
         }

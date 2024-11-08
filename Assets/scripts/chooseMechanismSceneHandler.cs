@@ -128,9 +128,9 @@ public class MechanismSceneHandler : MonoBehaviour
             if (toggleComponent != null && toggleComponent.isOn)
             {
                 toggleSelected = true;
-                AppData.selectMechanism = child.name;
-                AppLogger.SetCurrentMechanism(AppData.selectMechanism);
-               AppLogger.LogInfo($"Selected '{AppData.selectMechanism}'.");
+                AppData.selectedMechanism = child.name;
+                AppLogger.SetCurrentMechanism(AppData.selectedMechanism);
+               AppLogger.LogInfo($"Selected '{AppData.selectedMechanism}'.");
                 break;
             }
         }

@@ -40,7 +40,7 @@ public class GameLog : MonoBehaviour
         sessionNum = "Session"+AppData.currentSessionNumber.ToString();
         string dir = Path.Combine(DataManager.directoryPathSession, date, sessionNum);
         Directory.CreateDirectory(dir);
-        _fname = Path.Combine(dir,AppData.selectMechanism+"_"+ AppData.selectedGame+"_"+dateTime+".csv");
+        _fname = Path.Combine(dir,AppData.selectedMechanism +"_"+ AppData.selectedGame+"_"+dateTime+".csv");
         AppData.trialDataFileLocation = _fname;
         File.Create(_fname).Dispose();
         UnityEngine.Debug.Log(_fname+ "Created successfully");

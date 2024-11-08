@@ -72,10 +72,10 @@ public class SessionDataHandler
             .GroupBy(row => DateTime.ParseExact(row.Field<string>(DATETIME), DATEFORMAT_INFILE, CultureInfo.InvariantCulture).Date) // Group by date only
             .Select(group => new
             {
-                Date = group.Key,      // Format date as "yyyy-MM-dd"
-                DayOfWeek = group.Key.DayOfWeek,   // Get the day of the week
+                Date = group.Key,      
+                DayOfWeek = group.Key.DayOfWeek,   
                 TotalMovTime = group.Sum(row => Convert.ToInt32(row[MOVETIME]))
-            }).OrderByDescending(item => item.Date) // Order by date descending
+            }).OrderByDescending(item => item.Date) 
             .ToList();
 
         
@@ -148,7 +148,7 @@ public class SessionDataHandler
         {
             summaryDate[i] = filteredData[i].Date.ToString(DATEFORMAT); // Format date as "dd/MM"
             summaryElapsedTimeDay[i] = (float)filteredData[i].TotalMovTime; // Store movement time in minutes
-            //Debug.Log($"Date: {summaryDate[i]}, MovTime: {summaryElapsedTimeDay[i]}");
+          
         }
     }
 

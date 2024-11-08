@@ -393,6 +393,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rightBound: {fileID: 124408750}
   leftBound: {fileID: 270847921}
+  playButton: {fileID: 152383793}
+  exitButton: {fileID: 1464994806}
 --- !u!1001 &222929665
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.SocialPlatforms;
 using UnityEditor.SceneManagement;
 using NeuroRehabLibrary;
+using UnityEngine.Analytics;
 
 
 public class UIManagerPP : MonoBehaviour
@@ -21,26 +22,44 @@ public class UIManagerPP : MonoBehaviour
 
     void Start()
     {
+        AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
+        AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
         finishObjects = GameObject.FindGameObjectsWithTag("ShowOnFinish");
         hideFinished();
-        StartNewGameSession();
-
-
+        //AppData.runIndividualGame = true;
+        if (!AppData.runIndividualGame) {
+            Debug.Log(AppData.runIndividualGame);
+            StartNewGameSession();
+        }
     }
     void Update()
     {
         CheckGameEndConditions();
+        CheckGameEndConditions();
         if (isFinished)
         {
             showFinished();
-           gameData.isGameLogging = false;
+            gameData.isGameLogging = false;
         }
+        else
+        {
+            if (Time.timeScale == 0)
+            {
+                Debug.Log("Time:" + Time.timeScale);
+            }
+            if ((Time.timeScale == 0) && !isPaused && !isFinished && !(playerWon || enemyWon))
+            {
+                Time.timeScale = 1;
+                Debug.Log("Time:" + Time.timeScale + "  Executed");
+            }
+        }
+
         if ((Input.GetKeyDown(KeyCode.P) && !isFinished) || (isPressed && !isFinished))
         {
             if (!isPaused)
-            {
+            { 
                 pauseGame();
             }
             else
@@ -57,6 +76,7 @@ public class UIManagerPP : MonoBehaviour
         if (rightBound.enemyScore >= gameData.winningScore && !isFinished)
         {
             isFinished = true;
+            AppLogger.LogInfo("PingPong game Finished, Enemy won");
             enemyWon = true;
             playerWon = false;
             gameEnd();
@@ -64,6 +84,7 @@ public class UIManagerPP : MonoBehaviour
         else if (leftBound.playerScore >= gameData.winningScore && !isFinished)
         {
             isFinished = true;
+            AppLogger.LogInfo("PingPong game Finished, Player won");
             enemyWon = false;
             playerWon = true;
             gameEnd();
@@ -75,13 +96,17 @@ public class UIManagerPP : MonoBehaviour
         playAudio(enemyWon ? 1 : 0);
         gameData.reps = 0;
         showFinished();
-        EndCurrentGameSession();
+        if (!AppData.runIndividualGame)
+        {
+            EndCurrentGameSession();
+        }
     }
  private void pauseGame()
     {
         Time.timeScale = 0;
         isPaused = true;
         showPaused();
+        AppLogger.LogInfo("PingPong game Paused");
         gameData.isGameLogging = false;
         Debug.Log("Game Paused");
     }
@@ -100,18 +125,24 @@ public class UIManagerPP : MonoBehaviour
     {
         isPressed = true;
     }
-        //Reloads the Level
-  public void LoadScene(string sceneName)
+    public void LoadScene(string sceneName)
     {
-        EndCurrentGameSession();
+        if (!AppData.runIndividualGame)
+        {
+            EndCurrentGameSession();
+        }
        SceneManager.LoadScene(sceneName);
+        AppLogger.LogInfo($"switching scene to '{sceneName}'");
     }
 
-    //Reloads the Level
     public void Reload()
     {
-        EndCurrentGameSession();
+        if (!AppData.runIndividualGame)
+        {
+            EndCurrentGameSession();
+        }
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        AppLogger.LogInfo("Game restarted again");
     }
     void playAudio(int clipNumber)
     {
@@ -141,8 +172,6 @@ public class UIManagerPP : MonoBehaviour
         {
             g.SetActive(true);
         }
-        Debug.Log("Player movement time to this point: " + gameData.moveTime.ToString("F2") + " seconds");
-
     }
     public void hideFinished()
     {
@@ -158,15 +187,17 @@ public class UIManagerPP : MonoBehaviour
         {
             PlutoComm.OnButtonReleased -= onPlutoButtonReleased;
         }
-
-        EndCurrentGameSession();
+        if (AppData.runIndividualGame)
+        {
+            EndCurrentGameSession();
+        }
     }
     void StartNewGameSession()
     {
         currentGameSession = new GameSession
         {
             GameName = "PING-PONG",
-            Assessment = 0 // Example assessment value, adjust as needed
+            Assessment = 0 
         };
 
         SessionManager.Instance.StartGameSession(currentGameSession);
@@ -179,11 +210,9 @@ public class UIManagerPP : MonoBehaviour
         string device = "PLUTO"; 
         string assistMode = "Null"; 
         string assistModeParameters = "Null"; 
-        string deviceSetupLocation = "CMC-Bioeng-dpt"; // Set the device setup location
-        string gameParameter = "YourGameParameter"; // Set the game parameter
-       // Set the game parameter
-
-        string mech = AppData.selectMechanism;
+        string deviceSetupLocation = "CMC-Bioeng-dpt"; 
+        string gameParameter = "YourGameParameter"; 
+        string mech = AppData.selectedMechanism;
         SessionManager.Instance.SetDevice(device, currentGameSession);
         SessionManager.Instance.SetAssistMode(assistMode, assistModeParameters, currentGameSession);
         SessionManager.Instance.SetDeviceSetupLocation(deviceSetupLocation, currentGameSession);

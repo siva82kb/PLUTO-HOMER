@@ -20,7 +20,7 @@ public class BallController : MonoBehaviour
     // Use this for initialization
 
     public AudioClip[] audioClips;
-    int rand = 5;
+    int rand = 1;
     float threshold = 2;
 
     

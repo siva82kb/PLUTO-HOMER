@@ -86,6 +86,119 @@ public static class DataManager
         return dTable;
     }
 }
+/* Application Level Logger Class */
+public enum LogMessageType
+{
+    INFO,
+    WARNING,
+    ERROR
+}
+
+public static class AppLogger
+{
+    private static string logFilePath;
+    private static StreamWriter logWriter = null;
+    private static readonly object logLock = new object();
+    public static string currentScene { get; private set; } = "";
+    public static string currentMechanism { get; private set; } = "";
+    public static string currentGame { get; private set; } = "";
+
+    public static bool isLogging
+    {
+        get
+        {
+            return logFilePath != null;
+        }
+    }
+
+    public static void StartLogging(string scene)
+    {
+        // Start Log file only if we are not already logging.
+        if (isLogging)
+        {
+            return;
+        }
+        string logDirectory = Path.Combine(DataManager.directoryPath, "applog");
+        if (!Directory.Exists(logDirectory))
+        {
+            Directory.CreateDirectory(logDirectory);
+        }
+        logFilePath = Path.Combine(logDirectory, $"log-{DateTime.Now:dd-MM-yyyy-HH-mm-ss}.log");
+        if (!File.Exists(logFilePath))
+        {
+            using (File.Create(logFilePath))
+            {
+                Debug.Log("created");
+            }
+        }
+        logWriter = new StreamWriter(logFilePath, true);
+        currentScene = scene;
+        LogInfo("Created PLUTO log file.");
+    }
+
+    public static void SetCurrentScene(string scene)
+    {
+        if (isLogging)
+        {
+            currentScene = scene;
+        }
+    }
+
+    public static void SetCurrentMechanism(string mechanism)
+    {
+        if (isLogging)
+        {
+            currentMechanism = mechanism;
+        }
+    }
+
+    public static void SetCurrentGame(string game)
+    {
+        if (isLogging)
+        {
+            currentGame = game;
+        }
+    }
+
+    public static void StopLogging()
+    {
+        if (logWriter != null)
+        {
+            LogInfo("Closing log file.");
+            logWriter.Close();
+            logWriter = null;
+            logFilePath = null;
+            currentScene = "";
+        }
+    }
+
+    public static void LogMessage(string message, LogMessageType logMsgType)
+    {
+        lock (logLock)
+        {
+            if (logWriter != null)
+            {
+                logWriter.WriteLine($"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} [{currentScene}] [{currentMechanism}] [{currentGame}] {message}");
+                logWriter.Flush();
+            }
+        }
+    }
+
+    public static void LogInfo(string message)
+    {
+        LogMessage(message, LogMessageType.INFO);
+    }
+
+    public static void LogWarning(string message)
+    {
+        LogMessage(message, LogMessageType.WARNING);
+    }
+
+    public static void LogError(string message)
+    {
+        LogMessage(message, LogMessageType.ERROR);
+    }
+}
 
 
 

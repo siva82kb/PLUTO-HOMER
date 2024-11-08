@@ -34,7 +34,7 @@ public class PongPlayerController : MonoBehaviour
 
     public static float playerMovementArea(float angle)
     {
-        MechanismData mechanismData = new MechanismData(AppData.selectMechanism);
+        MechanismData mechanismData = new MechanismData(AppData.selectedMechanism);
         float tmin = mechanismData.tmin;
         float tmax = mechanismData.tmax;
         return Mathf.Clamp(-playSize + (angle - tmin) * (2 * playSize) / (tmax - tmin), bottomBound, topBound);

@@ -25,8 +25,9 @@ public class ChooseGameSceneHandler : MonoBehaviour
             AppLogger.StartLogging(SceneManager.GetActiveScene().name);
             // Initialize.
             AppData.initializeStuff();
-            AppData.selectMechanism = "HOC";
-}
+            AppData.selectedMechanism = "HOC";
+            AppLogger.SetCurrentMechanism(AppData.selectedMechanism);
+        }
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
         AppLogger.SetCurrentGame("");

@@ -28,9 +28,7 @@ public class UIManagerPP : MonoBehaviour
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
         finishObjects = GameObject.FindGameObjectsWithTag("ShowOnFinish");
         hideFinished();
-        //AppData.runIndividualGame = true;
         if (!AppData.runIndividualGame) {
-            Debug.Log(AppData.runIndividualGame);
             StartNewGameSession();
         }
     }
@@ -45,14 +43,9 @@ public class UIManagerPP : MonoBehaviour
         }
         else
         {
-            if (Time.timeScale == 0)
-            {
-                Debug.Log("Time:" + Time.timeScale);
-            }
             if ((Time.timeScale == 0) && !isPaused && !isFinished && !(playerWon || enemyWon))
             {
                 Time.timeScale = 1;
-                Debug.Log("Time:" + Time.timeScale + "  Executed");
             }
         }
 
@@ -108,7 +101,6 @@ public class UIManagerPP : MonoBehaviour
         showPaused();
         AppLogger.LogInfo("PingPong game Paused");
         gameData.isGameLogging = false;
-        Debug.Log("Game Paused");
     }
 
     private void resumeGame()
@@ -117,7 +109,6 @@ public class UIManagerPP : MonoBehaviour
         isPaused = false;
         hidePaused();
         gameData.isGameLogging = true;
-        Debug.Log("Game Unpaused");
     }
 
 
@@ -131,7 +122,7 @@ public class UIManagerPP : MonoBehaviour
         {
             EndCurrentGameSession();
         }
-       SceneManager.LoadScene(sceneName);
+        SceneManager.LoadScene(sceneName);
         AppLogger.LogInfo($"switching scene to '{sceneName}'");
     }
 
@@ -155,7 +146,6 @@ public class UIManagerPP : MonoBehaviour
         foreach (GameObject g in pauseObjects)
         {
             g.SetActive(true);
-      
         }
     }
     public void hidePaused()
@@ -163,7 +153,6 @@ public class UIManagerPP : MonoBehaviour
         foreach (GameObject g in pauseObjects)
         {
             g.SetActive(false);
-           
         }
     }
     public void showFinished()
@@ -179,7 +168,6 @@ public class UIManagerPP : MonoBehaviour
         {
             g.SetActive(false);
         }
-
     }
     private void OnDestroy()
     {

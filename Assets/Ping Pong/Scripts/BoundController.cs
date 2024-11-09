@@ -40,7 +40,6 @@ public class BoundController : MonoBehaviour
             {
                 Time.timeScale = 0;
             }
-            //Time.timeScale = 0; 
         }
     } 
     void playAudio(int clipNumber)

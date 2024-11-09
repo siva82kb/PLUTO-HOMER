@@ -7,11 +7,8 @@ public class PongPlayerController : MonoBehaviour
 
     static float topBound = 4.5F;
     static float bottomBound = -4.5F;
-
-    public static float playSize;
-    public static float[] rom;
     public float ballTrajetoryPrediction;
-    public static int reps;
+    public static float playSize;
     private Vector3 previousPlayerPosition;
     private float playerMovementTime = 0f;
     private Coroutine movementCoroutine;
@@ -77,12 +74,6 @@ public class PongPlayerController : MonoBehaviour
         if (collision.gameObject.tag == "Target")
         {
             gameData.reps += 1;
-            Debug.Log(gameData.reps + " target Hit");
         }
-    }
-
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        Debug.Log("Hello");
     }
 }

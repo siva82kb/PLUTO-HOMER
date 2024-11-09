@@ -34,7 +34,6 @@ public class UIManager1 : MonoBehaviour
             LoadNextScene();
             isButtonPressed = false;
         }
-
     }
     //loads inputted level
     public void onExitButtonClicked()
@@ -44,9 +43,7 @@ public class UIManager1 : MonoBehaviour
     }
     public void onPlutoButtonReleased()
     {
-        
             isButtonPressed = true;
-      
     }
     void LoadNextScene()
     {

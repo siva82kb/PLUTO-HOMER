@@ -5,11 +5,6 @@ public class BallSpawnerController : MonoBehaviour
 {
 
     public GameObject ball;
-    //public PingPonGAANController ppAAN;
-
-
-
-    // Use this for initialization
     void Start()
     {
         GameObject ballClone;
@@ -17,7 +12,6 @@ public class BallSpawnerController : MonoBehaviour
         ballClone.transform.SetParent(this.transform);
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (transform.childCount == 0)

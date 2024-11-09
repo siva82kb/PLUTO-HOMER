@@ -14,6 +14,12 @@ public class ChooseGameSceneHandler : MonoBehaviour
     private string selectedGame;
     private string changeScene = "chooseMechanism";
     private static bool isButtonPressed = false;
+    private readonly Dictionary<string, string> gameScenes = new Dictionary<string, string>
+    {
+        { "pingPong", "pong_menu" },
+        { "Game2", "Game2Scene" },
+        { "Game3", "Game3Scene" }
+    };
 
 
     void Start()
@@ -93,20 +99,10 @@ public class ChooseGameSceneHandler : MonoBehaviour
 
     private void LoadSelectedGameScene(string game)
     {
-        switch (game)
+        if (gameScenes.TryGetValue(game, out string sceneName))
         {
-            case "pingPong":              
-                SceneManager.LoadScene("pong_menu");
-                break;
-            case "Game2":
-                SceneManager.LoadScene("Game2Scene");
-                break;
-            case "Game3":
-                SceneManager.LoadScene("Game3Scene");
-                break;
-            default:
-                Debug.LogWarning("Unknown game selected: " + game);
-                break;
+            Debug.Log("Scene name:"+ sceneName);    
+            SceneManager.LoadScene(sceneName);
         }
     }
     public void OnPlutoButtonReleased()

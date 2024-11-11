@@ -25,7 +25,7 @@ public class calibrationSceneHandler : MonoBehaviour
     {
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
-        selectedMechanism = AppData.selectMechanism;
+        selectedMechanism = AppData.selectedMechanism;
         int mechNumber = PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, selectedMechanism);
         mechText.text = PlutoComm.MECHANISMSTEXT[mechNumber];
         exit.onClick.AddListener(OnExitButtonClicked);
@@ -153,6 +153,7 @@ public class calibrationSceneHandler : MonoBehaviour
             textMessage.text = $"Error: Together Position NOT reached! Current: {currentPosition}";
             textMessage.color = Color.red;
             isCalibrating = false;
+            PlutoComm.setControlType(PlutoComm.CONTROLTYPE[0]);
             return false;
         }
     }
@@ -169,6 +170,7 @@ public class calibrationSceneHandler : MonoBehaviour
             textMessage.text = $"Error: Separation Position NOT reached! Current: {currentPosition}";
             textMessage.color = Color.red;
             isCalibrating = false;
+            PlutoComm.setControlType(PlutoComm.CONTROLTYPE[0]);
             return false;
         }
     }

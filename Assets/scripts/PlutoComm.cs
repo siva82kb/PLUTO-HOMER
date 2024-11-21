@@ -1,14 +1,16 @@
 using System;
+using System.Text;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO.Ports;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public static class PlutoComm
 {
     // Device Level Constants
-    public static readonly string[] OUTDATATYPE = new string[] { "SENSORSTREAM", "CONTROLPARAM", "DIAGNOSTICS" };
-    public static readonly string[] MECHANISMS = new string[] { "WFE", "WURD", "FPS", "HOC", "FME1", "FME2", "NOMECH" };
+    public static readonly string[] OUTDATATYPE = new string[] { "SENSORSTREAM", "CONTROLPARAM", "DIAGNOSTICS", "VERSION" };
+    public static readonly string[] MECHANISMS = new string[] { "NOMECH", "WFE", "WURD", "FPS", "HOC", "FME1", "FME2" };
     public static readonly string[] MECHANISMSTEXT = new string[] {
         "Wrist Flex/Extension",
         "Wrist Ulnar/Radial Deviation",
@@ -40,12 +42,13 @@ public static class PlutoComm
         "STOP_STREAM",
         "SET_CONTROL_TYPE",
         "SET_CONTROL_TARGET",
-        "SET_DIAGNOSTICS"
+        "SET_DIAGNOSTICS",
+        "SET_CONTROL_BOUND"
     };
-    public static readonly int[] CALIBANGLE = new int[] { 120, 120, 120, 140 };
+    public static readonly int[] CALIBANGLE = new int[] { 0, 136, 136, 180, 93 }; // The first zero value is a dummy value.
     public static readonly double[] TORQUE = new double[] { -MAXTORQUE, MAXTORQUE };
     public static readonly double[] POSITION = new double[] { -135, 0 };
-    public static readonly double HOCScale = 3.97 * Math.PI / 180;
+    public static readonly double HOCScale = 0.10752; // 3.97 * Math.PI / 180;
 
     // Function to get the number corresponding to a label.
     public static int GetPlutoCodeFromLabel(string[] array, string value)
@@ -61,6 +64,10 @@ public static class PlutoComm
     public delegate void PlutoControlModeChangeEvent();
     public static event PlutoControlModeChangeEvent OnControlModeChange;
 
+    // New data event.
+    public delegate void PlutoNewDataEvent();
+    public static event PlutoNewDataEvent OnNewPlutoData;
+
     // Private variables
     static private byte[] rawBytes = new byte[256];
     // For the following arrays, the first element represents the number of elements in the array.
@@ -73,6 +80,9 @@ public static class PlutoComm
     static public DateTime previousTime { get; private set; }
     static public DateTime currentTime { get; private set; }
     static public double frameRate { get; private set; }
+    static public String deviceId { get; private set; }
+    static public String version { get; private set; }
+    static public String compileDate { get; private set; }
     static public int status
     {
         get
@@ -126,7 +136,7 @@ public static class PlutoComm
     {
         get
         {
-            return currentStateData[4];
+            return currentStateData[5];
         }
     }
     static public float angle
@@ -148,6 +158,13 @@ public static class PlutoComm
         get
         {
             return currentSensorData[3];
+        }
+    }
+    static public float controlBound
+    {
+        get
+        {
+            return currentStateData[4] / 255f;
         }
     }
     static public float target
@@ -203,19 +220,35 @@ public static class PlutoComm
         // Actuated - Mech
         currentStateData[3] = rawBytes[4];
 
-        // Udpate current sensor data
-        int nSensors = SENSORNUMBER[dataType];
-        currentSensorData[0] = nSensors;
-        for (int i = 0; i < nSensors; i++)
+        // Handle data based on what type of data it is.
+        byte _datatype = (byte) (currentStateData[1] >> 4);
+        switch (OUTDATATYPE[_datatype])
         {
-            currentSensorData[i + 1] = BitConverter.ToSingle(
-                new byte[] { rawBytes[5 + (i * 4)], rawBytes[6 + (i * 4)], rawBytes[7 + (i * 4)], rawBytes[8 + (i * 4)] },
-                0
-            );
+            case "SENSORSTREAM":
+            case "DIAGNOSTICS":
+                // Udpate current sensor data
+                int nSensors = SENSORNUMBER[_datatype];
+                currentSensorData[0] = nSensors;
+                for (int i = 0; i < nSensors; i++)
+                {
+                    currentSensorData[i + 1] = BitConverter.ToSingle(
+                        new byte[] { rawBytes[5 + (i * 4)], rawBytes[6 + (i * 4)], rawBytes[7 + (i * 4)], rawBytes[8 + (i * 4)] },
+                        0
+                    );
+                }
+                // Update the control bound
+                currentStateData[4] = rawBytes[(nSensors + 1) * 4 + 1];
+                // Update the button state
+                currentStateData[5] = rawBytes[(nSensors + 1) * 4 + 2];
+                break;
+            case "VERSION":
+                // Read the bytes into a string.
+                deviceId = Encoding.ASCII.GetString(rawBytes, 5, rawBytes[0] - 4 - 1).Split(",")[0];
+                version = Encoding.ASCII.GetString(rawBytes, 5, rawBytes[0] - 4 - 1).Split(",")[1];
+                compileDate = Encoding.ASCII.GetString(rawBytes, 5, rawBytes[0] - 4 - 1).Split(",")[2];
+                break;
         }
 
-        // Update the button state
-        currentStateData[4] = rawBytes[(nSensors + 1) * 4 + 1];
         // Number of current state data
         currentStateData[0] = 3;
 
@@ -223,7 +256,7 @@ public static class PlutoComm
         frameRate = 1 / (currentTime - previousTime).TotalSeconds;
 
         // Check if the button has been released.
-        if (previousStateData[4] == 0 && currentStateData[4] == 1)
+        if (previousStateData[5] == 0 && currentStateData[5] == 1)
         {
             OnButtonReleased?.Invoke();
         }
@@ -232,6 +265,12 @@ public static class PlutoComm
         if (getControlType(previousStateData[1]) != getControlType(currentStateData[1]))
         {
             OnControlModeChange?.Invoke();
+        }
+
+        // Invoke the new data event only for SENSORSTREAM or DIAGNOSTICS data.
+        if ((OUTDATATYPE[_datatype] == "SENSORSTREAM") || (OUTDATATYPE[_datatype] == "DIAGNOSTICS")) 
+        {
+            OnNewPlutoData?.Invoke();
         }
     }
 
@@ -260,6 +299,11 @@ public static class PlutoComm
     public static void setDiagnosticMode()
     {
         JediComm.SendMessage(new byte[] { (byte)GetPlutoCodeFromLabel(INDATATYPE, "SET_DIAGNOSTICS") });
+    }
+
+    public static void getVersion()
+    {
+        JediComm.SendMessage(new byte[] { (byte)GetPlutoCodeFromLabel(INDATATYPE, "GET_VERSION") });
     }
 
     public static void calibrate(string mech)
@@ -292,6 +336,19 @@ public static class PlutoComm
                 targetBytes[1],
                 targetBytes[2],
                 targetBytes[3]
+            }
+        );
+    }
+
+    public static void setControlBound(float ctrlBound)
+    {
+        // Limit the value to be between 0 and 1.
+        ctrlBound = Math.Max(0, Math.Min(1, ctrlBound));
+        byte _ctrlboundbyte = (byte) (ctrlBound * 255);
+        JediComm.SendMessage(
+            new byte[] {
+                (byte)GetPlutoCodeFromLabel(INDATATYPE, "SET_CONTROL_BOUND"),
+                _ctrlboundbyte
             }
         );
     }

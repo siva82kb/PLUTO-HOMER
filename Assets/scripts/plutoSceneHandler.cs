@@ -11,6 +11,10 @@ using System;
 using System.Linq;
 using UnityEngine.UIElements;
 using UnityEditorInternal;
+using static UnityEditor.LightingExplorerTableColumn;
+using static UnityEngine.GraphicsBuffer;
+using Unity.VisualScripting;
+using UnityEditor.PackageManager;
 
 public class Pluto_SceneHandler : MonoBehaviour
 {
@@ -51,6 +55,7 @@ public class Pluto_SceneHandler : MonoBehaviour
     private bool isLogging = false;
     private string logFileName = null;
     private StreamWriter logFile = null;
+    private string _dataLogDir = "Assets\\data\\diagnostics\\";
 
     // Start is called before the first frame update
     void Start()
@@ -94,6 +99,7 @@ public class Pluto_SceneHandler : MonoBehaviour
         // Toggle button
         tglCalibSelect.onValueChanged.AddListener(delegate { OnCalibrationChange(); });
         tglControlSelect.onValueChanged.AddListener (delegate { OnControlChange(); });
+        tglDataLog.onValueChanged.AddListener(delegate { OnDataLogChange(); });
 
         // Dropdown value change.
         ddControlSelect.onValueChanged.AddListener(delegate { OnControlModeChange(); });
@@ -122,6 +128,27 @@ public class Pluto_SceneHandler : MonoBehaviour
         if (logFile == null) return;
 
         // Log data
+        String[] rowcomps = new string[]
+        {
+            $"{PlutoComm.runTime}",
+            $"{PlutoComm.packetNumber}",
+            $"{PlutoComm.status}",
+            $"{PlutoComm.dataType}",
+            $"{PlutoComm.errorStatus}",
+            $"{PlutoComm.controlType}",
+            $"{PlutoComm.calibration}",
+            $"{PlutoComm.mechanism}",
+            $"{PlutoComm.button}",
+            $"{PlutoComm.angle}",
+            $"{PlutoComm.torque}",
+            $"{PlutoComm.control}",
+            $"{PlutoComm.controlBound}",
+            $"{PlutoComm.target}",
+            $"{PlutoComm.err}",
+            $"{PlutoComm.errDiff}",
+            $"{PlutoComm.errSum}"
+        };
+        logFile.WriteLine(String.Join(", ", rowcomps));
     }
 
     private void OnControlTargetChange()
@@ -208,6 +235,46 @@ public class Pluto_SceneHandler : MonoBehaviour
         }
     }
 
+    private void OnDataLogChange()
+    {
+        // Close file.
+        closeLogFile(logFile);
+        logFile = null;
+        // Check what needs to done.
+        if (logFileName == null)
+        {
+            // We are not logging to a file. Start logging.
+            logFileName = _dataLogDir + $"logfile_{DateTime.Today:yyyy-MM-dd}.csv";
+            logFile = createLogFile(logFileName);
+        }
+        else
+        {
+            logFileName = null;
+        }
+    }
+
+    private StreamWriter createLogFile(string logFileName)
+    {
+        StreamWriter _sw = new StreamWriter(logFileName, false);
+        // Write the header row.
+        _sw.WriteLine($"DeviceID = {PlutoComm.deviceId}");
+        _sw.WriteLine($"FirmwareVersion = {PlutoComm.version}");
+        _sw.WriteLine($"CompileDate = {PlutoComm.compileDate}");
+        _sw.WriteLine($"Actuated = {PlutoComm.actuated}");
+        _sw.WriteLine($"Start Datetime = {DateTime.Now:yyyy/MM/dd HH-mm-ss.ffffff}");
+        _sw.WriteLine("time, packetno, status, datatype, errorstatus, controltype, calibration, mechanism, button, angle, torque, control, controlbound, target, error, errordiff, errorsum");
+        return _sw;
+    }
+
+    private void closeLogFile(StreamWriter logFile)
+    {
+        if (logFile != null)
+        {
+            // Close the file properly and create a new handle.
+            logFile.Close();
+            logFile.Dispose();
+        }
+    }
     private void onPlutoButtonReleased()
     {
         // Check if we are in Calibration Mode.
@@ -334,6 +401,9 @@ public class Pluto_SceneHandler : MonoBehaviour
         _dispstr += $"\nF/W Version   : {PlutoComm.version}";
         _dispstr += $"\nCompile Date  : {PlutoComm.compileDate}";
         _dispstr += $"\n";
+        _dispstr += $"\nPacket Number : {PlutoComm.packetNumber}";
+        _dispstr += $"\nDev Run Time  : {PlutoComm.runTime:F2}";
+        _dispstr += $"\nFrame Rate    : {PlutoComm.frameRate:F2}";
         _dispstr += $"\nStatus        : {PlutoComm.OUTDATATYPE[PlutoComm.dataType]}";
         _dispstr += $"\nControl Type  : {PlutoComm.CONTROLTYPE[PlutoComm.controlType]}";
         _dispstr += $"\nCalibration   : {PlutoComm.CALIBRATION[PlutoComm.calibration]}";

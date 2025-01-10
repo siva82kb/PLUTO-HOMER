@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO.Ports;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public static class PlutoComm
 {
@@ -83,6 +84,9 @@ public static class PlutoComm
     static public String deviceId { get; private set; }
     static public String version { get; private set; }
     static public String compileDate { get; private set; }
+    static public ushort packetNumber { get; private set; }
+    static public float runTime { get; private set; }
+    static public float prevRunTime { get; private set; }
     static public int status
     {
         get
@@ -211,6 +215,7 @@ public static class PlutoComm
         rawBytes = payloadBytes;
         previousTime = currentTime;
         currentTime = payloadTime;
+        prevRunTime = runTime;
 
         // Updat current state data
         // Status
@@ -219,6 +224,12 @@ public static class PlutoComm
         currentStateData[2] = 255 * rawBytes[3] + rawBytes[2];
         // Actuated - Mech
         currentStateData[3] = rawBytes[4];
+
+        // Get the packet number.
+        packetNumber = BitConverter.ToUInt16(new byte[] { rawBytes[5], rawBytes[6] });
+
+        // Get the runtime.
+        runTime = 0.001f * BitConverter.ToUInt32(new byte[] { rawBytes[7], rawBytes[8], rawBytes[9], rawBytes[10] });
 
         // Handle data based on what type of data it is.
         byte _datatype = (byte) (currentStateData[1] >> 4);
@@ -232,14 +243,14 @@ public static class PlutoComm
                 for (int i = 0; i < nSensors; i++)
                 {
                     currentSensorData[i + 1] = BitConverter.ToSingle(
-                        new byte[] { rawBytes[5 + (i * 4)], rawBytes[6 + (i * 4)], rawBytes[7 + (i * 4)], rawBytes[8 + (i * 4)] },
+                        new byte[] { rawBytes[11 + (i * 4)], rawBytes[12 + (i * 4)], rawBytes[13 + (i * 4)], rawBytes[14 + (i * 4)] },
                         0
                     );
                 }
                 // Update the control bound
-                currentStateData[4] = rawBytes[(nSensors + 1) * 4 + 1];
+                currentStateData[4] = rawBytes[(nSensors + 1) * 4 + 6 + 1];
                 // Update the button state
-                currentStateData[5] = rawBytes[(nSensors + 1) * 4 + 2];
+                currentStateData[5] = rawBytes[(nSensors + 1) * 4 + 6 + 2];
                 break;
             case "VERSION":
                 // Read the bytes into a string.
@@ -253,7 +264,7 @@ public static class PlutoComm
         currentStateData[0] = 3;
 
         // Updat framerate
-        frameRate = 1 / (currentTime - previousTime).TotalSeconds;
+        frameRate = 1 / (runTime - prevRunTime);
 
         // Check if the button has been released.
         if (previousStateData[5] == 0 && currentStateData[5] == 1)

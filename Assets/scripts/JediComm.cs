@@ -99,6 +99,7 @@ public static class JediComm
                 // Read full packet.
                 if (readFullSerialPacket())
                 {
+                    //Debug.Log((DateTime.Now - plTime).TotalMilliseconds);
                     plTime = DateTime.Now;
                     ConnectToRobot.isPLUTO = true;
                     PlutoComm.parseByteArray(rawBytes, plCount, plTime);

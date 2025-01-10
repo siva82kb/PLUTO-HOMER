@@ -14,14 +14,10 @@ public class summarySceneHandler : MonoBehaviour
     public SessionDataHandler sessionDataHandler;
     public BarChart barchart;
     public string title;
-   
-    // Existing variables...
     private ConcurrentQueue<System.Action> _actionQueue = new ConcurrentQueue<System.Action>();
 
     
-
-
-public void Start()
+    public void Start()
     {
        
         title = "summary";
@@ -33,7 +29,7 @@ public void Start()
     {
         while (_actionQueue.TryDequeue(out var action))
         {
-            action.Invoke(); // Execute the action
+            action.Invoke(); 
         }
 
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
@@ -43,6 +39,7 @@ public void Start()
     public void mechanismClicked(Button button)
     {
         title = button.gameObject.name.ToUpper();
+        Debug.Log("button name:" + title);
         int n = PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, title);
         title = PlutoComm.MECHANISMSTEXT[n];
         sessionDataHandler.CalculateMovTimeForMechanism(button.gameObject.name.ToUpper());
@@ -52,16 +49,13 @@ public void Start()
     //To disconnect the Robot 
     public void onPlutoButtonReleased()
     {
-        Debug.Log("pressed");
-
-        // Enqueue the disconnect and quit actions
         _actionQueue.Enqueue(() =>
         {
             ConnectToRobot.disconnect();
             Application.Quit();
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false; // Stop play mode if in editor
-#endif
+        #if UNITY_EDITOR
+                    UnityEditor.EditorApplication.isPlaying = false; 
+        #endif
         });
     }
 
@@ -70,20 +64,17 @@ public void Start()
     //To initialize the barchart with whole data of moveTime per day
     public void initializeChart()
     {
-        //DataManager.initializeFilePath();
         Debug.Log("Is bar chart active: " + barchart.gameObject.activeSelf);
 
         sessionDataHandler = new SessionDataHandler(DataManager.filePathSessionData);
 
-
         sessionDataHandler.summaryCalculateMovTimePerDayWithLinq();
-        // Get or add the BarChart component
+
         barchart = gameObject.GetComponent<BarChart>();
         if (barchart == null)
         {
             barchart = gameObject.AddComponent<BarChart>();
-            barchart.Init();
-            Debug.Log("BarChart initialized");
+            barchart.Init();;
         }
 
         // Set chart title and tooltip visibility
@@ -98,12 +89,12 @@ public void Start()
         var yAxis = barchart.EnsureChartComponent<YAxis>();
         xAxis.show = true;
         yAxis.show = true;
-        xAxis.type = Axis.AxisType.Category; // Set x-axis type to Category
-        yAxis.type = Axis.AxisType.Value; // Set y-axis type to Value
-        yAxis.min = 0; // Make sure bars start from the y=0 line
-        yAxis.max = sessionDataHandler.summaryElapsedTimeDay.Max(); // You can adjust the maximum value as needed
+        xAxis.type = Axis.AxisType.Category; 
+        yAxis.type = Axis.AxisType.Value;
+        yAxis.min = 0; 
+        yAxis.max = sessionDataHandler.summaryElapsedTimeDay.Max(); 
 
-        // Set zoom properties
+        
         var dataZoom = barchart.EnsureChartComponent<DataZoom>();
         dataZoom.enable = true;
         dataZoom.supportInside = true;
@@ -113,7 +104,6 @@ public void Start()
 
         UpdateChartData();
     }
-    //To update chart with data
    
     public void UpdateChartData()
     {
@@ -130,7 +120,6 @@ public void Start()
         barchart.EnsureChartComponent<Title>().text = title;
         barchart.AddSerie<Bar>();
 
-        // Update the x-axis data
         var xAxis = barchart.GetChartComponent<XAxis>();
         xAxis.data.Clear();
         foreach (string date in sessionDataHandler.summaryDate)
@@ -138,7 +127,6 @@ public void Start()
             xAxis.data.Add(date); // Add x-axis labels (dates)
         }
 
-        // Update the y-axis data (movement time)
         var yAxis = barchart.GetChartComponent<YAxis>();
         yAxis.data.Clear();
       

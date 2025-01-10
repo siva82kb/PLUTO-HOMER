@@ -42,7 +42,7 @@ public class MechanismSceneHandler : MonoBehaviour
         }
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
-        
+        AppLogger.SetCurrentMechanism("");
         // Attach PLUTO button event
         PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
 
@@ -128,8 +128,9 @@ public class MechanismSceneHandler : MonoBehaviour
             if (toggleComponent != null && toggleComponent.isOn)
             {
                 toggleSelected = true;
-                AppData.selectMechanism = child.name;
-                AppLogger.LogInfo($"Selected '{AppData.selectMechanism}'.");
+                AppData.selectedMechanism = child.name;
+                AppLogger.SetCurrentMechanism(AppData.selectedMechanism);
+               AppLogger.LogInfo($"Selected '{AppData.selectedMechanism}'.");
                 break;
             }
         }

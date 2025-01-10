@@ -12,6 +12,7 @@ using System.Globalization;
 using Unity.VisualScripting;
 using UnityEngine.SceneManagement;
 using System.Text.RegularExpressions;
+using NeuroRehabLibrary;
 
 public class welcomSceneHandler : MonoBehaviour
 {
@@ -42,6 +43,11 @@ public class welcomSceneHandler : MonoBehaviour
 
         // Initialize.
         AppData.initializeStuff();
+        //Neuro Library
+        string baseDirectory = DataManager.directoryPathSession;
+        Debug.Log(baseDirectory);
+        SessionManager.Initialize(DataManager.directoryPathSession);
+        SessionManager.Instance.Login();
         daySummaries = AppData.UserData.CalculateMoveTimePerDay();
 
         // Update summary display

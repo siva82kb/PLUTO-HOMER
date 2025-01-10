@@ -25,7 +25,7 @@ public static class PlutoDefs
 public static class AppData
 {
     // COM Port for the device
-    public static readonly string COMPort = "COM4";
+    public static readonly string COMPort = "COM3";
 
     //Options to drive 
     public static string selectMechanism = null;

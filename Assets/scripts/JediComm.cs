@@ -17,7 +17,7 @@ public static class JediComm
     private static readonly bool OUTDEBUG = false; // Set this to true or false based on your debugging needs
     static public bool stop;
     static public bool pause;
-    static public SerialPort serPort { get; private set; }
+    static public SerialPort serPort { get; private set; } = null;
     static private Thread reader;
     static byte[] packet;
     static private int plCount = 0;
@@ -31,6 +31,9 @@ public static class JediComm
 
     static public void InitSerialComm(string port)
     {
+        if (serPort != null) return;
+
+        // Serial port has not been set.
         serPort = new SerialPort();
         // Allow the user to set the appropriate properties.
         serPort.PortName = port;
@@ -73,6 +76,7 @@ public static class JediComm
         {
             reader.Abort();
             serPort.Close();
+            serPort = null;
         }
     }
 
@@ -99,6 +103,7 @@ public static class JediComm
                 // Read full packet.
                 if (readFullSerialPacket())
                 {
+                    //Debug.Log((DateTime.Now - plTime).TotalMilliseconds);
                     plTime = DateTime.Now;
                     ConnectToRobot.isPLUTO = true;
                     PlutoComm.parseByteArray(rawBytes, plCount, plTime);

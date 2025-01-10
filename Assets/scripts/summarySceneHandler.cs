@@ -1,4 +1,4 @@
-
+using System;
 using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -43,7 +43,7 @@ public void Start()
     public void mechanismClicked(Button button)
     {
         title = button.gameObject.name.ToUpper();
-        int n = PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, title);
+        int n = Array.IndexOf(PlutoComm.MECHANISMS, title);
         title = PlutoComm.MECHANISMSTEXT[n];
         sessionDataHandler.CalculateMovTimeForMechanism(button.gameObject.name.ToUpper());
         UpdateChartData();
@@ -64,8 +64,6 @@ public void Start()
 #endif
         });
     }
-
-
 
     //To initialize the barchart with whole data of moveTime per day
     public void initializeChart()
@@ -124,7 +122,7 @@ public void Start()
         }
 
         // Clear any previous data from the chart
-        int n = PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, title);
+        int n = Array.IndexOf(PlutoComm.MECHANISMSTEXT, title);
 
         barchart.RemoveData();
         barchart.EnsureChartComponent<Title>().text = title;

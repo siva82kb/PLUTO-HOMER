@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -26,10 +27,9 @@ public class calibrationSceneHandler : MonoBehaviour
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
         selectedMechanism = AppData.selectMechanism;
-        int mechNumber = PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, selectedMechanism);
+        int mechNumber = Array.IndexOf(PlutoComm.MECHANISMS, selectedMechanism);
         mechText.text = PlutoComm.MECHANISMSTEXT[mechNumber];
         exit.onClick.AddListener(OnExitButtonClicked);
-
     }
 
     void Update()

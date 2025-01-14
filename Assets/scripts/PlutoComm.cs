@@ -55,6 +55,15 @@ public static class PlutoComm
         "NOHEARTBEAT"
     };
     public static readonly int[] CALIBANGLE = new int[] { 0, 136, 136, 180, 93 }; // The first zero value is a dummy value.
+    public static readonly float[] MECHOFFSETVALUE = new float[] {
+        68,   // Wrist Flexion/Extension     
+        0,    // Dummy. No mechanism 
+        68,   // Wrist Ulnar/Radial Deviation
+        90,   // Forearm Prono/Sunpination
+        0,    // Hand Opening/Closing
+        0,    // Functional mechanism 1
+        0,    // Functional mechanism 2
+    };
     public static readonly double[] TORQUE = new double[] { -MAXTORQUE, MAXTORQUE };
     public static readonly double[] POSITION = new double[] { -135, 0 };
     public static readonly double HOCScale = 0.10752; // 3.97 * Math.PI / 180;

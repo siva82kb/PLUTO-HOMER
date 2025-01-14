@@ -135,7 +135,7 @@ public class Pluto_SceneHandler : MonoBehaviour
         btnNextRandomTarget.onClick.AddListener(delegate { OnNextRandomTarget(); });
 
         // AAN Demo Button click.
-        btnAANDemo.onClick.AddListener(() => SceneManager.LoadScene(1));
+        btnAANDemo.onClick.AddListener(() => SceneManager.LoadScene(5));
 
         // Listen to PLUTO's event
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
@@ -230,7 +230,8 @@ public class Pluto_SceneHandler : MonoBehaviour
         // Initial angle is the current robot angle.
         _initialTarget = PlutoComm.angle;
         // Final angle is a random value chosen between 0 and the maximum angle for the current mechanism.
-        _finalTarget = UnityEngine.Random.Range(0, PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
+        _finalTarget = UnityEngine.Random.Range(-PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism],
+                                                PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism]);
         // Set the target duration.
         tgtDuration = float.Parse(inputDuration.text);
         // Set the current time.
@@ -403,8 +404,8 @@ public class Pluto_SceneHandler : MonoBehaviour
                     // Set the appropriate range for the slider.
                     if (_mech == "WFE" || _mech == "WURD" || _mech == "FPS")
                     {
-                        sldrTarget.minValue = 0;
-                        sldrTarget.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism];
+                        sldrTarget.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+                        sldrTarget.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
                         sldrTarget.value = PlutoComm.angle;
                     }
                     else
@@ -498,8 +499,9 @@ public class Pluto_SceneHandler : MonoBehaviour
                 }
                 break;
             case CalibrationState.ZERO_SET:
-                if (Math.Abs(PlutoComm.angle) >= 0.9 * PlutoComm.CALIBANGLE[_mechInx]
-                    && Math.Abs(PlutoComm.angle) <= 1.1 * PlutoComm.CALIBANGLE[_mechInx])
+                float _angval = PlutoComm.angle + PlutoComm.MECHOFFSETVALUE[_mechInx];
+                if (Math.Abs(_angval) >= 0.9 * PlutoComm.CALIBANGLE[_mechInx]
+                    && Math.Abs(_angval) <= 1.1 * PlutoComm.CALIBANGLE[_mechInx])
                 {
                     calibState = CalibrationState.ROM_SET;
                 }

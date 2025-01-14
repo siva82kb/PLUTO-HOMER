@@ -275,8 +275,8 @@ public class Pluto_SceneHandler_Old : MonoBehaviour
                 PlutoComm.calibrate(PlutoComm.MECHANISMS[_mechInx]);
                 break;
             case CalibrationState.ZERO_SET:
-                if (Math.Abs(PlutoComm.angle) >= 0.9 * PlutoComm.CALIBANGLE[_mechInx] 
-                    && Math.Abs(PlutoComm.angle) <= 1.1 * PlutoComm.CALIBANGLE[_mechInx])
+                if (Math.Abs(PlutoComm.angle) >= 0.45 * PlutoComm.CALIBANGLE[_mechInx] 
+                    && Math.Abs(PlutoComm.angle) <= 0.55 * PlutoComm.CALIBANGLE[_mechInx])
                 {
                     calibState = CalibrationState.ROM_SET;
                 }

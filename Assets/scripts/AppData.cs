@@ -27,14 +27,15 @@ public static class AppData
     // COM Port for the device
     public static readonly string COMPort = "COM3";
 
-    //Options to drive 
+    // Options to drive 
     public static string selectMechanism = null;
+    public static float mechOffsetValue = 0f;
     public static string selectedGame = null;
     public static string game;
     public static int gameScore;
     public static int reps;
 
-    //game
+    // Game 
     public static bool isGameLogging;
 
     public static void initializeStuff()

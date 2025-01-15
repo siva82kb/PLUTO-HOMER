@@ -20,7 +20,7 @@ using XCharts;
 using XCharts.Runtime;
 using UnityEditor.Compilation;
 
-public class Pluto_AAN_SceneHandler : MonoBehaviour
+public class Homer_AAN_SceneHandler : MonoBehaviour
 {
     public TextMeshProUGUI textDataDisplay;
     public TextMeshProUGUI textTrialDetails;
@@ -29,6 +29,16 @@ public class Pluto_AAN_SceneHandler : MonoBehaviour
     // Target and actual circles
     public GameObject targetCircle;
     public GameObject actualCircle;
+
+    // AROM, PROM markers
+    public GameObject aromLeft;
+    public GameObject aromRight;
+    public GameObject promLeft;
+    public GameObject promRight;
+
+    // AROM PROM Assess Toggle buttons
+    public UnityEngine.UI.Toggle tglAROM;
+    public UnityEngine.UI.Toggle tglPROM;
 
     // Start/Stop Demo button
     public UnityEngine.UI.Button btnStartStop;
@@ -39,6 +49,15 @@ public class Pluto_AAN_SceneHandler : MonoBehaviour
     // Data logging
     public UnityEngine.UI.Toggle tglDataLog;
 
+    // AROM parameters
+    private bool isAromAssess = false;
+    private float[] aromValue = new float[2];
+    private int plutoBtnPressCount = 0;
+
+    // PROM parameters
+    private bool isPromAssess = false;
+    private float[] promValue = new float[2];
+
     // Control variables
     private bool isRunning = false;
     //private float controlTarget = 0.0f;
@@ -47,7 +66,7 @@ public class Pluto_AAN_SceneHandler : MonoBehaviour
     private float _currentTime = 0;
     private float _initialTarget = 0;
     private float _finalTarget = 0;
-    //private bool _changingTarget = false;
+    //private bool _changingTarget = false; 
 
     // Discrete movements related variables
     private uint trialNo = 0;
@@ -133,6 +152,7 @@ public class Pluto_AAN_SceneHandler : MonoBehaviour
         // PLUTO heartbeat.
         PlutoComm.sendHeartbeat();
 
+        // Update UI
         UpdateUI();
 
         // Update trial detials
@@ -157,7 +177,7 @@ public class Pluto_AAN_SceneHandler : MonoBehaviour
         {
             // Update actual position
             actualCircle.transform.position = new Vector3(
-                (2 * PlutoComm.angle / PlutoComm.CALIBANGLE[PlutoComm.mechanism] - 1) * xmax,
+                (2 * PlutoComm.angle / PlutoComm.CALIBANGLE[PlutoComm.mechanism]) * xmax,
                 actualCircle.transform.position.y,
                 actualCircle.transform.position.z
             );
@@ -272,8 +292,8 @@ public class Pluto_AAN_SceneHandler : MonoBehaviour
     public void AttachControlCallbacks()
     {
         // Toggle button
-        //tglCalibSelect.onValueChanged.AddListener(delegate { OnCalibrationChange(); });
-        //tglControlSelect.onValueChanged.AddListener (delegate { OnControlChange(); });
+        tglAROM.onValueChanged.AddListener(delegate { OnAromChange(); });
+        tglPROM.onValueChanged.AddListener(delegate { OnPromChange(); });
         tglDataLog.onValueChanged.AddListener(delegate { OnDataLogChange(); });
 
         // Button click.
@@ -387,6 +407,22 @@ public class Pluto_AAN_SceneHandler : MonoBehaviour
         return (_currtgt, _t < 1);
     }
 
+    private void OnAromChange()
+    {
+        isAromAssess = true;
+        aromValue[0] = 0.0f;
+        aromValue[1] = 0.0f;
+        plutoBtnPressCount = 0;
+    }
+
+    private void OnPromChange()
+    {
+        isPromAssess = true;
+        promValue[0] = 0.0f;
+        promValue[1] = 0.0f;
+        plutoBtnPressCount = 0;
+    }
+
     private void OnDataLogChange()
     {
         // Close file.
@@ -495,6 +531,18 @@ public class Pluto_AAN_SceneHandler : MonoBehaviour
 
     private void onPlutoButtonReleased()
     {
+        plutoBtnPressCount += 1;
+        // Check if its AROM or PROM assessment
+        if (isAromAssess)
+        {
+            if (plutoBtnPressCount == 2) isAromAssess = false;
+            aromValue[plutoBtnPressCount] = PlutoComm.angle;
+        }
+        if (isPromAssess)
+        {
+            if (plutoBtnPressCount == 2) isPromAssess = false;
+            promValue[plutoBtnPressCount] = PlutoComm.angle;
+        }
     }
 
     private void InitializeUI()
@@ -503,12 +551,21 @@ public class Pluto_AAN_SceneHandler : MonoBehaviour
 
     private void UpdateUI()
     {
+        // Enable/Disable controls.
+        tglAROM.enabled = !isAromAssess & !isPromAssess;
+        tglPROM.enabled = !isAromAssess & !isPromAssess;
+        tglDataLog.enabled = !isAromAssess & !isPromAssess;
+        btnStartStop.enabled = !isAromAssess & !isPromAssess;
+
         // Update data dispaly
         UpdateDataDispay();
 
         // Enable/Disable control panel.
         string _mech = PlutoComm.MECHANISMS[PlutoComm.mechanism];
         string _ctrlType = PlutoComm.CONTROLTYPE[PlutoComm.controlType];
+
+        // Display AROM/PROM markers.
+        arom
     }
 
     private void UpdateDataDispay()

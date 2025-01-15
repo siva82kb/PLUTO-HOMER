@@ -56,8 +56,8 @@ public static class PlutoComm
     };
     public static readonly int[] CALIBANGLE = new int[] { 0, 136, 136, 180, 93 }; // The first zero value is a dummy value.
     public static readonly float[] MECHOFFSETVALUE = new float[] {
-        68,   // Wrist Flexion/Extension     
         0,    // Dummy. No mechanism 
+        68,   // Wrist Flexion/Extension     
         68,   // Wrist Ulnar/Radial Deviation
         90,   // Forearm Prono/Sunpination
         0,    // Hand Opening/Closing

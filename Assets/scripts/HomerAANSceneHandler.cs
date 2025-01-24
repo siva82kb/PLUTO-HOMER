@@ -36,10 +36,6 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
     public GameObject promLeft;
     public GameObject promRight;
 
-    // AROM PROM Assess Toggle buttons
-    public UnityEngine.UI.Toggle tglAROM;
-    public UnityEngine.UI.Toggle tglPROM;
-
     // Start/Stop Demo button
     public UnityEngine.UI.Button btnStartStop;
 
@@ -50,13 +46,10 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
     public UnityEngine.UI.Toggle tglDataLog;
 
     // AROM parameters
-    private bool isAromAssess = false;
-    private float[] aromValue = new float[2];
-    private int plutoBtnPressCount = 0;
+    private float[] aromValue = new float[2] { -30f, 30f };
 
     // PROM parameters
-    private bool isPromAssess = false;
-    private float[] promValue = new float[2];
+    private float[] promValue = new float[2] { -60.0f, 60.0f };
 
     // Control variables
     private bool isRunning = false;
@@ -292,8 +285,6 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
     public void AttachControlCallbacks()
     {
         // Toggle button
-        tglAROM.onValueChanged.AddListener(delegate { OnAromChange(); });
-        tglPROM.onValueChanged.AddListener(delegate { OnPromChange(); });
         tglDataLog.onValueChanged.AddListener(delegate { OnDataLogChange(); });
 
         // Button click.
@@ -407,22 +398,6 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         return (_currtgt, _t < 1);
     }
 
-    private void OnAromChange()
-    {
-        isAromAssess = true;
-        aromValue[0] = 0.0f;
-        aromValue[1] = 0.0f;
-        plutoBtnPressCount = 0;
-    }
-
-    private void OnPromChange()
-    {
-        isPromAssess = true;
-        promValue[0] = 0.0f;
-        promValue[1] = 0.0f;
-        plutoBtnPressCount = 0;
-    }
-
     private void OnDataLogChange()
     {
         // Close file.
@@ -531,18 +506,6 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
 
     private void onPlutoButtonReleased()
     {
-        plutoBtnPressCount += 1;
-        // Check if its AROM or PROM assessment
-        if (isAromAssess)
-        {
-            if (plutoBtnPressCount == 2) isAromAssess = false;
-            aromValue[plutoBtnPressCount] = PlutoComm.angle;
-        }
-        if (isPromAssess)
-        {
-            if (plutoBtnPressCount == 2) isPromAssess = false;
-            promValue[plutoBtnPressCount] = PlutoComm.angle;
-        }
     }
 
     private void InitializeUI()
@@ -551,12 +514,6 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
 
     private void UpdateUI()
     {
-        // Enable/Disable controls.
-        tglAROM.enabled = !isAromAssess & !isPromAssess;
-        tglPROM.enabled = !isAromAssess & !isPromAssess;
-        tglDataLog.enabled = !isAromAssess & !isPromAssess;
-        btnStartStop.enabled = !isAromAssess & !isPromAssess;
-
         // Update data dispaly
         UpdateDataDispay();
 
@@ -565,7 +522,26 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         string _ctrlType = PlutoComm.CONTROLTYPE[PlutoComm.controlType];
 
         // Display AROM/PROM markers.
-        arom
+        aromLeft.transform.position = new Vector3(
+            (2 * aromValue[0] / PlutoComm.CALIBANGLE[PlutoComm.mechanism]) * xmax,
+            aromLeft.transform.position.y,
+            aromLeft.transform.position.z
+        );
+        aromRight.transform.position = new Vector3(
+            (2 * aromValue[1] / PlutoComm.CALIBANGLE[PlutoComm.mechanism]) * xmax,
+            aromRight.transform.position.y,
+            aromRight.transform.position.z
+        );
+        promLeft.transform.position = new Vector3(
+            (2 * promValue[0] / PlutoComm.CALIBANGLE[PlutoComm.mechanism]) * xmax,
+            promLeft.transform.position.y,
+            promLeft.transform.position.z
+        );
+        promRight.transform.position = new Vector3(
+            (2 * promValue[1] / PlutoComm.CALIBANGLE[PlutoComm.mechanism]) * xmax,
+            promRight.transform.position.y,
+            promRight.transform.position.z
+        );
     }
 
     private void UpdateDataDispay()

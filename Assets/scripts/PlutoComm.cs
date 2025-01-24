@@ -10,7 +10,7 @@ using UnityEngine.UIElements;
 public static class PlutoComm
 {
     // Device Level Constants
-    public static readonly string[] OUTDATATYPE = new string[] { "SENSORSTREAM", "CONTROLPARAM", "DIAGNOSTICS", "VERSION" };
+    public static readonly string[] OUTDATATYPE = new string[] { "SENSORSTREAM", "CONTROLPARAM", "DIAGNOSTICS", "VERSION", "APROM" };
     public static readonly string[] MECHANISMS = new string[] { "NOMECH", "WFE", "WURD", "FPS", "HOC", "FME1", "FME2" };
     public static readonly string[] MECHANISMSTEXT = new string[] {
         "Wrist Flex/Extension",
@@ -35,7 +35,7 @@ public static class PlutoComm
         7   // DIAGNOSTICS
     };
     public static readonly double MAXTORQUE = 1.0; // Nm
-    public static readonly int[] INDATATYPECODES = new int[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x80 };
+    public static readonly int[] INDATATYPECODES = new int[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x80 };
     public static readonly string[] INDATATYPE = new string[] {
         "GET_VERSION",
         "CALIBRATE",
@@ -47,6 +47,8 @@ public static class PlutoComm
         "SET_CONTROL_BOUND",
         "RESET_PACKETNO",
         "SET_CONTROL_DIR",
+        "SET_APROM",
+        "GET_APROM",
         "HEARTBEAT"
     };
     public static readonly string[] ERRORTYPES = new string[] {
@@ -98,6 +100,8 @@ public static class PlutoComm
     static public ushort packetNumber { get; private set; }
     static public float runTime { get; private set; }
     static public float prevRunTime { get; private set; }
+    static public float[] aRom { get; private set; } = new float[2];
+    static public float[] pRom { get; private set; } = new float[2];
     static public int status
     {
         get
@@ -289,6 +293,9 @@ public static class PlutoComm
                 // Update the button state
                 currentStateData[6] = rawBytes[(nSensors + 1) * 4 + 6 + 3];
                 break;
+            case "APROM":
+                Debug.Log("GET_APROM");
+                break;
             case "VERSION":
                 // Read the bytes into a string.
                 deviceId = Encoding.ASCII.GetString(rawBytes, 5, rawBytes[0] - 4 - 1).Split(",")[0];
@@ -355,7 +362,7 @@ public static class PlutoComm
     }
 
     public static void calibrate(string mech)
-    {
+    {   
         JediComm.SendMessage(
             new byte[] {
                 (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "CALIBRATE")],

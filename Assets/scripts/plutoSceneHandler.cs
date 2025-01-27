@@ -15,6 +15,7 @@ using static UnityEditor.LightingExplorerTableColumn;
 using static UnityEngine.GraphicsBuffer;
 using Unity.VisualScripting;
 using UnityEditor.PackageManager;
+using System.Runtime.CompilerServices;
 
 public class Pluto_SceneHandler : MonoBehaviour
 {
@@ -24,6 +25,15 @@ public class Pluto_SceneHandler : MonoBehaviour
     public UnityEngine.UI.Toggle tglCalibSelect;
     public Dropdown ddCalibMech;
     public TextMeshProUGUI textCalibMessage;
+
+    // AP ROM
+    public UnityEngine.UI.Slider sldrAromMin;
+    public UnityEngine.UI.Slider sldrAromMax;
+    public UnityEngine.UI.Slider sldrPromMin;
+    public UnityEngine.UI.Slider sldrPromMax;
+    public TextMeshProUGUI textArom;
+    public TextMeshProUGUI textProm;
+    public UnityEngine.UI.Button btnSetAPRom;
 
     // Control
     public UnityEngine.UI.Toggle tglControlSelect;
@@ -47,6 +57,10 @@ public class Pluto_SceneHandler : MonoBehaviour
     private bool isCalibrating = false;
     private enum CalibrationState { WAIT_FOR_ZERO_SET, ZERO_SET, ROM_SET, ERROR, ALL_DONE };
     private CalibrationState calibState = CalibrationState.WAIT_FOR_ZERO_SET;
+
+    // APRom variables.
+    private float[] aRomValues = new float[2];
+    private float[] pRomValues = new float[2];
 
     // Control variables
     private bool isControl = false;
@@ -127,11 +141,16 @@ public class Pluto_SceneHandler : MonoBehaviour
         ddControlSelect.onValueChanged.AddListener(delegate { OnControlModeChange(); });
 
         // Slider value change.
+        sldrAromMin.onValueChanged.AddListener(delegate { OnSldrAromMinChange(); });
+        sldrAromMax.onValueChanged.AddListener(delegate { OnSldrAromMaxChange(); });
+        sldrPromMin.onValueChanged.AddListener(delegate { OnSldrPromMinChange(); });
+        sldrPromMax.onValueChanged.AddListener(delegate { OnSldrPromMaxChange(); });
         sldrTarget.onValueChanged.AddListener(delegate { OnControlTargetChange(); });
         sldrCtrlBound.onValueChanged.AddListener(delegate { OnControlBoundChange(); });
         sldrCtrlDir.onValueChanged.AddListener(delegate { OnControlDirChange(); });
 
         // Button click.
+        btnSetAPRom.onClick.AddListener(delegate { OnARRomSet(); });
         btnNextRandomTarget.onClick.AddListener(delegate { OnNextRandomTarget(); });
 
         // AAN Demo Button click.
@@ -141,6 +160,7 @@ public class Pluto_SceneHandler : MonoBehaviour
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
         PlutoComm.OnControlModeChange += onPlutoControlModeChange;
         PlutoComm.OnNewPlutoData += onNewPlutoData;
+        PlutoComm.OnAPROMChange += onAPRomChanged;
     }
 
     private void onPlutoControlModeChange()
@@ -176,6 +196,70 @@ public class Pluto_SceneHandler : MonoBehaviour
             $"{PlutoComm.errSum}"
         };
         logFile.WriteLine(String.Join(", ", rowcomps));
+    }
+
+    private void onAPRomChanged()
+    {
+        // Start streaming
+        PlutoComm.setDiagnosticMode();
+    }
+
+    private void OnSldrAromMinChange()
+    {
+        if (sldrAromMin.value >= sldrAromMax.value)
+        {
+            sldrAromMax.value = sldrAromMin.value;
+        }
+        if (sldrPromMin.value >= sldrAromMin.value)
+        {
+            sldrPromMin.value = sldrAromMin.value;
+        }
+        UpdateAPRomText();
+    }
+
+    private void OnSldrAromMaxChange()
+    {
+        if (sldrAromMin.value >= sldrAromMax.value)
+        {
+            sldrAromMin.value = sldrAromMax.value;
+        }
+        if (sldrAromMax.value >= sldrPromMax.value)
+        {
+            sldrPromMax.value = sldrAromMax.value;
+        }
+        UpdateAPRomText();
+    }
+
+    private void OnSldrPromMinChange()
+    {
+        if (sldrPromMin.value >= sldrPromMax.value)
+        {
+            sldrPromMax.value = sldrPromMin.value;
+        }
+        if (sldrPromMin.value >= sldrAromMin.value)
+        {
+            sldrAromMin.value = sldrPromMin.value;
+        }
+        UpdateAPRomText();
+    }
+
+    private void OnSldrPromMaxChange()
+    {
+        if (sldrAromMin.value >= sldrPromMax.value)
+        {
+            sldrPromMin.value = sldrPromMax.value;
+        }
+        if (sldrPromMax.value <= sldrAromMax.value)
+        {
+            sldrAromMax.value = sldrPromMax.value;
+        }
+        UpdateAPRomText();
+    }
+
+    private void UpdateAPRomText()
+    {
+        textArom.SetText($"AROM: {sldrAromMin.value,6:F1} - {sldrAromMax.value,6:F1}");
+        textProm.SetText($"PROM: {sldrPromMin.value,6:F1} - {sldrPromMax.value,6:F1}");
     }
 
     private void OnControlTargetChange()
@@ -224,6 +308,18 @@ public class Pluto_SceneHandler : MonoBehaviour
         }
     }
 
+    private void OnARRomSet()
+    {
+        // Set the AROM and PROM values.
+        aRomValues[0] = sldrAromMin.value;
+        aRomValues[1] = sldrAromMax.value;
+        pRomValues[0] = sldrPromMin.value;
+        pRomValues[1] = sldrPromMax.value;
+        // Send the AROM and PROM values to PLUTO.
+        PlutoComm.setAPRom(aRomValues[0], aRomValues[1], pRomValues[0], pRomValues[1]);
+        // Get the AROM
+        PlutoComm.getAPRom();
+    }
     private void OnNextRandomTarget()
     {
         // Set initial and final target values.
@@ -356,6 +452,37 @@ public class Pluto_SceneHandler : MonoBehaviour
         ddCalibMech.enabled = tglCalibSelect.enabled && tglCalibSelect.isOn;
         ddControlSelect.enabled = tglControlSelect.enabled && tglControlSelect.isOn;
 
+        // APROM panel is enabled only when the control is NONE.
+        sldrAromMin.enabled = PlutoComm.CONTROLTYPE[PlutoComm.controlType] == "NONE";
+        sldrAromMax.enabled = PlutoComm.CONTROLTYPE[PlutoComm.controlType] == "NONE";
+        sldrPromMin.enabled = PlutoComm.CONTROLTYPE[PlutoComm.controlType] == "NONE";
+        sldrPromMax.enabled = PlutoComm.CONTROLTYPE[PlutoComm.controlType] == "NONE";
+        btnSetAPRom.enabled = PlutoComm.CONTROLTYPE[PlutoComm.controlType] == "NONE";
+
+        // Set slider limits.
+        if (PlutoComm.MECHANISMS[PlutoComm.mechanism] == "HOC")
+        {
+            sldrAromMin.minValue = PlutoComm.getHOCDisplay(0);
+            sldrAromMin.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
+            sldrAromMax.minValue = PlutoComm.getHOCDisplay(0);
+            sldrAromMax.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
+            sldrPromMin.minValue = PlutoComm.getHOCDisplay(0);
+            sldrPromMin.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
+            sldrPromMax.minValue = PlutoComm.getHOCDisplay(0);
+            sldrPromMax.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
+        }
+        else
+        {
+            sldrAromMin.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+            sldrAromMin.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+            sldrAromMax.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+            sldrAromMax.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+            sldrPromMin.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+            sldrPromMin.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+            sldrPromMax.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+            sldrPromMax.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+        }
+
         // Update data dispaly
         UpdateDataDispay();
 
@@ -452,6 +579,16 @@ public class Pluto_SceneHandler : MonoBehaviour
         _dispstr += $"\nStatus        : {PlutoComm.OUTDATATYPE[PlutoComm.dataType]}";
         _dispstr += $"\nMechanism     : {PlutoComm.MECHANISMS[PlutoComm.mechanism]}";
         _dispstr += $"\nCalibration   : {PlutoComm.CALIBRATION[PlutoComm.calibration]}";
+        if (PlutoComm.MECHANISMS[PlutoComm.mechanism] == "HOC")
+        {
+            _dispstr += $"\nAROM (cm)     : {PlutoComm.getHOCDisplay(PlutoComm.aRom[0]),6:F1}, {PlutoComm.getHOCDisplay(PlutoComm.aRom[1]),6:F1}";
+            _dispstr += $"\nPROM (cm)     : {PlutoComm.getHOCDisplay(PlutoComm.pRom[0]),6:F1}, {PlutoComm.getHOCDisplay(PlutoComm.pRom[1]),6:F1}";
+        }
+        else
+        {
+            _dispstr += $"\nAROM (deg)    : {PlutoComm.aRom[0],6:F1}, {PlutoComm.aRom[1],6:F1}";
+            _dispstr += $"\nPROM (deg)    : {PlutoComm.pRom[0],6:F1}, {PlutoComm.pRom[1],6:F1}";
+        }
         _dispstr += $"\nError         : {PlutoComm.errorString}";
         _dispstr += $"\nControl Type  : {PlutoComm.CONTROLTYPE[PlutoComm.controlType]}";
         _dispstr += $"\nActuated      : {PlutoComm.actuated}";

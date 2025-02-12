@@ -10,7 +10,7 @@ using UnityEngine.UIElements;
 public static class PlutoComm
 {
     // Device Level Constants
-    public static readonly string[] OUTDATATYPE = new string[] { "SENSORSTREAM", "CONTROLPARAM", "DIAGNOSTICS", "VERSION", "APROM" };
+    public static readonly string[] OUTDATATYPE = new string[] { "SENSORSTREAM", "CONTROLPARAM", "DIAGNOSTICS", "VERSION" };
     public static readonly string[] MECHANISMS = new string[] { "NOMECH", "WFE", "WURD", "FPS", "HOC", "FME1", "FME2" };
     public static readonly string[] MECHANISMSTEXT = new string[] {
         "Wrist Flex/Extension",
@@ -30,12 +30,12 @@ public static class PlutoComm
         "Position-AAN"
     };
     public static readonly int[] SENSORNUMBER = new int[] {
-        4,  // SENSORSTREAM 
+        5,  // SENSORSTREAM 
         0,  // CONTROLPARAM
-        7   // DIAGNOSTICS
+        8   // DIAGNOSTICS
     };
     public static readonly double MAXTORQUE = 1.0; // Nm
-    public static readonly int[] INDATATYPECODES = new int[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x80 };
+    public static readonly int[] INDATATYPECODES = new int[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x80 };
     public static readonly string[] INDATATYPE = new string[] {
         "GET_VERSION",
         "CALIBRATE",
@@ -47,8 +47,6 @@ public static class PlutoComm
         "SET_CONTROL_BOUND",
         "RESET_PACKETNO",
         "SET_CONTROL_DIR",
-        "SET_APROM",
-        "GET_APROM",
         "HEARTBEAT"
     };
     public static readonly string[] ERRORTYPES = new string[] {
@@ -78,13 +76,13 @@ public static class PlutoComm
     public delegate void PlutoControlModeChangeEvent();
     public static event PlutoControlModeChangeEvent OnControlModeChange;
 
+    // Mechanism change event.
+    public delegate void PlutoMechanismChangeEvent();
+    public static event PlutoMechanismChangeEvent OnMechanismChange;
+
     // New data event.
     public delegate void PlutoNewDataEvent();
     public static event PlutoNewDataEvent OnNewPlutoData;
-
-    // APROM change event.
-    public delegate void PlutoAPROMChangeEvent();
-    public static event PlutoAPROMChangeEvent OnAPROMChange;
 
     // Private variables
     static private byte[] rawBytes = new byte[256];
@@ -104,8 +102,6 @@ public static class PlutoComm
     static public ushort packetNumber { get; private set; }
     static public float runTime { get; private set; }
     static public float prevRunTime { get; private set; }
-    static public float[] aRom { get; private set; } = new float[2];
-    static public float[] pRom { get; private set; } = new float[2];
     static public int status
     {
         get
@@ -221,25 +217,32 @@ public static class PlutoComm
             return currentSensorData[4];
         }
     }
-    static public float err
+    static public float desired
     {
         get
         {
             return currentSensorData[5];
         }
     }
-    static public float errDiff
+    static public float err
     {
         get
         {
             return currentSensorData[6];
         }
     }
-    static public float errSum
+    static public float errDiff
     {
         get
         {
             return currentSensorData[7];
+        }
+    }
+    static public float errSum
+    {
+        get
+        {
+            return currentSensorData[8];
         }
     }
 
@@ -267,7 +270,7 @@ public static class PlutoComm
         currentStateData[2] = 255 * rawBytes[3] + rawBytes[2];
         // Actuated - Mech
         currentStateData[3] = rawBytes[4];
-
+        
         // Handle data based on what type of data it is.
         byte _datatype = (byte)(currentStateData[1] >> 4);
         switch (OUTDATATYPE[_datatype])
@@ -281,12 +284,17 @@ public static class PlutoComm
                 runTime = 0.001f * BitConverter.ToUInt32(new byte[] { rawBytes[7], rawBytes[8], rawBytes[9], rawBytes[10] });
 
                 // Udpate current sensor data
+                int offset = 10;
                 int nSensors = SENSORNUMBER[_datatype];
                 currentSensorData[0] = nSensors;
                 for (int i = 0; i < nSensors; i++)
                 {
                     currentSensorData[i + 1] = BitConverter.ToSingle(
-                        new byte[] { rawBytes[11 + (i * 4)], rawBytes[12 + (i * 4)], rawBytes[13 + (i * 4)], rawBytes[14 + (i * 4)] },
+                        new byte[] { 
+                            rawBytes[offset + 1 + (i * 4)],
+                            rawBytes[offset + 2 + (i * 4)], 
+                            rawBytes[offset + 3 + (i * 4)],
+                            rawBytes[offset + 4 + (i * 4)] },
                         0
                     );
                 }
@@ -315,29 +323,18 @@ public static class PlutoComm
                     OnControlModeChange?.Invoke();
                 }
 
+                // Check if the mechanism has been changed.
+                if ((previousStateData[3] >> 4)  != (currentStateData[3] >> 4))
+                {
+                    OnMechanismChange?.Invoke();
+                }
+
                 // Invoke the new data event only for SENSORSTREAM or DIAGNOSTICS data.
                 OnNewPlutoData?.Invoke();
                 break;
-            case "APROM":
-                Debug.Log("APROM");
-                float[] _aRom = new float[2];
-                float[] _pRom = new float[2];
-                _aRom[0] = BitConverter.ToSingle(new byte[] { rawBytes[5], rawBytes[6], rawBytes[7], rawBytes[8] }, 0);
-                _aRom[1] = BitConverter.ToSingle(new byte[] { rawBytes[9], rawBytes[10], rawBytes[11], rawBytes[12] }, 0);
-                _pRom[0] = BitConverter.ToSingle(new byte[] { rawBytes[13], rawBytes[14], rawBytes[15], rawBytes[16] }, 0);
-                _pRom[1] = BitConverter.ToSingle(new byte[] { rawBytes[17], rawBytes[18], rawBytes[19], rawBytes[20] }, 0);
-
-                // Check if APROM data was received, and there is a change.
-                if ((_aRom[0] != aRom[0]) || (_aRom[1] != aRom[1]) || (_pRom[0] != pRom[0]) ||(_pRom[1] != pRom[1]))
-                {
-                    aRom = _aRom;
-                    pRom = _pRom;
-                    Debug.Log($"{aRom[0]}, {aRom[1]}, {pRom[0]}, {pRom[1]}");
-                    OnAPROMChange?.Invoke();
-                }
-                break;
             case "VERSION":
                 // Read the bytes into a string.
+                Debug.Log("Version");
                 deviceId = Encoding.ASCII.GetString(rawBytes, 5, rawBytes[0] - 4 - 1).Split(",")[0];
                 version = Encoding.ASCII.GetString(rawBytes, 5, rawBytes[0] - 4 - 1).Split(",")[1];
                 compileDate = Encoding.ASCII.GetString(rawBytes, 5, rawBytes[0] - 4 - 1).Split(",")[2];
@@ -440,26 +437,16 @@ public static class PlutoComm
             }
         );
     }
-    public static void setAPRom(float aRomMin, float aRomMax, float pRomMin, float pRomMax)
+    public static void setAPRom(sbyte aRomMin, sbyte aRomMax, sbyte pRomMin, sbyte pRomMax)
     {
-        byte[] _aRomMinBytes = BitConverter.GetBytes(aRomMin);
-        byte[] _aRomMaxBytes = BitConverter.GetBytes(aRomMax);
-        byte[] _pRomMinBytes = BitConverter.GetBytes(pRomMin);
-        byte[] _pRomMaxBytes = BitConverter.GetBytes(pRomMax);
-        Debug.Log((byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "SET_APROM")]);
+        Debug.Log($"{(sbyte)aRomMin}, {(sbyte)aRomMax}, {(sbyte)pRomMin}, {(sbyte)pRomMax}");
+        Debug.Log($"{(byte)aRomMin}, {(byte)aRomMax}, {(byte)pRomMin}, {(byte)pRomMax}");
         JediComm.SendMessage(
             new byte[] {
                 (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "SET_APROM")],
-                _aRomMinBytes[0], _aRomMinBytes[1], _aRomMinBytes[2], _aRomMinBytes[3],
-                _aRomMaxBytes[0], _aRomMaxBytes[1], _aRomMaxBytes[2], _aRomMaxBytes[3],
-                _pRomMinBytes[0], _pRomMinBytes[1], _pRomMinBytes[2], _pRomMinBytes[3],
-                _pRomMaxBytes[0], _pRomMaxBytes[1], _pRomMaxBytes[2], _pRomMaxBytes[3]
+                (byte) aRomMin, (byte) aRomMax, (byte) pRomMin, (byte) pRomMax
             }
         );
-    }
-    public static void getAPRom()
-    {
-        JediComm.SendMessage(new byte[] { (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "GET_APROM")] });
     }
     public static void resetPacketNo()
     {

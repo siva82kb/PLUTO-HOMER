@@ -27,6 +27,7 @@ public class Pluto_SceneHandler : MonoBehaviour
     public TextMeshProUGUI textCalibMessage;
 
     // AP ROM
+    public UnityEngine.UI.Toggle tglAPRomSelect;
     public UnityEngine.UI.Slider sldrAromMin;
     public UnityEngine.UI.Slider sldrAromMax;
     public UnityEngine.UI.Slider sldrPromMin;
@@ -59,8 +60,10 @@ public class Pluto_SceneHandler : MonoBehaviour
     private CalibrationState calibState = CalibrationState.WAIT_FOR_ZERO_SET;
 
     // APRom variables.
-    private float[] aRomValues = new float[2];
-    private float[] pRomValues = new float[2];
+    private bool isAPRom = false;
+    private bool _changeAPRomSldrLimits = false;
+    private float aRomL, aRomH;
+    private float pRomL, pRomH;
 
     // Control variables
     private bool isControl = false;
@@ -119,6 +122,7 @@ public class Pluto_SceneHandler : MonoBehaviour
             // Set the control target.
             PlutoComm.setControlTarget(controlTarget);
         }
+        
         // Udpate UI
         UpdateUI();
 
@@ -134,6 +138,7 @@ public class Pluto_SceneHandler : MonoBehaviour
     {
         // Toggle button
         tglCalibSelect.onValueChanged.AddListener(delegate { OnCalibrationChange(); });
+        tglAPRomSelect.onValueChanged.AddListener(delegate { OnAPRomChange(); });
         tglControlSelect.onValueChanged.AddListener(delegate { OnControlChange(); });
         tglDataLog.onValueChanged.AddListener(delegate { OnDataLogChange(); });
 
@@ -159,8 +164,13 @@ public class Pluto_SceneHandler : MonoBehaviour
         // Listen to PLUTO's event
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
         PlutoComm.OnControlModeChange += onPlutoControlModeChange;
+        PlutoComm.OnMechanismChange += PlutoComm_OnMechanismChange;
         PlutoComm.OnNewPlutoData += onNewPlutoData;
-        PlutoComm.OnAPROMChange += onAPRomChanged;
+    }
+
+    private void PlutoComm_OnMechanismChange()
+    {
+        _changeAPRomSldrLimits = true;
     }
 
     private void onPlutoControlModeChange()
@@ -187,6 +197,7 @@ public class Pluto_SceneHandler : MonoBehaviour
             $"{PlutoComm.button}",
             $"{PlutoComm.angle}",
             $"{PlutoComm.torque}",
+            $"{PlutoComm.desired}",
             $"{PlutoComm.control}",
             $"{PlutoComm.controlBound}",
             $"{PlutoComm.controlDir}",
@@ -200,8 +211,13 @@ public class Pluto_SceneHandler : MonoBehaviour
 
     private void onAPRomChanged()
     {
-        // Start streaming
-        PlutoComm.setDiagnosticMode();
+        //aRomValues[0] = PlutoComm.aRomL;
+        //aRomValues[1] = PlutoComm.aRomH;
+        //pRomValues[0] = PlutoComm.aRomL;
+        //pRomValues[1] = PlutoComm.aRomL;
+        //_changeAPRomSldrLimits = true;
+        //// Start streaming
+        //PlutoComm.setDiagnosticMode();
     }
 
     private void OnSldrAromMinChange()
@@ -214,6 +230,8 @@ public class Pluto_SceneHandler : MonoBehaviour
         {
             sldrPromMin.value = sldrAromMin.value;
         }
+        aRomL = sldrAromMin.value;
+        aRomH = sldrAromMax.value;
         UpdateAPRomText();
     }
 
@@ -227,6 +245,8 @@ public class Pluto_SceneHandler : MonoBehaviour
         {
             sldrPromMax.value = sldrAromMax.value;
         }
+        aRomL = sldrAromMin.value;
+        aRomH = sldrAromMax.value; 
         UpdateAPRomText();
     }
 
@@ -240,6 +260,8 @@ public class Pluto_SceneHandler : MonoBehaviour
         {
             sldrAromMin.value = sldrPromMin.value;
         }
+        pRomL = sldrPromMin.value;
+        pRomH = sldrPromMax.value; 
         UpdateAPRomText();
     }
 
@@ -253,13 +275,15 @@ public class Pluto_SceneHandler : MonoBehaviour
         {
             sldrAromMax.value = sldrPromMax.value;
         }
+        pRomL = sldrPromMin.value;
+        pRomH = sldrPromMax.value;
         UpdateAPRomText();
     }
 
     private void UpdateAPRomText()
     {
-        textArom.SetText($"AROM: {sldrAromMin.value,6:F1} - {sldrAromMax.value,6:F1}");
-        textProm.SetText($"PROM: {sldrPromMin.value,6:F1} - {sldrPromMax.value,6:F1}");
+        textArom.SetText($"AROM: {aRomL,6:F1} - {aRomH,6:F1}");
+        textProm.SetText($"PROM: {pRomL,6:F1} - {pRomH,6:F1}");
     }
 
     private void OnControlTargetChange()
@@ -310,34 +334,59 @@ public class Pluto_SceneHandler : MonoBehaviour
 
     private void OnARRomSet()
     {
-        // Set the AROM and PROM values.
-        aRomValues[0] = sldrAromMin.value;
-        aRomValues[1] = sldrAromMax.value;
-        pRomValues[0] = sldrPromMin.value;
-        pRomValues[1] = sldrPromMax.value;
+        sbyte _aromL, _aromH, _promL, _promH;
+        // Some jugad needed for HOC.
+        if (PlutoComm.MECHANISMS[PlutoComm.mechanism] == "HOC")
+        {
+            // Set the AROM and PROM values.
+            _aromL = (sbyte) PlutoComm.getHOCAngle(sldrAromMin.value);
+            _aromH = (sbyte) PlutoComm.getHOCAngle(sldrAromMax.value);
+            _promL = (sbyte) PlutoComm.getHOCAngle(sldrPromMin.value);
+            _promH = (sbyte) PlutoComm.getHOCAngle(sldrPromMax.value);
+        } else
+        {
+            // Set the AROM and PROM values.
+            _aromL = (sbyte) sldrAromMin.value;
+            _aromH = (sbyte) sldrAromMax.value;
+            _promL = (sbyte) sldrPromMin.value;
+            _promH = (sbyte) sldrPromMax.value;
+        }
         // Send the AROM and PROM values to PLUTO.
-        PlutoComm.setAPRom(aRomValues[0], aRomValues[1], pRomValues[0], pRomValues[1]);
-        // Get the AROM
-        PlutoComm.getAPRom();
+        PlutoComm.setAPRom(_aromL, _aromH, _promL, _promH);
+        // Get out of the APRom setting mode.
+        isAPRom = false;
+        tglAPRomSelect.isOn = false;
     }
+
     private void OnNextRandomTarget()
     {
-        // Set initial and final target values.
-        // Initial angle is the current robot angle.
-        _initialTarget = PlutoComm.angle;
-        // Final angle is a random value chosen between 0 and the maximum angle for the current mechanism.
-        _finalTarget = UnityEngine.Random.Range(-PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism],
-                                                PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism]);
-        // Set the target duration.
-        tgtDuration = float.Parse(inputDuration.text);
-        // Set the current time.
-        _currentTime = Time.time;
-        // Compute current target value.
-        var _tgt = computeCurrentTarget();
-        // Set the current target value.
-        controlTarget = _tgt.currTgtValue;
-        // Set the changing target flag.
-        _changingTarget = _tgt.isTgtChanging;
+        // Handle things differently for POSITION and POSITIONAAN control types.
+        if (PlutoComm.CONTROLTYPE[PlutoComm.controlType] == "POSITION")
+        {
+            // Set initial and final target values.
+            // Initial angle is the current robot angle.
+            _initialTarget = PlutoComm.angle;
+            // Final angle is a random value chosen between 0 and the maximum angle for the current mechanism.
+            _finalTarget = UnityEngine.Random.Range(-PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism],
+                                                    PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism]);
+            // Set the target duration.
+            tgtDuration = float.Parse(inputDuration.text);
+            // Set the current time.
+            _currentTime = Time.time;
+            // Compute current target value.
+            var _tgt = computeCurrentTarget();
+            // Set the current target value.
+            controlTarget = _tgt.currTgtValue;
+            // Set the changing target flag.
+            _changingTarget = _tgt.isTgtChanging;
+        }
+        else if (PlutoComm.CONTROLTYPE[PlutoComm.controlType] == "POSITIONAAN")
+        {
+            // Choose a random target within the PROM range.
+            _finalTarget = 0.0f; // UnityEngine.Random.Range(PlutoComm.pRomL, PlutoComm.pRomH);
+            // Set the target on the device.
+            PlutoComm.setControlTarget(_finalTarget);
+        }
     }
 
     private (float currTgtValue, bool isTgtChanging) computeCurrentTarget()
@@ -373,6 +422,11 @@ public class Pluto_SceneHandler : MonoBehaviour
         }
     }
 
+    private void OnAPRomChange()
+    {
+        isAPRom = tglAPRomSelect.isOn;
+    }
+
     private void OnDataLogChange()
     {
         // Close file.
@@ -400,7 +454,7 @@ public class Pluto_SceneHandler : MonoBehaviour
         _sw.WriteLine($"CompileDate = {PlutoComm.compileDate}");
         _sw.WriteLine($"Actuated = {PlutoComm.actuated}");
         _sw.WriteLine($"Start Datetime = {DateTime.Now:yyyy/MM/dd HH-mm-ss.ffffff}");
-        _sw.WriteLine("time, packetno, status, datatype, errorstatus, controltype, calibration, mechanism, button, angle, torque, control, controlbound, controldir, target, error, errordiff, errorsum");
+        _sw.WriteLine("time, packetno, status, datatype, errorstatus, controltype, calibration, mechanism, button, angle, torque, control, controlbound, controldir, target, desired, error, errordiff, errorsum");
         return _sw;
     }
 
@@ -444,6 +498,8 @@ public class Pluto_SceneHandler : MonoBehaviour
         tglCalibSelect.isOn = false;
         tglControlSelect.enabled = true;
         tglControlSelect.isOn = false;
+        tglAPRomSelect.enabled = true;
+        tglAPRomSelect.isOn = false;
     }
 
     private void UpdateUI()
@@ -451,37 +507,6 @@ public class Pluto_SceneHandler : MonoBehaviour
         // Update UI Controls.
         ddCalibMech.enabled = tglCalibSelect.enabled && tglCalibSelect.isOn;
         ddControlSelect.enabled = tglControlSelect.enabled && tglControlSelect.isOn;
-
-        // APROM panel is enabled only when the control is NONE.
-        sldrAromMin.enabled = PlutoComm.CONTROLTYPE[PlutoComm.controlType] == "NONE";
-        sldrAromMax.enabled = PlutoComm.CONTROLTYPE[PlutoComm.controlType] == "NONE";
-        sldrPromMin.enabled = PlutoComm.CONTROLTYPE[PlutoComm.controlType] == "NONE";
-        sldrPromMax.enabled = PlutoComm.CONTROLTYPE[PlutoComm.controlType] == "NONE";
-        btnSetAPRom.enabled = PlutoComm.CONTROLTYPE[PlutoComm.controlType] == "NONE";
-
-        // Set slider limits.
-        if (PlutoComm.MECHANISMS[PlutoComm.mechanism] == "HOC")
-        {
-            sldrAromMin.minValue = PlutoComm.getHOCDisplay(0);
-            sldrAromMin.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
-            sldrAromMax.minValue = PlutoComm.getHOCDisplay(0);
-            sldrAromMax.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
-            sldrPromMin.minValue = PlutoComm.getHOCDisplay(0);
-            sldrPromMin.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
-            sldrPromMax.minValue = PlutoComm.getHOCDisplay(0);
-            sldrPromMax.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
-        }
-        else
-        {
-            sldrAromMin.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-            sldrAromMin.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-            sldrAromMax.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-            sldrAromMax.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-            sldrPromMin.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-            sldrPromMin.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-            sldrPromMax.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-            sldrPromMax.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-        }
 
         // Update data dispaly
         UpdateDataDispay();
@@ -495,8 +520,19 @@ public class Pluto_SceneHandler : MonoBehaviour
         else
         {
             textCalibMessage.SetText("");
+            // Update mechnisam dropdown to the current mechanism.
+            ddCalibMech.value = PlutoComm.mechanism - 1;
         }
 
+        // Set slider limits.
+        UpdateAPRomPanel();
+
+        // Updat Control Panel.
+        UpdateControlPanel();
+    }
+
+    private void UpdateControlPanel()
+    {
         // Check if control is in progress, and update UI accordingly.
         tglControlSelect.enabled = PlutoComm.MECHANISMS[PlutoComm.mechanism] != "NOMECH" && !isCalibrating;
         textTarget.SetText("Target: ");
@@ -504,64 +540,116 @@ public class Pluto_SceneHandler : MonoBehaviour
         // Enable/Disable control panel.
         string _mech = PlutoComm.MECHANISMS[PlutoComm.mechanism];
         string _ctrlType = PlutoComm.CONTROLTYPE[PlutoComm.controlType];
-        sldrTarget.enabled = (isControl && ((_ctrlType == "TORQUE") || (_ctrlType == "POSITION") || (_ctrlType == "POSITIONAAN")) && !_changingTarget);
+        sldrTarget.enabled = (isControl && ((_ctrlType == "TORQUE") || (_ctrlType == "POSITION")) && !_changingTarget);
         sldrCtrlBound.enabled = isControl && ((_ctrlType == "POSITION") || (_ctrlType == "POSITIONAAN"));
         sldrCtrlDir.enabled = isControl && (_ctrlType == "POSITIONAAN");
-        inputDuration.enabled = isControl && ((_ctrlType == "POSITION") || (_ctrlType == "POSITIONAAN"));
+        inputDuration.enabled = isControl && (_ctrlType == "POSITION");
         btnNextRandomTarget.enabled = isControl && ((_ctrlType == "POSITION") || (_ctrlType == "POSITIONAAN"));
-        if (isControl)
+
+        // Leave if control is not enabled.
+        if (isControl == false) return;
+        // Else, continue.
+        // Change slider limits if needed.
+        if (_changeSliderLimits)
         {
-            // Change slider limits if needed.
-            if (_changeSliderLimits)
+            // Change slider limits.
+            ChangeControlSliderLimits(_ctrlType, _mech);
+        }
+        else
+        {
+            if ((_ctrlType == "POSITION") || (_ctrlType == "POSITIONAAN"))
             {
-                // Torque controller
-                if (_ctrlType == "TORQUE")
-                {
-                    //sldrTarget.enabled = true;
-                    sldrTarget.minValue = (float)-PlutoComm.MAXTORQUE;
-                    sldrTarget.maxValue = (float)PlutoComm.MAXTORQUE;
-                    sldrTarget.value = 0f;
-                    sldrCtrlBound.enabled = false;
-                    // Disable duration input field and next target button.
-                    inputDuration.enabled = false;
-                    btnNextRandomTarget.enabled = false;
-                }
-                else if ((_ctrlType == "POSITION") || (_ctrlType == "POSITIONAAN"))
-                {
-                    // Set the appropriate range for the slider.
-                    if (_mech == "WFE" || _mech == "WURD" || _mech == "FPS")
-                    {
-                        sldrTarget.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-                        sldrTarget.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-                        sldrTarget.value = PlutoComm.angle;
-                    }
-                    else
-                    {
-                        sldrTarget.minValue = PlutoComm.getHOCDisplay(0);
-                        sldrTarget.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
-                        sldrTarget.value = PlutoComm.getHOCDisplay(PlutoComm.angle);
-                    }
-                    // Control Bound slider.
-                    sldrCtrlBound.minValue = 0;
-                    sldrCtrlBound.maxValue = 1;
-                    sldrCtrlBound.value = 0.0f;
-                    // Control Direction slider.
-                    sldrCtrlDir.value = 0;
-                }
-                _changeSliderLimits = false;
+                sldrTarget.value = controlTarget;
+            }
+        }
+        // Udpate target value.
+        string _unit = (_ctrlType == "TORQUE") ? "Nm" : "deg";
+        textTarget.SetText($"Target: {controlTarget,7:F2} {_unit}");
+        textCtrlBound.SetText($"Control Bound: {controlBound,7:F2}");
+        textCtrlDir.SetText($"Control Direction: {controlDir,7:F2}");
+    }
+
+    private void ChangeControlSliderLimits(string controlType, string mechanism)
+    {
+        // Torque controller
+        if (controlType == "TORQUE")
+        {
+            //sldrTarget.enabled = true;
+            sldrTarget.minValue = (float)-PlutoComm.MAXTORQUE;
+            sldrTarget.maxValue = (float)PlutoComm.MAXTORQUE;
+            sldrTarget.value = 0f;
+            sldrCtrlBound.enabled = false;
+            // Disable duration input field and next target button.
+            inputDuration.enabled = false;
+            btnNextRandomTarget.enabled = false;
+        }
+        else if ((controlType == "POSITION") || (controlType == "POSITIONAAN"))
+        {
+            // Set the appropriate range for the slider.
+            if (mechanism == "WFE" || mechanism == "WURD" || mechanism == "FPS")
+            {
+                sldrTarget.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+                sldrTarget.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+                sldrTarget.value = PlutoComm.angle;
             }
             else
             {
-                if ((_ctrlType == "POSITION") || (_ctrlType == "POSITIONAAN"))
-                {
-                    sldrTarget.value = controlTarget;
-                }
+                sldrTarget.minValue = PlutoComm.getHOCDisplay(0);
+                sldrTarget.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
+                sldrTarget.value = PlutoComm.getHOCDisplay(PlutoComm.angle);
             }
-            // Udpate target value.
-            string _unit = (_ctrlType == "TORQUE") ? "Nm" : "deg";
-            textTarget.SetText($"Target: {controlTarget,7:F2} {_unit}");
-            textCtrlBound.SetText($"Control Bound: {controlBound,7:F2}");
-            textCtrlDir.SetText($"Control Direction: {controlDir,7:F2}");
+            // Control Bound slider.
+            sldrCtrlBound.minValue = 0;
+            sldrCtrlBound.maxValue = 1;
+            sldrCtrlBound.value = 0.0f;
+            // Control Direction slider.
+            sldrCtrlDir.value = 0;
+        }
+        _changeSliderLimits = false;
+    }
+
+    private void UpdateAPRomPanel()
+    {
+        // APROM panel is enabled only when the control is NONE.
+        sldrAromMin.enabled = isAPRom;
+        sldrAromMax.enabled = isAPRom;
+        sldrPromMin.enabled = isAPRom;
+        sldrPromMax.enabled = isAPRom;
+        btnSetAPRom.enabled = isAPRom;
+
+        // Check if slider limits have to be changed.
+        if (_changeAPRomSldrLimits)
+        {
+            // Update slider limits
+            if (PlutoComm.MECHANISMS[PlutoComm.mechanism] == "HOC")
+            {
+                sldrAromMin.minValue = PlutoComm.getHOCDisplay(0);
+                sldrAromMin.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
+                sldrAromMax.minValue = PlutoComm.getHOCDisplay(0);
+                sldrAromMax.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
+                sldrPromMin.minValue = PlutoComm.getHOCDisplay(0);
+                sldrPromMin.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
+                sldrPromMax.minValue = PlutoComm.getHOCDisplay(0);
+                sldrPromMax.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
+            }
+            else
+            {
+                sldrAromMin.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+                sldrAromMin.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+                sldrAromMax.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+                sldrAromMax.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+                sldrPromMin.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+                sldrPromMin.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+                sldrPromMax.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+                sldrPromMax.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+
+            }
+            //// Update the AROM and PROM values.
+            //sldrAromMin.value = PlutoComm.aRomL;
+            //sldrAromMax.value = PlutoComm.aRomH;
+            //sldrPromMin.value = PlutoComm.pRomL;
+            //sldrPromMax.value = PlutoComm.pRomH;
+            _changeAPRomSldrLimits = false;
         }
     }
 
@@ -579,16 +667,6 @@ public class Pluto_SceneHandler : MonoBehaviour
         _dispstr += $"\nStatus        : {PlutoComm.OUTDATATYPE[PlutoComm.dataType]}";
         _dispstr += $"\nMechanism     : {PlutoComm.MECHANISMS[PlutoComm.mechanism]}";
         _dispstr += $"\nCalibration   : {PlutoComm.CALIBRATION[PlutoComm.calibration]}";
-        if (PlutoComm.MECHANISMS[PlutoComm.mechanism] == "HOC")
-        {
-            _dispstr += $"\nAROM (cm)     : {PlutoComm.getHOCDisplay(PlutoComm.aRom[0]),6:F1}, {PlutoComm.getHOCDisplay(PlutoComm.aRom[1]),6:F1}";
-            _dispstr += $"\nPROM (cm)     : {PlutoComm.getHOCDisplay(PlutoComm.pRom[0]),6:F1}, {PlutoComm.getHOCDisplay(PlutoComm.pRom[1]),6:F1}";
-        }
-        else
-        {
-            _dispstr += $"\nAROM (deg)    : {PlutoComm.aRom[0],6:F1}, {PlutoComm.aRom[1],6:F1}";
-            _dispstr += $"\nPROM (deg)    : {PlutoComm.pRom[0],6:F1}, {PlutoComm.pRom[1],6:F1}";
-        }
         _dispstr += $"\nError         : {PlutoComm.errorString}";
         _dispstr += $"\nControl Type  : {PlutoComm.CONTROLTYPE[PlutoComm.controlType]}";
         _dispstr += $"\nActuated      : {PlutoComm.actuated}";
@@ -603,6 +681,7 @@ public class Pluto_SceneHandler : MonoBehaviour
         _dispstr += $"\nControl       : {PlutoComm.control,6:F2}";
         _dispstr += $"\nCtrl Bnd (Dir): {PlutoComm.controlBound,6:F2} ({PlutoComm.controlDir})";
         _dispstr += $"\nTarget        : {PlutoComm.target,6:F2}";
+        _dispstr += $"\nDesired       : {PlutoComm.desired,6:F2}";
         if (PlutoComm.OUTDATATYPE[PlutoComm.dataType] == "DIAGNOSTICS")
         {
             _dispstr += $"\nError         : {PlutoComm.err,6:F2}";
@@ -611,7 +690,6 @@ public class Pluto_SceneHandler : MonoBehaviour
         }
         textDataDisplay.SetText(_dispstr);
     }
-
 
     /*
      * Calibration State Machine Functions

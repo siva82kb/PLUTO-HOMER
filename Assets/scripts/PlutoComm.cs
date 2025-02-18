@@ -35,7 +35,7 @@ public static class PlutoComm
         8   // DIAGNOSTICS
     };
     public static readonly double MAXTORQUE = 1.0; // Nm
-    public static readonly int[] INDATATYPECODES = new int[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x80 };
+    public static readonly int[] INDATATYPECODES = new int[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x80 };
     public static readonly string[] INDATATYPE = new string[] {
         "GET_VERSION",
         "CALIBRATE",
@@ -47,6 +47,7 @@ public static class PlutoComm
         "SET_CONTROL_BOUND",
         "RESET_PACKETNO",
         "SET_CONTROL_DIR",
+        "SET_AAN_TARGET",
         "HEARTBEAT"
     };
     public static readonly string[] ERRORTYPES = new string[] {
@@ -409,6 +410,23 @@ public static class PlutoComm
         );
     }
 
+    public static void setAANTarget(float tgt0, float t0, float tgt1, float dur)
+    {
+        Debug.Log($"tgt0: {tgt0:F2} | t0: {t0:F2} | tgt1: {tgt1:F2} | dur: {dur:F2}");
+        byte[] tgt0Bytes = BitConverter.GetBytes(tgt0);
+        byte[] t0Bytes = BitConverter.GetBytes(t0);
+        byte[] tgt1Bytes = BitConverter.GetBytes(tgt1);
+        byte[] durBytes = BitConverter.GetBytes(dur);
+        JediComm.SendMessage(
+            new byte[] {
+                (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "SET_AAN_TARGET")],
+                tgt0Bytes[0], tgt0Bytes[1], tgt0Bytes[2], tgt0Bytes[3],
+                t0Bytes[0], t0Bytes[1], t0Bytes[2], t0Bytes[3],
+                tgt1Bytes[0], tgt1Bytes[1], tgt1Bytes[2], tgt1Bytes[3],
+                durBytes[0], durBytes[1], durBytes[2], durBytes[3]
+            }
+        );
+    }
     public static void setControlBound(float ctrlBound)
     {
         // Limit the value to be between 0 and 1.
@@ -437,17 +455,17 @@ public static class PlutoComm
             }
         );
     }
-    public static void setAPRom(sbyte aRomMin, sbyte aRomMax, sbyte pRomMin, sbyte pRomMax)
-    {
-        Debug.Log($"{(sbyte)aRomMin}, {(sbyte)aRomMax}, {(sbyte)pRomMin}, {(sbyte)pRomMax}");
-        Debug.Log($"{(byte)aRomMin}, {(byte)aRomMax}, {(byte)pRomMin}, {(byte)pRomMax}");
-        JediComm.SendMessage(
-            new byte[] {
-                (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "SET_APROM")],
-                (byte) aRomMin, (byte) aRomMax, (byte) pRomMin, (byte) pRomMax
-            }
-        );
-    }
+    //public static void setAPRom(sbyte aRomMin, sbyte aRomMax, sbyte pRomMin, sbyte pRomMax)
+    //{
+    //    Debug.Log($"{(sbyte)aRomMin}, {(sbyte)aRomMax}, {(sbyte)pRomMin}, {(sbyte)pRomMax}");
+    //    Debug.Log($"{(byte)aRomMin}, {(byte)aRomMax}, {(byte)pRomMin}, {(byte)pRomMax}");
+    //    JediComm.SendMessage(
+    //        new byte[] {
+    //            (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "SET_APROM")],
+    //            (byte) aRomMin, (byte) aRomMax, (byte) pRomMin, (byte) pRomMax
+    //        }
+    //    );
+    //}
     public static void resetPacketNo()
     {
         JediComm.SendMessage(new byte[] { (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "RESET_PACKETNO")] });

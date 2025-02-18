@@ -43,8 +43,6 @@ public class Pluto_SceneHandler : MonoBehaviour
     public UnityEngine.UI.Slider sldrTarget;
     public TextMeshProUGUI textCtrlBound;
     public UnityEngine.UI.Slider sldrCtrlBound;
-    public TextMeshProUGUI textCtrlDir;
-    public UnityEngine.UI.Slider sldrCtrlDir;
     public TMP_InputField inputDuration;
     public UnityEngine.UI.Button btnNextRandomTarget;
 
@@ -62,8 +60,8 @@ public class Pluto_SceneHandler : MonoBehaviour
     // APRom variables.
     private bool isAPRom = false;
     private bool _changeAPRomSldrLimits = false;
-    private float aRomL, aRomH;
-    private float pRomL, pRomH;
+    private float aRomL = 0, aRomH = 0;
+    private float pRomL = 0, pRomH = 0;
 
     // Control variables
     private bool isControl = false;
@@ -352,7 +350,7 @@ public class Pluto_SceneHandler : MonoBehaviour
             _promH = (sbyte) sldrPromMax.value;
         }
         // Send the AROM and PROM values to PLUTO.
-        PlutoComm.setAPRom(_aromL, _aromH, _promL, _promH);
+        //PlutoComm.setAPRom(_aromL, _aromH, _promL, _promH);
         // Get out of the APRom setting mode.
         isAPRom = false;
         tglAPRomSelect.isOn = false;
@@ -385,7 +383,12 @@ public class Pluto_SceneHandler : MonoBehaviour
             // Choose a random target within the PROM range.
             _finalTarget = 0.0f; // UnityEngine.Random.Range(PlutoComm.pRomL, PlutoComm.pRomH);
             // Set the target on the device.
-            PlutoComm.setControlTarget(_finalTarget);
+            PlutoComm.setAANTarget(
+                PlutoComm.angle,
+                UnityEngine.Random.Range(-1.0f, 0.0f),
+                UnityEngine.Random.Range(-60, 60),
+                UnityEngine.Random.Range(2.0f, 4.0f)
+            );
         }
     }
 
@@ -402,8 +405,21 @@ public class Pluto_SceneHandler : MonoBehaviour
 
     private void OnControlModeChange()
     {
-        // Send control mode to PLUTO
-        PlutoComm.setControlType(PlutoComm.CONTROLTYPE[ddControlSelect.value]);
+        // Check if the selected control PositionAAN. If so, check if the APROM has been set.
+        bool _aromCond = (aRomL == 0) && (aRomH == 0);
+        bool _promCond = (pRomL == 0) && (pRomH == 0);
+        if (PlutoComm.CONTROLTYPE[ddControlSelect.value] == "POSITIONAAN" && (_aromCond || _promCond))
+        {
+            // Set the control mode to NONE.
+            PlutoComm.setControlType("NONE");
+            // Change the dropdown value to NONE.
+            ddControlSelect.value = 0;
+        }
+        else 
+        {
+            // Set control mode to PLUTO.
+            PlutoComm.setControlType(PlutoComm.CONTROLTYPE[ddControlSelect.value]);
+        }
     }
 
     private void OnControlChange()

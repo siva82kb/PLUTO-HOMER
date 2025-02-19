@@ -46,15 +46,13 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
     public UnityEngine.UI.Toggle tglDataLog;
 
     // AROM parameters
-    private float[] aromValue = new float[2] { -30f, 30f };
+    private float[] aromValue = new float[2] { -20f, 20f };
 
     // PROM parameters
     private float[] promValue = new float[2] { -60.0f, 60.0f };
 
     // Control variables
     private bool isRunning = false;
-    //private float controlTarget = 0.0f;
-    //private float controlBound = 0.0f;
     private const float tgtDuration = 3.0f;
     private float _currentTime = 0;
     private float _initialTarget = 0;
@@ -70,14 +68,17 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         Rest,           // Resting state
         SetTarget,      // Set the target
         Moving,         // Start Movement.
+        RelaxToArom,    // Relax control to reach nearest AROM edge.
+        AromMoving,     // Moving in the AROM.
+        Assisting,      // Assisting movement.
         Success,        // Successfull reach
         Failure,        // Failed reach
     }
     private DiscreteMovementTrialState _trialState;
     private static readonly IReadOnlyList<float> stateDurations = Array.AsReadOnly(new float[] {
-        2.50f,          // Rest duration
+        3.00f,          // Rest duration
         0.25f,          // Target set duration
-        5.00f,          // Maximum movement duration
+        6.00f,          // Maximum movement duration
         0.25f,          // Successful reach
         0.25f,          // Failed reach
     });
@@ -291,11 +292,10 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         btnStartStop.onClick.AddListener(delegate { OnStartStopDemo(); });
 
         // PLUTO Diagnostics Button click.
-        btnDiagnsotics.onClick.AddListener(() => SceneManager.LoadScene(0));
+        btnDiagnsotics.onClick.AddListener(() => SceneManager.LoadScene(6));
 
         // Listen to PLUTO's event
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
-        //PlutoComm.OnControlModeChange += onPlutoControlModeChange;
         PlutoComm.OnNewPlutoData += onNewPlutoData;
     }
 

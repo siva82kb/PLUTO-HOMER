@@ -35,6 +35,10 @@ public static class AppData
     public static int gameScore;
     public static int reps;
 
+    // AROM/PROM values
+    public static float[] aRom = new float[2];
+    public static float[] pRom = new float[2];
+
     // Game 
     public static bool isGameLogging;
 

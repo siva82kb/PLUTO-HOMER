@@ -32,5 +32,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/homer_aan.unity
     guid: 9f145429f92e149449428e347fae6809
+  - enabled: 1
+    path: Assets/Scenes/plutoDiagnostics.unity
+    guid: e159e2c4e7633f240b72c735975b2139
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

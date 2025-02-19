@@ -27,14 +27,12 @@ public class Pluto_SceneHandler : MonoBehaviour
     public TextMeshProUGUI textCalibMessage;
 
     // AP ROM
-    public UnityEngine.UI.Toggle tglAPRomSelect;
     public UnityEngine.UI.Slider sldrAromMin;
     public UnityEngine.UI.Slider sldrAromMax;
     public UnityEngine.UI.Slider sldrPromMin;
     public UnityEngine.UI.Slider sldrPromMax;
     public TextMeshProUGUI textArom;
     public TextMeshProUGUI textProm;
-    public UnityEngine.UI.Button btnSetAPRom;
 
     // Control
     public UnityEngine.UI.Toggle tglControlSelect;
@@ -58,7 +56,6 @@ public class Pluto_SceneHandler : MonoBehaviour
     private CalibrationState calibState = CalibrationState.WAIT_FOR_ZERO_SET;
 
     // APRom variables.
-    private bool isAPRom = false;
     private bool _changeAPRomSldrLimits = false;
     private float aRomL = 0, aRomH = 0;
     private float pRomL = 0, pRomH = 0;
@@ -68,7 +65,6 @@ public class Pluto_SceneHandler : MonoBehaviour
     private bool _changeSliderLimits = false;
     private float controlTarget = 0.0f;
     private float controlBound = 0.0f;
-    private sbyte controlDir = 0;
     private float tgtDuration = 2.0f;
     private float _currentTime = 0;
     private float _initialTarget = 0;
@@ -136,7 +132,6 @@ public class Pluto_SceneHandler : MonoBehaviour
     {
         // Toggle button
         tglCalibSelect.onValueChanged.AddListener(delegate { OnCalibrationChange(); });
-        tglAPRomSelect.onValueChanged.AddListener(delegate { OnAPRomChange(); });
         tglControlSelect.onValueChanged.AddListener(delegate { OnControlChange(); });
         tglDataLog.onValueChanged.AddListener(delegate { OnDataLogChange(); });
 
@@ -150,20 +145,27 @@ public class Pluto_SceneHandler : MonoBehaviour
         sldrPromMax.onValueChanged.AddListener(delegate { OnSldrPromMaxChange(); });
         sldrTarget.onValueChanged.AddListener(delegate { OnControlTargetChange(); });
         sldrCtrlBound.onValueChanged.AddListener(delegate { OnControlBoundChange(); });
-        sldrCtrlDir.onValueChanged.AddListener(delegate { OnControlDirChange(); });
 
         // Button click.
-        btnSetAPRom.onClick.AddListener(delegate { OnARRomSet(); });
         btnNextRandomTarget.onClick.AddListener(delegate { OnNextRandomTarget(); });
-
+            
         // AAN Demo Button click.
-        btnAANDemo.onClick.AddListener(() => SceneManager.LoadScene(5));
+        btnAANDemo.onClick.AddListener(delegate { OnAANDemoSceneLoad(); });
 
         // Listen to PLUTO's event
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
         PlutoComm.OnControlModeChange += onPlutoControlModeChange;
         PlutoComm.OnMechanismChange += PlutoComm_OnMechanismChange;
         PlutoComm.OnNewPlutoData += onNewPlutoData;
+    }
+
+    private void OnAANDemoSceneLoad()
+    {
+        AppData.aRom[0] = aRomL;
+        AppData.aRom[1] = aRomH;
+        AppData.pRom[0] = pRomL;
+        AppData.pRom[1] = pRomH;
+        SceneManager.LoadScene(5);
     }
 
     private void PlutoComm_OnMechanismChange()
@@ -317,19 +319,6 @@ public class Pluto_SceneHandler : MonoBehaviour
         }
     }
 
-    private void OnControlDirChange()
-    {
-        string _mech = PlutoComm.MECHANISMS[PlutoComm.mechanism];
-        string _ctrlType = PlutoComm.CONTROLTYPE[PlutoComm.controlType];
-        if ((_ctrlType == "POSITIONAAN"))
-        {
-            controlDir = (sbyte)sldrCtrlDir.value;
-            PlutoComm.setControlDir(controlDir);
-            // Print the hex value of the control direction.
-            Debug.Log($"Control Direction: {controlDir:X}");
-        }
-    }
-
     private void OnARRomSet()
     {
         sbyte _aromL, _aromH, _promL, _promH;
@@ -349,11 +338,6 @@ public class Pluto_SceneHandler : MonoBehaviour
             _promL = (sbyte) sldrPromMin.value;
             _promH = (sbyte) sldrPromMax.value;
         }
-        // Send the AROM and PROM values to PLUTO.
-        //PlutoComm.setAPRom(_aromL, _aromH, _promL, _promH);
-        // Get out of the APRom setting mode.
-        isAPRom = false;
-        tglAPRomSelect.isOn = false;
     }
 
     private void OnNextRandomTarget()
@@ -438,11 +422,6 @@ public class Pluto_SceneHandler : MonoBehaviour
         }
     }
 
-    private void OnAPRomChange()
-    {
-        isAPRom = tglAPRomSelect.isOn;
-    }
-
     private void OnDataLogChange()
     {
         // Close file.
@@ -508,14 +487,13 @@ public class Pluto_SceneHandler : MonoBehaviour
         // Fill dropdown list
         ddCalibMech.ClearOptions();
         ddCalibMech.AddOptions(PlutoComm.MECHANISMSTEXT.ToList());
-        ddControlSelect.AddOptions(PlutoComm.CONTROLTYPETEXT.ToList());
+        List<string> _ctrlList = PlutoComm.CONTROLTYPETEXT.ToList();
+        ddControlSelect.AddOptions(_ctrlList.Take(_ctrlList.Count - 1).ToList());
         // Clear panel selections.
         tglCalibSelect.enabled = true;
         tglCalibSelect.isOn = false;
         tglControlSelect.enabled = true;
         tglControlSelect.isOn = false;
-        tglAPRomSelect.enabled = true;
-        tglAPRomSelect.isOn = false;
     }
 
     private void UpdateUI()
@@ -545,6 +523,9 @@ public class Pluto_SceneHandler : MonoBehaviour
 
         // Updat Control Panel.
         UpdateControlPanel();
+
+        // AANDemoButton
+        btnAANDemo.enabled = isValidAPRomSet();
     }
 
     private void UpdateControlPanel()
@@ -557,10 +538,9 @@ public class Pluto_SceneHandler : MonoBehaviour
         string _mech = PlutoComm.MECHANISMS[PlutoComm.mechanism];
         string _ctrlType = PlutoComm.CONTROLTYPE[PlutoComm.controlType];
         sldrTarget.enabled = (isControl && ((_ctrlType == "TORQUE") || (_ctrlType == "POSITION")) && !_changingTarget);
-        sldrCtrlBound.enabled = isControl && ((_ctrlType == "POSITION") || (_ctrlType == "POSITIONAAN"));
-        sldrCtrlDir.enabled = isControl && (_ctrlType == "POSITIONAAN");
+        sldrCtrlBound.enabled = isControl && (_ctrlType == "POSITION");
         inputDuration.enabled = isControl && (_ctrlType == "POSITION");
-        btnNextRandomTarget.enabled = isControl && ((_ctrlType == "POSITION") || (_ctrlType == "POSITIONAAN"));
+        btnNextRandomTarget.enabled = isControl && (_ctrlType == "POSITION");
 
         // Leave if control is not enabled.
         if (isControl == false) return;
@@ -582,7 +562,6 @@ public class Pluto_SceneHandler : MonoBehaviour
         string _unit = (_ctrlType == "TORQUE") ? "Nm" : "deg";
         textTarget.SetText($"Target: {controlTarget,7:F2} {_unit}");
         textCtrlBound.SetText($"Control Bound: {controlBound,7:F2}");
-        textCtrlDir.SetText($"Control Direction: {controlDir,7:F2}");
     }
 
     private void ChangeControlSliderLimits(string controlType, string mechanism)
@@ -618,21 +597,12 @@ public class Pluto_SceneHandler : MonoBehaviour
             sldrCtrlBound.minValue = 0;
             sldrCtrlBound.maxValue = 1;
             sldrCtrlBound.value = 0.0f;
-            // Control Direction slider.
-            sldrCtrlDir.value = 0;
         }
         _changeSliderLimits = false;
     }
 
     private void UpdateAPRomPanel()
     {
-        // APROM panel is enabled only when the control is NONE.
-        sldrAromMin.enabled = isAPRom;
-        sldrAromMax.enabled = isAPRom;
-        sldrPromMin.enabled = isAPRom;
-        sldrPromMax.enabled = isAPRom;
-        btnSetAPRom.enabled = isAPRom;
-
         // Check if slider limits have to be changed.
         if (_changeAPRomSldrLimits)
         {
@@ -660,11 +630,7 @@ public class Pluto_SceneHandler : MonoBehaviour
                 sldrPromMax.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
 
             }
-            //// Update the AROM and PROM values.
-            //sldrAromMin.value = PlutoComm.aRomL;
-            //sldrAromMax.value = PlutoComm.aRomH;
-            //sldrPromMin.value = PlutoComm.pRomL;
-            //sldrPromMax.value = PlutoComm.pRomH;
+            // Update the AROM and PROM values.
             _changeAPRomSldrLimits = false;
         }
     }
@@ -767,6 +733,13 @@ public class Pluto_SceneHandler : MonoBehaviour
                 tglCalibSelect.isOn = false;
                 break;
         }
+    }
+
+    bool isValidAPRomSet()
+    {
+        bool _aromCond = (aRomL != 0) && (aRomH != 0);
+        bool _promCond = (pRomL != 0) && (pRomH != 0);
+        return _aromCond && _promCond;
     }
 
     void OnSceneUnloaded(Scene scene)

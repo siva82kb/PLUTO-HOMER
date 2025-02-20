@@ -26,14 +26,6 @@ public class Pluto_SceneHandler : MonoBehaviour
     public Dropdown ddCalibMech;
     public TextMeshProUGUI textCalibMessage;
 
-    // AP ROM
-    public UnityEngine.UI.Slider sldrAromMin;
-    public UnityEngine.UI.Slider sldrAromMax;
-    public UnityEngine.UI.Slider sldrPromMin;
-    public UnityEngine.UI.Slider sldrPromMax;
-    public TextMeshProUGUI textArom;
-    public TextMeshProUGUI textProm;
-
     // Control
     public UnityEngine.UI.Toggle tglControlSelect;
     public Dropdown ddControlSelect;
@@ -54,11 +46,6 @@ public class Pluto_SceneHandler : MonoBehaviour
     private bool isCalibrating = false;
     private enum CalibrationState { WAIT_FOR_ZERO_SET, ZERO_SET, ROM_SET, ERROR, ALL_DONE };
     private CalibrationState calibState = CalibrationState.WAIT_FOR_ZERO_SET;
-
-    // APRom variables.
-    private bool _changeAPRomSldrLimits = false;
-    private float aRomL = 0, aRomH = 0;
-    private float pRomL = 0, pRomH = 0;
 
     // Control variables
     private bool isControl = false;
@@ -139,10 +126,6 @@ public class Pluto_SceneHandler : MonoBehaviour
         ddControlSelect.onValueChanged.AddListener(delegate { OnControlModeChange(); });
 
         // Slider value change.
-        sldrAromMin.onValueChanged.AddListener(delegate { OnSldrAromMinChange(); });
-        sldrAromMax.onValueChanged.AddListener(delegate { OnSldrAromMaxChange(); });
-        sldrPromMin.onValueChanged.AddListener(delegate { OnSldrPromMinChange(); });
-        sldrPromMax.onValueChanged.AddListener(delegate { OnSldrPromMaxChange(); });
         sldrTarget.onValueChanged.AddListener(delegate { OnControlTargetChange(); });
         sldrCtrlBound.onValueChanged.AddListener(delegate { OnControlBoundChange(); });
 
@@ -161,16 +144,11 @@ public class Pluto_SceneHandler : MonoBehaviour
 
     private void OnAANDemoSceneLoad()
     {
-        AppData.aRom[0] = aRomL;
-        AppData.aRom[1] = aRomH;
-        AppData.pRom[0] = pRomL;
-        AppData.pRom[1] = pRomH;
         SceneManager.LoadScene(5);
     }
 
     private void PlutoComm_OnMechanismChange()
     {
-        _changeAPRomSldrLimits = true;
     }
 
     private void onPlutoControlModeChange()
@@ -220,72 +198,6 @@ public class Pluto_SceneHandler : MonoBehaviour
         //PlutoComm.setDiagnosticMode();
     }
 
-    private void OnSldrAromMinChange()
-    {
-        if (sldrAromMin.value >= sldrAromMax.value)
-        {
-            sldrAromMax.value = sldrAromMin.value;
-        }
-        if (sldrPromMin.value >= sldrAromMin.value)
-        {
-            sldrPromMin.value = sldrAromMin.value;
-        }
-        aRomL = sldrAromMin.value;
-        aRomH = sldrAromMax.value;
-        UpdateAPRomText();
-    }
-
-    private void OnSldrAromMaxChange()
-    {
-        if (sldrAromMin.value >= sldrAromMax.value)
-        {
-            sldrAromMin.value = sldrAromMax.value;
-        }
-        if (sldrAromMax.value >= sldrPromMax.value)
-        {
-            sldrPromMax.value = sldrAromMax.value;
-        }
-        aRomL = sldrAromMin.value;
-        aRomH = sldrAromMax.value; 
-        UpdateAPRomText();
-    }
-
-    private void OnSldrPromMinChange()
-    {
-        if (sldrPromMin.value >= sldrPromMax.value)
-        {
-            sldrPromMax.value = sldrPromMin.value;
-        }
-        if (sldrPromMin.value >= sldrAromMin.value)
-        {
-            sldrAromMin.value = sldrPromMin.value;
-        }
-        pRomL = sldrPromMin.value;
-        pRomH = sldrPromMax.value; 
-        UpdateAPRomText();
-    }
-
-    private void OnSldrPromMaxChange()
-    {
-        if (sldrAromMin.value >= sldrPromMax.value)
-        {
-            sldrPromMin.value = sldrPromMax.value;
-        }
-        if (sldrPromMax.value <= sldrAromMax.value)
-        {
-            sldrAromMax.value = sldrPromMax.value;
-        }
-        pRomL = sldrPromMin.value;
-        pRomH = sldrPromMax.value;
-        UpdateAPRomText();
-    }
-
-    private void UpdateAPRomText()
-    {
-        textArom.SetText($"AROM: {aRomL,6:F1} - {aRomH,6:F1}");
-        textProm.SetText($"PROM: {pRomL,6:F1} - {pRomH,6:F1}");
-    }
-
     private void OnControlTargetChange()
     {
         string _mech = PlutoComm.MECHANISMS[PlutoComm.mechanism];
@@ -316,27 +228,6 @@ public class Pluto_SceneHandler : MonoBehaviour
         {
             controlBound = sldrCtrlBound.value;
             PlutoComm.setControlBound(controlBound);
-        }
-    }
-
-    private void OnARRomSet()
-    {
-        sbyte _aromL, _aromH, _promL, _promH;
-        // Some jugad needed for HOC.
-        if (PlutoComm.MECHANISMS[PlutoComm.mechanism] == "HOC")
-        {
-            // Set the AROM and PROM values.
-            _aromL = (sbyte) PlutoComm.getHOCAngle(sldrAromMin.value);
-            _aromH = (sbyte) PlutoComm.getHOCAngle(sldrAromMax.value);
-            _promL = (sbyte) PlutoComm.getHOCAngle(sldrPromMin.value);
-            _promH = (sbyte) PlutoComm.getHOCAngle(sldrPromMax.value);
-        } else
-        {
-            // Set the AROM and PROM values.
-            _aromL = (sbyte) sldrAromMin.value;
-            _aromH = (sbyte) sldrAromMax.value;
-            _promL = (sbyte) sldrPromMin.value;
-            _promH = (sbyte) sldrPromMax.value;
         }
     }
 
@@ -389,21 +280,8 @@ public class Pluto_SceneHandler : MonoBehaviour
 
     private void OnControlModeChange()
     {
-        // Check if the selected control PositionAAN. If so, check if the APROM has been set.
-        bool _aromCond = (aRomL == 0) && (aRomH == 0);
-        bool _promCond = (pRomL == 0) && (pRomH == 0);
-        if (PlutoComm.CONTROLTYPE[ddControlSelect.value] == "POSITIONAAN" && (_aromCond || _promCond))
-        {
-            // Set the control mode to NONE.
-            PlutoComm.setControlType("NONE");
-            // Change the dropdown value to NONE.
-            ddControlSelect.value = 0;
-        }
-        else 
-        {
-            // Set control mode to PLUTO.
-            PlutoComm.setControlType(PlutoComm.CONTROLTYPE[ddControlSelect.value]);
-        }
+        // Set control mode to PLUTO.
+        PlutoComm.setControlType(PlutoComm.CONTROLTYPE[ddControlSelect.value]);
     }
 
     private void OnControlChange()
@@ -518,14 +396,8 @@ public class Pluto_SceneHandler : MonoBehaviour
             ddCalibMech.value = PlutoComm.mechanism - 1;
         }
 
-        // Set slider limits.
-        UpdateAPRomPanel();
-
         // Updat Control Panel.
         UpdateControlPanel();
-
-        // AANDemoButton
-        btnAANDemo.enabled = isValidAPRomSet();
     }
 
     private void UpdateControlPanel()
@@ -599,40 +471,6 @@ public class Pluto_SceneHandler : MonoBehaviour
             sldrCtrlBound.value = 0.0f;
         }
         _changeSliderLimits = false;
-    }
-
-    private void UpdateAPRomPanel()
-    {
-        // Check if slider limits have to be changed.
-        if (_changeAPRomSldrLimits)
-        {
-            // Update slider limits
-            if (PlutoComm.MECHANISMS[PlutoComm.mechanism] == "HOC")
-            {
-                sldrAromMin.minValue = PlutoComm.getHOCDisplay(0);
-                sldrAromMin.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
-                sldrAromMax.minValue = PlutoComm.getHOCDisplay(0);
-                sldrAromMax.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
-                sldrPromMin.minValue = PlutoComm.getHOCDisplay(0);
-                sldrPromMin.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
-                sldrPromMax.minValue = PlutoComm.getHOCDisplay(0);
-                sldrPromMax.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
-            }
-            else
-            {
-                sldrAromMin.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-                sldrAromMin.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-                sldrAromMax.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-                sldrAromMax.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-                sldrPromMin.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-                sldrPromMin.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-                sldrPromMax.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-                sldrPromMax.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-
-            }
-            // Update the AROM and PROM values.
-            _changeAPRomSldrLimits = false;
-        }
     }
 
     private void UpdateDataDispay()
@@ -733,13 +571,6 @@ public class Pluto_SceneHandler : MonoBehaviour
                 tglCalibSelect.isOn = false;
                 break;
         }
-    }
-
-    bool isValidAPRomSet()
-    {
-        bool _aromCond = (aRomL != 0) && (aRomH != 0);
-        bool _promCond = (pRomL != 0) && (pRomH != 0);
-        return _aromCond && _promCond;
     }
 
     void OnSceneUnloaded(Scene scene)

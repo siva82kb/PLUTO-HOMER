@@ -46,10 +46,10 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
     public UnityEngine.UI.Toggle tglDataLog;
 
     // AROM parameters
-    private float[] aromValue = new float[2] { -20f, 20f };
+    private float[] aRomValue = new float[2] { -20f, 20f };
 
     // PROM parameters
-    private float[] promValue = new float[2] { -60.0f, 60.0f };
+    private float[] pRomValue = new float[2] { -60.0f, 60.0f };
 
     // Control variables
     private bool isRunning = false;
@@ -67,9 +67,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
     {
         Rest,           // Resting state
         SetTarget,      // Set the target
-        AromMoving,     // Moving in the AROM.
-        RelaxToArom,    // Relax control to reach nearest AROM edge.
-        AssistToTarget, // Assisting to reach target.
+        Moving,         // Moving to target.
         Success,        // Successfull reach
         Failure,        // Failed reach
     }
@@ -77,7 +75,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
     private static readonly IReadOnlyList<float> stateDurations = Array.AsReadOnly(new float[] {
         3.00f,          // Rest duration
         0.25f,          // Target set duration
-        6.00f,          // Maximum movement duration
+        10.00f,          // Moving duration
         0.25f,          // Successful reach
         0.25f,          // Failed reach
     });
@@ -190,76 +188,88 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         float _deltime = trialDuration - stateStartTime;
         bool _statetimeout = _deltime >= stateDurations[(int)_trialState];
         // Time when target is reached.
-        bool _tgtreached = Math.Abs(_trialTarget - PlutoComm.angle) <= 5.0f;
-        //Moving,         // Start Movement.
-        //RelaxToArom,    // Relax control to reach nearest AROM edge.
-        //AromMoving,     // Moving in the AROM.
-        //Assisting,      // Assisting movement.
-        //Success,        // Successfull reach
-        //Failure,        // Failed reach
+        bool _intgt = Math.Abs(_trialTarget - PlutoComm.angle) <= 5.0f;
+        Debug.Log(_statetimeout);
         switch (_trialState)
         {
             case DiscreteMovementTrialState.Rest:
-                //// If the current target is not an INVALID_TARGET, then set it to INVALID_TARGET.
-                //if (PlutoComm.target != PlutoComm.INVALID_TARGET)
-                //{
-                //    PlutoComm.ResetAANTarget();
-                //}
-                // Check if the rest time has run out.
-                if (_statetimeout)
-                {
-                    SetTrialState(DiscreteMovementTrialState.SetTarget);
-                }
+                if (_statetimeout == false) return;
+                SetTrialState(DiscreteMovementTrialState.SetTarget);
                 break;
             case DiscreteMovementTrialState.SetTarget:
-                if (_statetimeout)
-                {
-                    switch (aanCtrler.getTargetType())
-                    {
-                        case HOMERPlutoAANController.TargetType.InAromFromArom:
-                        case HOMERPlutoAANController.TargetType.InPromFromArom:
-                            SetTrialState(DiscreteMovementTrialState.AromMoving);
-                            break;
-                        case HOMERPlutoAANController.TargetType.InAromFromProm:
-                        case HOMERPlutoAANController.TargetType.InPromFromPromCrossArom:
-                            SetTrialState(DiscreteMovementTrialState.RelaxToArom);
-                            break;
-                        case HOMERPlutoAANController.TargetType.InPromFromPromNoCrossArom:
-                            SetTrialState(DiscreteMovementTrialState.AssistToTarget);
-                            break;
-                    }
-                }
+                if (_statetimeout == false) return;
+                SetTrialState(DiscreteMovementTrialState.Moving);
                 break;
-            //case DiscreteMovementTrialState.Moving:
-
-            //    break;
-            //// Update control bound smoothly.
-            //UpdateControlBoundSmoothly();
-            //// Update the position control target smoothly.
-            //UpdatePositionTargetSmoothly();
-            //// Check if the target has been reached
-            //if (_tgtreached)
-            //{
-            //    _tempIntraStateTimer += Time.deltaTime;
-            //}
-            //else
-            //{
-            //    _tempIntraStateTimer = 0;
-            //}
-            //// Check if target time has been reached.
-            //if (_tempIntraStateTimer >= tgtHoldDuration)
-            //{
-            //    SetTrialState(DiscreteMovementTrialState.Success);
-            //}
-            //else if (_statetimeout)
-            //{
-            //    SetTrialState(DiscreteMovementTrialState.Failure);
-            //}
-            //break;
+            case DiscreteMovementTrialState.Moving:
+                // Check of the target has been reached.
+                _tempIntraStateTimer += _intgt ? Time.deltaTime : -_tempIntraStateTimer;
+                // Target reached successfull.
+                bool _tgtreached = _tempIntraStateTimer >= tgtHoldDuration;
+                // Update AANController.
+                aanCtrler.Update(PlutoComm.angle, Time.deltaTime, _statetimeout || _tgtreached);
+                // Set AAN target if needed.
+                if (aanCtrler.stateChange) UpdatePlutoAANTarget();
+                // Change state if needed.
+                if (_tgtreached) SetTrialState(DiscreteMovementTrialState.Success);
+                if (_statetimeout) SetTrialState(DiscreteMovementTrialState.Failure);
+                break;
             case DiscreteMovementTrialState.Success:
             case DiscreteMovementTrialState.Failure:
                 if (_statetimeout) SetTrialState(DiscreteMovementTrialState.Rest);
                 break;
+        }
+    }
+
+    private void UpdatePlutoAANTarget()
+    {
+        switch(aanCtrler.state)
+        {
+            case HOMERPlutoAANController.HOMERPlutoAANState.AromMoving:
+                // Reset AAN Target
+                PlutoComm.ResetAANTarget();
+                break;
+            case HOMERPlutoAANController.HOMERPlutoAANState.RelaxToArom:
+                // Set AAN Target to the nearest AROM edge.
+                PlutoComm.setAANTarget(PlutoComm.angle, 0, aanCtrler.getNearestAromEdge(PlutoComm.angle), 1.0f);
+                break;
+            case HOMERPlutoAANController.HOMERPlutoAANState.AssistToTarget:
+                // Set AAN Target to the nearest AROM edge.
+                PlutoComm.setAANTarget(PlutoComm.angle, 0, aanCtrler.targetPosition, 3.0f);
+                break;
+        }
+    }
+    private void HandleMoving(bool stateTimeOut, bool tgtReached)
+    {
+        if (stateTimeOut) SetTrialState(DiscreteMovementTrialState.Failure);
+        // Check if the target is in AROM.
+        if (aanCtrler.isTargetInArom())
+        {
+            // Just wait to see if the target has been reached.
+            _tempIntraStateTimer += tgtReached ? Time.deltaTime : - _tempIntraStateTimer;
+
+            // Check if target time has been reached.
+            if (_tempIntraStateTimer >= tgtHoldDuration)
+            {
+                SetTrialState(DiscreteMovementTrialState.Success);
+            }
+        }
+        else
+        {
+            // Check of the AROM boundary has been reached to initiate AAN assistance.
+            if (aanCtrler.isAromBoundaryReached(PlutoComm.angle))
+            {
+                SetTrialState(DiscreteMovementTrialState.Success);
+            }
+        }
+    }
+
+    private void HandleRelaxToArom(bool stateTimeOut)
+    {
+        if (stateTimeOut) SetTrialState(DiscreteMovementTrialState.Failure);
+        // Check if the AROM boundary has been reached.
+        if (aanCtrler.isAromBoundaryReached(PlutoComm.angle))
+        {
+            SetTrialState(DiscreteMovementTrialState.Success);
         }
     }
 
@@ -268,11 +278,6 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         switch (newState)
         {
             case DiscreteMovementTrialState.Rest:
-                //// If the current target is not an INVALID_TARGET, then set it to INVALID_TARGET.
-                //if (PlutoComm.target != PlutoComm.INVALID_TARGET)
-                //{
-                //    PlutoComm.ResetAANTarget();
-                //}
                 // Reset trial in the AANController.
                 aanCtrler.resetTrial();
                 // Reset stuff.
@@ -291,43 +296,20 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
             case DiscreteMovementTrialState.SetTarget:
                 // Random select target from the appropriate range.
                 float _tgtscale = UnityEngine.Random.Range(0.0f, 1.0f);
-                _trialTarget = _tgtscale * (promValue[1] - promValue[0]) + promValue[0];
+                _trialTarget = _tgtscale * (pRomValue[1] - pRomValue[0]) + pRomValue[0];
                 // Change target location.
                 targetCircle.transform.position = new Vector3(
                     (2 * _trialTarget / PlutoComm.CALIBANGLE[PlutoComm.mechanism]) * xmax,
                     targetCircle.transform.position.y,
                     targetCircle.transform.position.z
                 );
-                // Update AANController.
-                aanCtrler.setNewTrialDetails(PlutoComm.angle, _trialTarget);
+                PlutoComm.setControlBound(1.0f);
                 break;
-            case DiscreteMovementTrialState.AromMoving:
-                // No assistance needed. Reset AAN target.
-                PlutoComm.ResetAANTarget();
+            case DiscreteMovementTrialState.Moving:
+                // Reset the intrastate timer.
+                _tempIntraStateTimer = 0f;
+                aanCtrler.setNewTrialDetails(PlutoComm.angle, _trialTarget, stateDurations[(int)DiscreteMovementTrialState.Moving]);
                 break;
-            case DiscreteMovementTrialState.RelaxToArom:
-                // Set the AAN target to the nearest AROM edge.
-                PlutoComm.setAANTarget(PlutoComm.angle, 0, aanCtrler.getNearestAromEdge(PlutoComm.angle), 1.0f);
-                break;
-            case DiscreteMovementTrialState.AssistToTarget:
-                // Check the current state.
-                if (_trialState == DiscreteMovementTrialState.SetTarget)
-                {
-                    // The target 
-                }
-                
-                break;
-
-            //case DiscreteMovementTrialState.Moving:
-            //    // Start the position control to the tatget location.
-            //    _initialTarget = PlutoComm.angle;
-            //    _finalTarget = _trialTarget;
-            //    // Set new trial target.
-            //    aanCtrler.setNewTrialDetails(_initialTarget, _finalTarget);
-            //    // Set control direction
-            //    PlutoComm.setControlDir(aanCtrler.getControlDirectionForTrial());
-            //    _tempIntraStateTimer = 0f;
-            //    break;
             case DiscreteMovementTrialState.Success:
                 // Update trial result.
                 aanCtrler.upateTrialResult(true);
@@ -432,7 +414,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         else
         {
             // Pluto AAN controller
-            aanCtrler = new HOMERPlutoAANController();
+            aanCtrler = new HOMERPlutoAANController(aRomValue, pRomValue);
             // Change button text
             btnStartStop.GetComponentInChildren<TMP_Text>().text = "Stop Demo";
             isRunning = true;
@@ -583,22 +565,22 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
 
         // Display AROM/PROM markers.
         aromLeft.transform.position = new Vector3(
-            (2 * aromValue[0] / PlutoComm.CALIBANGLE[PlutoComm.mechanism]) * xmax,
+            (2 * aRomValue[0] / PlutoComm.CALIBANGLE[PlutoComm.mechanism]) * xmax,
             aromLeft.transform.position.y,
             aromLeft.transform.position.z
         );
         aromRight.transform.position = new Vector3(
-            (2 * aromValue[1] / PlutoComm.CALIBANGLE[PlutoComm.mechanism]) * xmax,
+            (2 * aRomValue[1] / PlutoComm.CALIBANGLE[PlutoComm.mechanism]) * xmax,
             aromRight.transform.position.y,
             aromRight.transform.position.z
         );
         promLeft.transform.position = new Vector3(
-            (2 * promValue[0] / PlutoComm.CALIBANGLE[PlutoComm.mechanism]) * xmax,
+            (2 * pRomValue[0] / PlutoComm.CALIBANGLE[PlutoComm.mechanism]) * xmax,
             promLeft.transform.position.y,
             promLeft.transform.position.z
         );
         promRight.transform.position = new Vector3(
-            (2 * promValue[1] / PlutoComm.CALIBANGLE[PlutoComm.mechanism]) * xmax,
+            (2 * pRomValue[1] / PlutoComm.CALIBANGLE[PlutoComm.mechanism]) * xmax,
             promRight.transform.position.y,
             promRight.transform.position.z
         );
@@ -632,6 +614,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         _dispstr += $"\nControl       : {PlutoComm.control,6:F2}";
         _dispstr += $"\nCtrl Bnd (Dir): {PlutoComm.controlBound,6:F2} ({PlutoComm.controlDir})";
         _dispstr += $"\nTarget        : {PlutoComm.target,6:F2}";
+        _dispstr += $"\nDesired       : {PlutoComm.desired,6:F2}";
         if (PlutoComm.OUTDATATYPE[PlutoComm.dataType] == "DIAGNOSTICS")
         {
             _dispstr += $"\nError         : {PlutoComm.err,6:F2}";
@@ -653,7 +636,8 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         _dispstr += "-------------\n";
         _dispstr += $"Duration         : {trialDuration:F2}s ({_tempIntraStateTimer:F2}s)";
         _dispstr += $"\nState            : {_trialState}";
-        _dispstr += $"\nState Durtation  : {trialDuration - stateStartTime:F2}s";
+        _dispstr += $"\nAAN State        : {aanCtrler.state}";
+        _dispstr += $"\nState Durtation  : {trialDuration - stateStartTime:F2}s [{stateDurations[(int)_trialState]}s]";
         if (_trialState == DiscreteMovementTrialState.Rest)
         {
             _dispstr += $"\nTarget           : -";

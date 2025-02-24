@@ -94,24 +94,11 @@ public class PlutoAANController
     }
 }
 
-public struct HOMERPlutoAANTarget
-{
-    public float initialPosition;
-    public float targetPosition;
-    public float initialTimr;
-    public float reachDuration;
-
-    public HOMERPlutoAANTarget(float initPos, float tgtPos, float initTime, float reachDur)
-    {
-        initialPosition = initPos;
-        targetPosition = tgtPos;
-        initialTimr = initTime;
-        reachDuration = reachDur;
-    }
-}
-
 public class HOMERPlutoAANController
 {
+    public static readonly float MIN_AVG_SPEED = 10.0f;     // 10 deg per second is the minimum speed.
+    public static readonly float MAX_AVG_SPEED = 20.0f;     // 20 deg per second is the maximum speed.
+    public static readonly float MIN_REACH_TIME = 1.0f;     // Movement durations cannpt be shorter than 1 second.
     public enum TargetType
     {
         InAromFromArom,
@@ -158,7 +145,7 @@ public class HOMERPlutoAANController
     public Queue<float> positionQ { private set; get; }
     public Queue<float> timeQ { private set; get; }
     public float trialTime { private set; get; }
-    private HOMERPlutoAANTarget newAanTarget;
+    private float[] _newAanTarget;
 
     public HOMERPlutoAANController(float[] aRomValue, float[] pRomValue, float ctrlBound=0.16f, float forget = 0.9f, float assist = 1.1f, float bndry=0.8f)
     {
@@ -178,7 +165,8 @@ public class HOMERPlutoAANController
         positionQ = new Queue<float>();
         timeQ = new Queue<float>();
         trialTime = 0;
-        newAanTarget = new HOMERPlutoAANTarget(0, 0, 0, 0);
+        _newAanTarget = new float[5];
+        _newAanTarget[0] = 999; // Invalid target.
     }
 
     public void Update(float actual, float delT, bool trialDone)
@@ -194,8 +182,7 @@ public class HOMERPlutoAANController
 
         // Check if max duration is reached.
         bool _timeoutDone = (trialTime >= maxDuration) || trialDone;
-        Debug.Log($"AAN Timeout: {_timeoutDone}, Trial Time: {trialTime}s, Max Duration: {maxDuration}, TrialDone: {trialDone}");
-
+        
         // Update movement and time queues.
         UpdatePositionTimeQueues(actual, trialTime);
 
@@ -213,9 +200,13 @@ public class HOMERPlutoAANController
                     case HOMERPlutoAANController.TargetType.InAromFromProm:
                     case HOMERPlutoAANController.TargetType.InPromFromPromCrossArom:
                         state = HOMERPlutoAANState.RelaxToArom;
+                        // Generate target to relax to AROM.
+                        GenerateRelaxToAromAanTarget(actual);
                         break;
                     case HOMERPlutoAANController.TargetType.InPromFromPromNoCrossArom:
                         state = HOMERPlutoAANState.AssistToTarget;
+                        // Generate target to assist.
+                        GenerateAssistToTargetAanTarget(actual);
                         break;
                 }
                 break;
@@ -227,6 +218,8 @@ public class HOMERPlutoAANController
                 if ((_dir > 0 && actual >= aromBoundary * aRom[1]) || (_dir < 0 && actual <= aromBoundary * aRom[0]))
                 {
                     state = HOMERPlutoAANState.AssistToTarget;
+                    // Generate target to assist.
+                    GenerateAssistToTargetAanTarget(actual);
                 }
                 // Timeout or Done
                 if (_timeoutDone)
@@ -260,7 +253,7 @@ public class HOMERPlutoAANController
         }
     }
 
-    public void resetTrial()
+    public void ResetTrial()
     {
         initialPosition = 0;
         targetPosition = 0;
@@ -273,7 +266,7 @@ public class HOMERPlutoAANController
         trialTime = 0;
     }
 
-    public void setNewTrialDetails(float actual, float target, float maxDur)
+    public void SetNewTrialDetails(float actual, float target, float maxDur)
     {
         // Set the initial and target position for the trial.
         initialPosition = actual;
@@ -285,6 +278,11 @@ public class HOMERPlutoAANController
         timeQ.Enqueue(trialTime);
         stateChange = true;
         state = HOMERPlutoAANState.NewTrialTargetSet;
+    }
+
+    public float[] GetNewAanTarget()
+    {
+        return _newAanTarget[0] == 999 ? null : _newAanTarget.Skip(1).ToArray();
     }
 
     public bool isActualInArom(float actual)
@@ -355,6 +353,37 @@ public class HOMERPlutoAANController
         // Update the position queue.
         positionQ.Enqueue(actPos);
         timeQ.Enqueue(tTime);
+    }
+
+    private void GenerateRelaxToAromAanTarget(float actual)
+    {
+        // Find the nearest AROM edge.
+        float _nearestAromEdge = getNearestAromEdge(actual);
+        // There is valid target
+        _newAanTarget[0] = 0;
+        // Initial Position
+        _newAanTarget[1] = actual;
+        // Initial Time
+        _newAanTarget[2] = 0;
+        // Target Position
+        _newAanTarget[3] = _nearestAromEdge;
+        // Reach Duration
+        _newAanTarget[4] = Math.Min(maxDuration, Math.Max(MIN_REACH_TIME, Math.Abs(_nearestAromEdge - actual) / MAX_AVG_SPEED));
+    }
+
+    private void GenerateAssistToTargetAanTarget(float actual)
+    {
+        // There is a valid target
+        _newAanTarget[0] = 0;
+        // Initial Position
+        _newAanTarget[1] = actual;
+        // Initial Time
+        _newAanTarget[2] = 0;
+        // Target Position
+        _newAanTarget[3] = targetPosition;
+        // Reach Duration
+        float _maxAvgSpeed = Math.Max(MIN_AVG_SPEED, Math.Min(Math.Abs(actual - initialPosition) / trialTime, MAX_AVG_SPEED));
+        _newAanTarget[4] = Math.Min(maxDuration, Math.Max(MIN_REACH_TIME, Math.Abs(targetPosition - actual) / _maxAvgSpeed));
     }
 
     public void upateTrialResult(bool success)

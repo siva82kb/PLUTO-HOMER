@@ -75,7 +75,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
     private static readonly IReadOnlyList<float> stateDurations = Array.AsReadOnly(new float[] {
         3.00f,          // Rest duration
         0.25f,          // Target set duration
-        10.00f,          // Moving duration
+        5.00f,          // Moving duration
         0.25f,          // Successful reach
         0.25f,          // Failed reach
     });
@@ -229,14 +229,14 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
                 PlutoComm.ResetAANTarget();
                 break;
             case HOMERPlutoAANController.HOMERPlutoAANState.RelaxToArom:
-                // Set AAN Target to the nearest AROM edge.
-                Debug.Log(aanCtrler.getNearestAromEdge(PlutoComm.angle));
-                PlutoComm.setAANTarget(PlutoComm.angle, 0, aanCtrler.getNearestAromEdge(PlutoComm.angle), 1.0f);
-                break;
             case HOMERPlutoAANController.HOMERPlutoAANState.AssistToTarget:
                 // Set AAN Target to the nearest AROM edge.
-                PlutoComm.setAANTarget(PlutoComm.angle, 0, aanCtrler.targetPosition, 3.0f);
+                float[] _newAanTarget = aanCtrler.GetNewAanTarget();
+                PlutoComm.setAANTarget(_newAanTarget[0], _newAanTarget[1], _newAanTarget[2], _newAanTarget[3]);
                 break;
+                //// Set AAN Target to the nearest AROM edge.
+                //PlutoComm.setAANTarget(PlutoComm.angle, 0, aanCtrler.targetPosition, 3.0f);
+                //break;
         }
     }
 
@@ -246,7 +246,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         {
             case DiscreteMovementTrialState.Rest:
                 // Reset trial in the AANController.
-                aanCtrler.resetTrial();
+                aanCtrler.ResetTrial();
                 // Reset stuff.
                 trialDuration = 0f;
                 prevControlBound = PlutoComm.controlBound;
@@ -275,7 +275,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
             case DiscreteMovementTrialState.Moving:
                 // Reset the intrastate timer.
                 _tempIntraStateTimer = 0f;
-                aanCtrler.setNewTrialDetails(PlutoComm.angle, _trialTarget, stateDurations[(int)DiscreteMovementTrialState.Moving]);
+                aanCtrler.SetNewTrialDetails(PlutoComm.angle, _trialTarget, stateDurations[(int)DiscreteMovementTrialState.Moving]);
                 break;
             case DiscreteMovementTrialState.Success:
                 // Update trial result.

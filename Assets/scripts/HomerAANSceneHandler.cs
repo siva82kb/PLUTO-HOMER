@@ -230,46 +230,13 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
                 break;
             case HOMERPlutoAANController.HOMERPlutoAANState.RelaxToArom:
                 // Set AAN Target to the nearest AROM edge.
+                Debug.Log(aanCtrler.getNearestAromEdge(PlutoComm.angle));
                 PlutoComm.setAANTarget(PlutoComm.angle, 0, aanCtrler.getNearestAromEdge(PlutoComm.angle), 1.0f);
                 break;
             case HOMERPlutoAANController.HOMERPlutoAANState.AssistToTarget:
                 // Set AAN Target to the nearest AROM edge.
                 PlutoComm.setAANTarget(PlutoComm.angle, 0, aanCtrler.targetPosition, 3.0f);
                 break;
-        }
-    }
-    private void HandleMoving(bool stateTimeOut, bool tgtReached)
-    {
-        if (stateTimeOut) SetTrialState(DiscreteMovementTrialState.Failure);
-        // Check if the target is in AROM.
-        if (aanCtrler.isTargetInArom())
-        {
-            // Just wait to see if the target has been reached.
-            _tempIntraStateTimer += tgtReached ? Time.deltaTime : - _tempIntraStateTimer;
-
-            // Check if target time has been reached.
-            if (_tempIntraStateTimer >= tgtHoldDuration)
-            {
-                SetTrialState(DiscreteMovementTrialState.Success);
-            }
-        }
-        else
-        {
-            // Check of the AROM boundary has been reached to initiate AAN assistance.
-            if (aanCtrler.isAromBoundaryReached(PlutoComm.angle))
-            {
-                SetTrialState(DiscreteMovementTrialState.Success);
-            }
-        }
-    }
-
-    private void HandleRelaxToArom(bool stateTimeOut)
-    {
-        if (stateTimeOut) SetTrialState(DiscreteMovementTrialState.Failure);
-        // Check if the AROM boundary has been reached.
-        if (aanCtrler.isAromBoundaryReached(PlutoComm.angle))
-        {
-            SetTrialState(DiscreteMovementTrialState.Success);
         }
     }
 
@@ -312,12 +279,12 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
                 break;
             case DiscreteMovementTrialState.Success:
                 // Update trial result.
-                aanCtrler.upateTrialResult(true);
+                //aanCtrler.upateTrialResult(true);
                 // Update adaptation row.
                 WriteTrialRowInfo(1);
                 break;
             case DiscreteMovementTrialState.Failure:
-                aanCtrler.upateTrialResult(false);
+                //aanCtrler.upateTrialResult(false);
                 WriteTrialRowInfo(0);
                 break;
         }
@@ -339,34 +306,6 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         // Listen to PLUTO's event
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
         PlutoComm.OnNewPlutoData += onNewPlutoData;
-    }
-
-    private void UpdateControlBoundSmoothly()
-    {
-        if ((prevControlBound == currControlBound) ||
-            ((trialDuration - stateStartTime) >= cbChangeDuration))
-        {
-            return;
-        }
-        // Implement the minimum jerk trajectory.
-        float _t = (trialDuration - stateStartTime) / cbChangeDuration;
-        // Limit _t between 0 and 1.
-        _t = Mathf.Clamp(_t, 0, 1);
-        // Compute the CB value using the minimum jerk trajectory.
-        _currCBforDisplay = prevControlBound + (currControlBound - prevControlBound) * (10 * Mathf.Pow(_t, 3) - 15 * Mathf.Pow(_t, 4) + 6 * Mathf.Pow(_t, 5));
-        // Update control bound.
-        PlutoComm.setControlBound(_currCBforDisplay);
-    }
-
-    private void UpdatePositionTargetSmoothly()
-    {
-        float _t = (trialDuration- stateStartTime) / tgtDuration;
-        // Limit _t between 0 and 1.
-        _t = Mathf.Clamp(_t, 0, 1);
-        // Compute the current target value using the minimum jerk trajectory.
-        _currTgtForDisplay = _initialTarget + (_finalTarget - _initialTarget) * (10 * Mathf.Pow(_t, 3) - 15 * Mathf.Pow(_t, 4) + 6 * Mathf.Pow(_t, 5));
-        // Update position target
-        PlutoComm.setControlTarget(_currTgtForDisplay);
     }
 
     private void onNewPlutoData()
@@ -392,6 +331,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
             $"{PlutoComm.controlBound}",
             $"{PlutoComm.controlDir}",
             $"{PlutoComm.target}",
+            $"{PlutoComm.desired}",
             $"{PlutoComm.err}",
             $"{PlutoComm.errDiff}",
             $"{PlutoComm.errSum}"
@@ -414,7 +354,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         else
         {
             // Pluto AAN controller
-            aanCtrler = new HOMERPlutoAANController(aRomValue, pRomValue);
+            aanCtrler = new HOMERPlutoAANController(aRomValue, pRomValue, 1.0f);
             // Change button text
             btnStartStop.GetComponentInChildren<TMP_Text>().text = "Stop Demo";
             isRunning = true;
@@ -427,17 +367,6 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
             // Start the state machine.
             SetTrialState(DiscreteMovementTrialState.Rest);
         }
-    }
-
-    private (float currTgtValue, bool isTgtChanging) computeCurrentTarget()
-    {
-        float _t = (Time.time - _currentTime) / tgtDuration;
-        // Limit _t between 0 and 1.
-        _t = Mathf.Clamp(_t, 0, 1);
-        // Compute the current target value using the minimum jerk trajectory.
-        float _currtgt = _initialTarget + (_finalTarget - _initialTarget) * (10 * Mathf.Pow(_t, 3) - 15 * Mathf.Pow(_t, 4) + 6 * Mathf.Pow(_t, 5));
-        // return if the final target has been reached.
-        return (_currtgt, _t < 1);
     }
 
     private void OnDataLogChange()
@@ -478,7 +407,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         logRawFile.WriteLine($"CompileDate = {PlutoComm.compileDate}");
         logRawFile.WriteLine($"Actuated = {PlutoComm.actuated}");
         logRawFile.WriteLine($"Start Datetime = {DateTime.Now:yyyy/MM/dd HH-mm-ss.ffffff}");
-        logRawFile.WriteLine("time, packetno, status, datatype, errorstatus, controltype, calibration, mechanism, button, angle, torque, control, controlbound, controldir, target, error, errordiff, errorsum");
+        logRawFile.WriteLine("time, packetno, status, datatype, errorstatus, controltype, calibration, mechanism, button, angle, torque, control, controlbound, controldir, target, desired, error, errordiff, errorsum");
     }
 
     private void CreateAdaptLogFile()

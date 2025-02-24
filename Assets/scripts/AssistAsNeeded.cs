@@ -123,11 +123,12 @@ public class HOMERPlutoAANController
     }
     public enum HOMERPlutoAANState
     {
-        None = 0,       // None state. The AAN is not engaged.
-        AromMoving,     // Moving in the AROM.
-        RelaxToArom,    // Relax control to reach nearest AROM edge.
-        AssistToTarget, // Assisting to reach target.
-        Idle            // Idle state. The AAN is engaged but doing nothing.
+        None = 0,           // None state. The AAN is not engaged.
+        NewTrialTargetSet,  // Target set but not started moving.
+        AromMoving,         // Moving in the AROM.
+        RelaxToArom,        // Relax control to reach nearest AROM edge.
+        AssistToTarget,     // Assisting to reach target.
+        Idle                // Idle state. The AAN is engaged but doing nothing.
     }
 
     public float initialPosition { private set; get; }
@@ -142,14 +143,24 @@ public class HOMERPlutoAANController
     public bool trialRunning { private set; get; }
     public float[] aRom { private set; get; }
     public float[] pRom { private set; get; }
-    public HOMERPlutoAANState state { private set; get; }
+    // Setter will automatically change the stateChange variable to true/false
+    // depending on whether a new state value has been set.
+    private HOMERPlutoAANState _state;
+    public HOMERPlutoAANState state {
+        get => _state;
+        private set
+        {
+            stateChange = _state != value;
+            _state = value;
+        }
+    }
     public bool stateChange { private set; get; }
     public Queue<float> positionQ { private set; get; }
     public Queue<float> timeQ { private set; get; }
     public float trialTime { private set; get; }
     private HOMERPlutoAANTarget newAanTarget;
 
-    public HOMERPlutoAANController(float[] aRomValue, float[] pRomValue, float forget = 0.9f, float assist = 1.1f, float bndry=0.8f)
+    public HOMERPlutoAANController(float[] aRomValue, float[] pRomValue, float ctrlBound=0.16f, float forget = 0.9f, float assist = 1.1f, float bndry=0.8f)
     {
         forgetFactor = forget;
         assistFactor = assist;
@@ -157,8 +168,8 @@ public class HOMERPlutoAANController
         initialPosition = 0;
         targetPosition = 0;
         maxDuration = 0;
-        currentCtrlBound = 0.16f;
-        previousCtrlBound = 0.16f;
+        currentCtrlBound = ctrlBound;
+        previousCtrlBound = ctrlBound;
         successRate = 0;
         trialRunning = false;
         aRom = aRomValue;
@@ -191,6 +202,23 @@ public class HOMERPlutoAANController
         // Act according to the state of the AAN.
         switch (state)
         {
+            case HOMERPlutoAANState.NewTrialTargetSet:
+                // Set the state of the AAN.
+                switch (getTargetType())
+                {
+                    case HOMERPlutoAANController.TargetType.InAromFromArom:
+                    case HOMERPlutoAANController.TargetType.InPromFromArom:
+                        state = HOMERPlutoAANState.AromMoving;
+                        break;
+                    case HOMERPlutoAANController.TargetType.InAromFromProm:
+                    case HOMERPlutoAANController.TargetType.InPromFromPromCrossArom:
+                        state = HOMERPlutoAANState.RelaxToArom;
+                        break;
+                    case HOMERPlutoAANController.TargetType.InPromFromPromNoCrossArom:
+                        state = HOMERPlutoAANState.AssistToTarget;
+                        break;
+                }
+                break;
             case HOMERPlutoAANState.AromMoving:
                 // Check if the target is reached.
                 if (isTargetInArom()) return;
@@ -199,13 +227,11 @@ public class HOMERPlutoAANController
                 if ((_dir > 0 && actual >= aromBoundary * aRom[1]) || (_dir < 0 && actual <= aromBoundary * aRom[0]))
                 {
                     state = HOMERPlutoAANState.AssistToTarget;
-                    stateChange = true;
                 }
                 // Timeout or Done
                 if (_timeoutDone)
                 {
                     state = HOMERPlutoAANState.Idle;
-                    stateChange = true;
                 }
                 break;
             case HOMERPlutoAANState.RelaxToArom:
@@ -216,21 +242,18 @@ public class HOMERPlutoAANController
                     if (_timeoutDone)
                     {
                         state = HOMERPlutoAANState.Idle;
-                        stateChange = true;
                         return;
                     }
                     return;
                 }
                 // AROM reached.
                 state = HOMERPlutoAANState.AromMoving;
-                stateChange = true;
                 break;
             case HOMERPlutoAANState.AssistToTarget:
                 // Timeout or Done
                 if (_timeoutDone)
                 {
                     state = HOMERPlutoAANState.Idle;
-                    stateChange = true;
                     return;
                 }
                 break;
@@ -257,24 +280,11 @@ public class HOMERPlutoAANController
         targetPosition = target;
         maxDuration = maxDur;
         trialRunning = true;
-        // Set the state of the AAN.
-        switch (getTargetType())
-        {
-            case HOMERPlutoAANController.TargetType.InAromFromArom:
-            case HOMERPlutoAANController.TargetType.InPromFromArom:
-                state = HOMERPlutoAANState.AromMoving;
-                break;
-            case HOMERPlutoAANController.TargetType.InAromFromProm:
-            case HOMERPlutoAANController.TargetType.InPromFromPromCrossArom:
-                state = HOMERPlutoAANState.RelaxToArom;
-                break;
-            case HOMERPlutoAANController.TargetType.InPromFromPromNoCrossArom:
-                state = HOMERPlutoAANState.AssistToTarget;
-                break;
-        }
         // Initialize the queues to keep track of the recent movement trajectory.
         positionQ.Enqueue(actual);
         timeQ.Enqueue(trialTime);
+        stateChange = true;
+        state = HOMERPlutoAANState.NewTrialTargetSet;
     }
 
     public bool isActualInArom(float actual)

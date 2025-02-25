@@ -75,7 +75,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
     private static readonly IReadOnlyList<float> stateDurations = Array.AsReadOnly(new float[] {
         3.00f,          // Rest duration
         0.25f,          // Target set duration
-        5.00f,          // Moving duration
+        20.00f,          // Moving duration
         0.25f,          // Successful reach
         0.25f,          // Failed reach
     });
@@ -119,6 +119,8 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
     private StreamWriter logRawFile = null;
     private string logAdaptFileName = null;
     private StreamWriter logAdaptFile = null;
+    private string logAanFileName = null;
+    private StreamWriter logAanFile = null;
     private string _dataLogDir = "Assets\\data\\aan_demo\\";
 
     // Start is called before the first frame update
@@ -195,10 +197,12 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
             case DiscreteMovementTrialState.Rest:
                 if (_statetimeout == false) return;
                 SetTrialState(DiscreteMovementTrialState.SetTarget);
+                WriteAanStateInforRow();
                 break;
             case DiscreteMovementTrialState.SetTarget:
                 if (_statetimeout == false) return;
                 SetTrialState(DiscreteMovementTrialState.Moving);
+                WriteAanStateInforRow(); 
                 break;
             case DiscreteMovementTrialState.Moving:
                 // Check of the target has been reached.
@@ -212,6 +216,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
                 // Change state if needed.
                 if (_tgtreached) SetTrialState(DiscreteMovementTrialState.Success);
                 if (_statetimeout) SetTrialState(DiscreteMovementTrialState.Failure);
+                WriteAanStateInforRow();
                 break;
             case DiscreteMovementTrialState.Success:
             case DiscreteMovementTrialState.Failure:
@@ -234,9 +239,6 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
                 float[] _newAanTarget = aanCtrler.GetNewAanTarget();
                 PlutoComm.setAANTarget(_newAanTarget[0], _newAanTarget[1], _newAanTarget[2], _newAanTarget[3]);
                 break;
-                //// Set AAN Target to the nearest AROM edge.
-                //PlutoComm.setAANTarget(PlutoComm.angle, 0, aanCtrler.targetPosition, 3.0f);
-                //break;
         }
     }
 
@@ -250,13 +252,11 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
                 // Reset stuff.
                 trialDuration = 0f;
                 prevControlBound = PlutoComm.controlBound;
-                currControlBound = aanCtrler.getControlBoundForTrial();
+                currControlBound = 1.0f;
                 trialNo += 1; 
                 UpdateCBAdaptDetailsDisplay();
-                // Break if logging is not selected.
-                if (tglDataLog.isOn == false) break;
-                // Log data.
-                UpdateLogFiles();
+                // Break if logging is selected.
+                if (tglDataLog.isOn) UpdateLogFiles();
                 // Reset target timer (for display purposes).
                 _tempIntraStateTimer = 0f;
                 break;
@@ -278,14 +278,10 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
                 aanCtrler.SetNewTrialDetails(PlutoComm.angle, _trialTarget, stateDurations[(int)DiscreteMovementTrialState.Moving]);
                 break;
             case DiscreteMovementTrialState.Success:
-                // Update trial result.
-                //aanCtrler.upateTrialResult(true);
-                // Update adaptation row.
-                WriteTrialRowInfo(1);
-                break;
             case DiscreteMovementTrialState.Failure:
-                //aanCtrler.upateTrialResult(false);
-                WriteTrialRowInfo(0);
+                // Update adaptation row.
+                byte _successbyte = newState == DiscreteMovementTrialState.Success ? (byte)1 : (byte)0;
+                WriteTrialRowInfo(_successbyte);
                 break;
         }
         _trialState = newState;
@@ -342,6 +338,28 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         }
     }
 
+    private void WriteAanStateInforRow()
+    {
+        // Log data if needed. Else move on.
+        if (logAanFile == null) return;
+
+        // Log data
+        float[] _aantgtvals = aanCtrler.GetNewAanTarget();
+        string _aantgtdetails = _aantgtvals == null ? "" : $"{_aantgtvals[0]:F2}|{_aantgtvals[1]:F2}|{_aantgtvals[2]:F2}|{_aantgtvals[3]:F2}";
+        int _stchng = aanCtrler.stateChange ? 1 : 0;
+        String[] rowcomps = new string[]
+        {
+            $"{PlutoComm.runTime}",
+            $"{aanCtrler.state}",
+            $"{_stchng}",
+            $"{_aantgtdetails}"
+        };
+        if (logAanFile != null)
+        {
+            logAanFile.WriteLine(String.Join(", ", rowcomps));
+        }
+    }
+
     private void OnStartStopDemo()
     {
         if (isRunning)
@@ -354,7 +372,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         else
         {
             // Pluto AAN controller
-            aanCtrler = new HOMERPlutoAANController(aRomValue, pRomValue, 1.0f);
+            aanCtrler = new HOMERPlutoAANController(aRomValue, pRomValue, 0.85f);
             // Change button text
             btnStartStop.GetComponentInChildren<TMP_Text>().text = "Stop Demo";
             isRunning = true;
@@ -391,9 +409,12 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         {
             CreateAdaptLogFile();
         }
-        // Create the raw log file after closing the current file.
-        CloseRawLogFile();
-        CreateRawLogFile();
+        //// Create the raw log file after closing the current file.
+        //CloseRawLogFile();
+        //CreateRawLogFile();
+        // Create the raw and AAN log file after closing the current file.
+        CloseRawAndAanLogFile();
+        CreateRawAndAanLogFile();
     }
 
     private void CreateRawLogFile()
@@ -407,7 +428,44 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         logRawFile.WriteLine($"CompileDate = {PlutoComm.compileDate}");
         logRawFile.WriteLine($"Actuated = {PlutoComm.actuated}");
         logRawFile.WriteLine($"Start Datetime = {DateTime.Now:yyyy/MM/dd HH-mm-ss.ffffff}");
-        logRawFile.WriteLine("time, packetno, status, datatype, errorstatus, controltype, calibration, mechanism, button, angle, torque, control, controlbound, controldir, target, desired, error, errordiff, errorsum");
+        string[] headernames = { "time", "packetno", "status", "datatype", "errorstatus", "controltype", "calibration",
+            "mechanism", "button", "angle", "torque", "control", "controlbound", "controldir", "target", "desired",
+            "error", "errordiff", "errorsum"
+        };
+        logRawFile.WriteLine(String.Join(", ", headernames));
+    }
+
+    private void CreateRawAndAanLogFile()
+    {
+        string _writetime = $"{DateTime.Now:yyyy/MM/dd HH-mm-ss.ffffff}";
+        // Raw log file
+        // Set the file name.
+        logRawFileName = $"rawlogfile_{trialNo:D3}.csv";
+        logRawFile = new StreamWriter(_dataLogDir + fileNamePrefix + "\\" + logRawFileName, false);
+        // Write the header row.
+        logRawFile.WriteLine($"DeviceID = {PlutoComm.deviceId}");
+        logRawFile.WriteLine($"FirmwareVersion = {PlutoComm.version}");
+        logRawFile.WriteLine($"CompileDate = {PlutoComm.compileDate}");
+        logRawFile.WriteLine($"Actuated = {PlutoComm.actuated}");
+        logRawFile.WriteLine($"Start Datetime = {_writetime}");
+        string[] headernames = { "time", "packetno", "status", "datatype", "errorstatus", "controltype", "calibration",
+            "mechanism", "button", "angle", "torque", "control", "controlbound", "controldir", "target", "desired",
+            "error", "errordiff", "errorsum"
+        };
+        logRawFile.WriteLine(String.Join(", ", headernames));
+
+        // AAN log file
+        // Set the file name.
+        logAanFileName = $"aanlogfile_{trialNo:D3}.csv";
+        logAanFile = new StreamWriter(_dataLogDir + fileNamePrefix + "\\" + logAanFileName, false);
+        // Write the header row.
+        logAanFile.WriteLine($"DeviceID = {PlutoComm.deviceId}");
+        logAanFile.WriteLine($"FirmwareVersion = {PlutoComm.version}");
+        logAanFile.WriteLine($"CompileDate = {PlutoComm.compileDate}");
+        logAanFile.WriteLine($"Actuated = {PlutoComm.actuated}");
+        logAanFile.WriteLine($"Start Datetime = {_writetime}");
+        headernames = new string[] { "time", "aanstate", "aanstatechange", "aantargetdetails"};
+        logAanFile.WriteLine(String.Join(", ", headernames));
     }
 
     private void CreateAdaptLogFile()
@@ -436,8 +494,6 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
             $"{aanCtrler.targetPosition}",
             $"{aanCtrler.initialPosition}",
             $"{successfailure}",
-            $"{aanCtrler.successRate}",
-            $"{aanCtrler.previousCtrlBound}",
             $"{currControlDir}",
             $"{logRawFileName}"
         };
@@ -456,6 +512,26 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         }
         logRawFileName = null;
         logRawFile = null;
+    }
+
+    private void CloseRawAndAanLogFile()
+    {
+        // Close raw file
+        if (logRawFile != null)
+        {
+            // Close the file properly and create a new handle.
+            logRawFile.Close();
+        }
+        logRawFileName = null;
+        logRawFile = null;
+        // Close Aan file
+        if (logAanFile != null)
+        {
+            // Close the file properly and create a new handle.
+            logAanFile.Close();
+        }
+        logAanFileName = null;
+        logAanFile = null;
     }
 
     private void CloseAdaptLogFile()

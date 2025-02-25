@@ -121,11 +121,11 @@ public class HOMERPlutoAANController
     public float initialPosition { private set; get; }
     public float targetPosition { private set; get; }
     public float maxDuration { private set; get; }
-    public float currentCtrlBound { private set; get; }
-    public float previousCtrlBound { private set; get; }
+    //public float currentCtrlBound { private set; get; }
+    //public float previousCtrlBound { private set; get; }
     public int successRate { private set; get; }
-    public float forgetFactor { private set; get; }
-    public float assistFactor { private set; get; }
+    //public float forgetFactor { private set; get; }
+    //public float assistFactor { private set; get; }
     public float aromBoundary { private set; get; }
     public bool trialRunning { private set; get; }
     public float[] aRom { private set; get; }
@@ -147,17 +147,17 @@ public class HOMERPlutoAANController
     public float trialTime { private set; get; }
     private float[] _newAanTarget;
 
-    public HOMERPlutoAANController(float[] aRomValue, float[] pRomValue, float ctrlBound=0.16f, float forget = 0.9f, float assist = 1.1f, float bndry=0.8f)
+    public HOMERPlutoAANController(float[] aRomValue, float[] pRomValue, float bndry=0.9f)
     {
-        forgetFactor = forget;
-        assistFactor = assist;
+        //forgetFactor = forget;
+        //assistFactor = assist;
         aromBoundary = bndry;
         initialPosition = 0;
         targetPosition = 0;
         maxDuration = 0;
-        currentCtrlBound = ctrlBound;
-        previousCtrlBound = ctrlBound;
-        successRate = 0;
+        //currentCtrlBound = ctrlBound;
+        //previousCtrlBound = ctrlBound;
+        //successRate = 0;
         trialRunning = false;
         aRom = aRomValue;
         pRom = pRomValue;
@@ -191,7 +191,7 @@ public class HOMERPlutoAANController
         {
             case HOMERPlutoAANState.NewTrialTargetSet:
                 // Set the state of the AAN.
-                switch (getTargetType())
+                switch (GetTargetType())
                 {
                     case HOMERPlutoAANController.TargetType.InAromFromArom:
                     case HOMERPlutoAANController.TargetType.InPromFromArom:
@@ -212,11 +212,14 @@ public class HOMERPlutoAANController
                 break;
             case HOMERPlutoAANState.AromMoving:
                 // Check if the target is reached.
-                if (isTargetInArom()) return;
+                if (IsTargetInArom()) return;
                 // Check if the AROM boundary is reached.
                 int _dir = Math.Sign(targetPosition - initialPosition);
-                if ((_dir > 0 && actual >= aromBoundary * aRom[1]) || (_dir < 0 && actual <= aromBoundary * aRom[0]))
+                float _arompos = (actual - aRom[0]) / (aRom[1] - aRom[0]);
+                Debug.Log(_arompos);
+                if ((_dir > 0 && _arompos >= aromBoundary) || (_dir < 0 && _arompos <= (1 - aromBoundary)))
                 {
+                    Debug.Log("True");
                     state = HOMERPlutoAANState.AssistToTarget;
                     // Generate target to assist.
                     GenerateAssistToTargetAanTarget(actual);
@@ -229,24 +232,29 @@ public class HOMERPlutoAANController
                 break;
             case HOMERPlutoAANState.RelaxToArom:
                 // Check if AROM has not been reached.
-                if (!isActualInArom(actual))
+                if (IsActualInArom(actual))
                 {
-                    // Timeout or Done
-                    if (_timeoutDone)
-                    {
-                        state = HOMERPlutoAANState.Idle;
-                        return;
-                    }
+                    // AROM reached.
+                    state = HOMERPlutoAANState.AromMoving;
+                    // Reset AAN target
+                    _newAanTarget[0] = 999;
                     return;
                 }
-                // AROM reached.
-                state = HOMERPlutoAANState.AromMoving;
+                // Timeout or Done
+                if (_timeoutDone)
+                {
+                    state = HOMERPlutoAANState.Idle;
+                    // Reset AAN target
+                    _newAanTarget[0] = 999;
+                }
                 break;
             case HOMERPlutoAANState.AssistToTarget:
                 // Timeout or Done
                 if (_timeoutDone)
                 {
                     state = HOMERPlutoAANState.Idle;
+                    // Reset AAN target
+                    _newAanTarget[0] = 999;
                     return;
                 }
                 break;
@@ -260,6 +268,7 @@ public class HOMERPlutoAANController
         maxDuration = 0;
         trialRunning = false;
         state = HOMERPlutoAANState.None;
+        _newAanTarget[0] = 999;
         // Empty the queues.
         positionQ.Clear();
         timeQ.Clear();
@@ -285,12 +294,12 @@ public class HOMERPlutoAANController
         return _newAanTarget[0] == 999 ? null : _newAanTarget.Skip(1).ToArray();
     }
 
-    public bool isActualInArom(float actual)
+    public bool IsActualInArom(float actual)
     {
         return (actual >= aRom[0] && actual <= aRom[1]);
     }
 
-    public TargetType getTargetType()
+    public TargetType GetTargetType()
     {
         bool _initInArom = (initialPosition >= aRom[0] && initialPosition <= aRom[1]);
         if (trialRunning == false) return TargetType.None;
@@ -312,18 +321,18 @@ public class HOMERPlutoAANController
         return TargetType.InPromFromPromCrossArom;
     }
 
-    public bool isTargetInArom()
+    public bool IsTargetInArom()
     {
         if (trialRunning == false) return false;
         return (targetPosition >= aRom[0] && targetPosition <= aRom[1]);
     }
 
-    public float getNearestAromEdge(float actual)
+    public float GetNearestAromEdge(float actual)
     {
         return Math.Abs(actual - aRom[0]) < Math.Abs(actual - aRom[1]) ? aRom[0] : aRom[1];
     }
 
-    public bool isAromBoundaryReached(float actual)
+    public bool IsAromBoundaryReached(float actual)
     {
         // Check the direction of movement to the target.
         if (targetPosition >= actual)
@@ -332,15 +341,11 @@ public class HOMERPlutoAANController
         }
         return actual <= aRom[0];
     }
-    public float getControlBoundForTrial()
-    {
-        return currentCtrlBound;
-    }
 
-    public sbyte getControlDirectionForTrial()
-    {
-        return (sbyte)Math.Sign(targetPosition - initialPosition);
-    }
+    //public sbyte getControlDirectionForTrial()
+    //{
+    //    return (sbyte)Math.Sign(targetPosition - initialPosition);
+    //}
 
     private void UpdatePositionTimeQueues(float actPos, float tTime)
     {
@@ -358,7 +363,7 @@ public class HOMERPlutoAANController
     private void GenerateRelaxToAromAanTarget(float actual)
     {
         // Find the nearest AROM edge.
-        float _nearestAromEdge = getNearestAromEdge(actual);
+        float _nearestAromEdge = GetNearestAromEdge(actual);
         // There is valid target
         _newAanTarget[0] = 0;
         // Initial Position
@@ -386,44 +391,44 @@ public class HOMERPlutoAANController
         _newAanTarget[4] = Math.Min(maxDuration, Math.Max(MIN_REACH_TIME, Math.Abs(targetPosition - actual) / _maxAvgSpeed));
     }
 
-    public void upateTrialResult(bool success)
-    {
-        if (trialRunning == false) return;
+    //public void upateTrialResult(bool success)
+    //{
+    //    if (trialRunning == false) return;
 
-        // Update success rate
-        if (success)
-        {
-            if (successRate < 0)
-            {
-                successRate = 1;
-            }
-            else
-            {
-                successRate += 1;
-            }
-        }
-        else
-        {
-            if (successRate >= 0)
-            {
-                successRate = -1;
-            }
-            else
-            {
-                successRate -= 1;
-            }
-        }
-        // Update control bound.
-        previousCtrlBound = currentCtrlBound;
-        if (successRate >= 3)
-        {
-            currentCtrlBound = forgetFactor * currentCtrlBound;
-        }
-        else if (successRate < 0)
-        {
-            currentCtrlBound = Math.Min(1.0f, assistFactor * currentCtrlBound);
-        }
-        // Trial done. No more update possible for this trial.
-        trialRunning = false;
-    }
+    //    // Update success rate
+    //    if (success)
+    //    {
+    //        if (successRate < 0)
+    //        {
+    //            successRate = 1;
+    //        }
+    //        else
+    //        {
+    //            successRate += 1;
+    //        }
+    //    }
+    //    else
+    //    {
+    //        if (successRate >= 0)
+    //        {
+    //            successRate = -1;
+    //        }
+    //        else
+    //        {
+    //            successRate -= 1;
+    //        }
+    //    }
+    //    // Update control bound.
+    //    previousCtrlBound = currentCtrlBound;
+    //    if (successRate >= 3)
+    //    {
+    //        currentCtrlBound = forgetFactor * currentCtrlBound;
+    //    }
+    //    else if (successRate < 0)
+    //    {
+    //        currentCtrlBound = Math.Min(1.0f, assistFactor * currentCtrlBound);
+    //    }
+    //    // Trial done. No more update possible for this trial.
+    //    trialRunning = false;
+    //}
 }

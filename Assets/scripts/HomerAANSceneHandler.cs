@@ -46,6 +46,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
     public UnityEngine.UI.Toggle tglDataLog;
 
     // AROM parameters
+    private bool _apromSet = false;
     private float[] aRomValue = new float[2] { -20f, 20f };
 
     // PROM parameters
@@ -306,6 +307,21 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
 
     private void onNewPlutoData()
     {
+        // Check if ARROM has been set.
+        if (_apromSet == false)
+        {
+            // Adjust AROM/PROM for HOC mechanism
+            Debug.Log(PlutoComm.MECHANISMS[PlutoComm.mechanism]);
+            if (PlutoComm.MECHANISMS[PlutoComm.mechanism] == "HOC")
+            {
+                aRomValue = new float[2] { PlutoComm.getHOCAngle(0), PlutoComm.getHOCAngle(3) };
+                pRomValue = new float[2] { PlutoComm.getHOCAngle(0), PlutoComm.getHOCAngle(7) };
+            }
+            Debug.Log($"AROM: [{aRomValue[0]}, {aRomValue[1]}]");
+            Debug.Log($"PROM: [{pRomValue[0]}, {pRomValue[1]}]");
+            _apromSet = true;
+        }
+
         // Log data if needed. Else move on.
         if (logRawFile == null) return;
 
@@ -561,14 +577,15 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
 
     private void UpdateUI()
     {
+        // Enable start/stop button only if APROM is set.
+        Debug.Log(_apromSet);
+        btnStartStop.interactable = _apromSet;
+
         // Update data dispaly
         UpdateDataDispay();
-            
-        // Enable/Disable control panel.
-        string _mech = PlutoComm.MECHANISMS[PlutoComm.mechanism];
-        string _ctrlType = PlutoComm.CONTROLTYPE[PlutoComm.controlType];
 
         // Display AROM/PROM markers.
+        Debug.Log($"{PlutoComm.MECHANISMS[PlutoComm.mechanism]} Calib Angle: {PlutoComm.CALIBANGLE[PlutoComm.mechanism]}");
         aromLeft.transform.position = new Vector3(
             (2 * aRomValue[0] / PlutoComm.CALIBANGLE[PlutoComm.mechanism]) * xmax,
             aromLeft.transform.position.y,

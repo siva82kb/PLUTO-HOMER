@@ -2189,7 +2189,7 @@ GameObject:
   - component: {fileID: 1883165961}
   - component: {fileID: 1883165960}
   m_Layer: 0
-  m_Name: aromRightMarker
+  m_Name: promRightMarker
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

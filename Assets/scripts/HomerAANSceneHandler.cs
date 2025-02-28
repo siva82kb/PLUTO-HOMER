@@ -360,6 +360,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         {
             logAanFile.WriteLine(String.Join(", ", rowcomps));
         }
+        Debug.Log("Writing ");
     }
 
     private void OnStartStopDemo()

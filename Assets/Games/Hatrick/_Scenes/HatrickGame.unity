@@ -2790,11 +2790,12 @@ MonoBehaviour:
   cam: {fileID: 0}
   ball:
   - {fileID: 5816639487924542826, guid: 5b823bad31cf21245aa04c21bff5ff85, type: 3}
-  - {fileID: 5816639487924542826, guid: ce4947480cfae4d419b3b2e2378e25fd, type: 3}
+  - {fileID: 5816639487924542826, guid: 5b823bad31cf21245aa04c21bff5ff85, type: 3}
   - {fileID: 5816639487924542826, guid: 5b823bad31cf21245aa04c21bff5ff85, type: 3}
   - {fileID: 5816639487924542826, guid: 5b823bad31cf21245aa04c21bff5ff85, type: 3}
   aromLeft: {fileID: 1057131366}
   aromRight: {fileID: 1464396596}
+  PlayerObj: {fileID: 0}
   score: 0
   balldestroyed: 1
   targetSpwan: 0

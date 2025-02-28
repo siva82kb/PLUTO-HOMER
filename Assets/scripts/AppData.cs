@@ -46,6 +46,8 @@ public static class AppData
     public static float promTmin=0f;
     public static float promTmax=0f;
 
+
+    public static string _dataLogDir = null;
     //// Counts to keep track of time for different GUI updatess
     //public static int[] count = new int[] { 0, 0 };
     //private static int[] _Th;
@@ -673,3 +675,250 @@ public class DataLogger
     }
 }
 
+
+
+
+public class AANDataLogger
+{
+    // AAN class
+    private HOMERPlutoAANController aanCtrler;
+
+    // Logging related variables
+    private string fileNamePrefix = null;
+    private string logRawFileName = null;
+    private StreamWriter logRawFile = null;
+    private string logAdaptFileName = null;
+    private StreamWriter logAdaptFile = null;
+    private string logAanFileName = null;
+    private StreamWriter logAanFile = null;
+
+    private uint trialNo;
+
+    public AANDataLogger(HOMERPlutoAANController controller)
+    {
+        aanCtrler = controller;
+        PlutoComm.OnNewPlutoData += onNewPlutoData;
+    }
+
+    public void onNewPlutoData()
+    {
+        // Log data if needed. Else move on.
+        if (logRawFile == null) return;
+
+        // Log data
+        String[] rowcomps = new string[]
+        {
+            $"{PlutoComm.runTime}",
+            $"{PlutoComm.packetNumber}",
+            $"{PlutoComm.status}",
+            $"{PlutoComm.dataType}",
+            $"{PlutoComm.errorStatus}",
+            $"{PlutoComm.controlType}",
+            $"{PlutoComm.calibration}",
+            $"{PlutoComm.mechanism}",
+            $"{PlutoComm.button}",
+            $"{PlutoComm.angle}",
+            $"{PlutoComm.torque}",
+            $"{PlutoComm.control}",
+            $"{PlutoComm.controlBound}",
+            $"{PlutoComm.controlDir}",
+            $"{PlutoComm.target}",
+            $"{PlutoComm.desired}",
+            $"{PlutoComm.err}",
+            $"{PlutoComm.errDiff}",
+            $"{PlutoComm.errSum}"
+        };
+        if (logRawFile != null)
+        {
+            logRawFile.WriteLine(String.Join(", ", rowcomps));
+        }
+    }
+
+    public void WriteAanStateInforRow()
+    {
+        // Log data if needed. Else move on.
+        if (logAanFile == null) return;
+
+        // Log data
+        float[] _aantgtvals = aanCtrler.GetNewAanTarget();
+        string _aantgtdetails = _aantgtvals == null ? "" : $"{_aantgtvals[0]:F2}|{_aantgtvals[1]:F2}|{_aantgtvals[2]:F2}|{_aantgtvals[3]:F2}";
+        int _stchng = aanCtrler.stateChange ? 1 : 0;
+        String[] rowcomps = new string[]
+        {
+            $"{PlutoComm.runTime}",
+            $"{aanCtrler.state}",
+            $"{_stchng}",
+            $"{_aantgtdetails}"
+        };
+        if (logAanFile != null)
+        {
+            logAanFile.WriteLine(String.Join(", ", rowcomps));
+        }
+        UnityEngine.Debug.Log("Writing ");
+    }
+
+    private void OnDataLogChange()
+    {
+        // Close file.
+        CloseRawLogFile();
+        CloseAdaptLogFile();
+        logRawFile = null;
+        logAdaptFile = null;
+        fileNamePrefix = null;
+    }
+
+    public void UpdateLogFiles(uint trialNumber)
+    {
+        if (fileNamePrefix == null)
+        {
+            fileNamePrefix = $"{DateTime.Now:yyyy-MM-dd_HH-mm-ss}";
+        }
+        CreateDirectoryIfNeeded(AppData._dataLogDir + "\\");
+        // Create the adaptation log file.
+        if (logAdaptFile == null)
+        {
+            CreateAdaptLogFile();
+        }
+        trialNo = trialNumber;
+        //// Create the raw log file after closing the current file.
+        //CloseRawLogFile();
+        //CreateRawLogFile();
+        // Create the raw and AAN log file after closing the current file.
+        CloseRawAndAanLogFile();
+        CreateRawAndAanLogFile(trialNo);
+    }
+
+
+    public void CreateRawAndAanLogFile(uint trialNo)
+    {
+        string _writetime = $"{DateTime.Now:yyyy/MM/dd HH-mm-ss.ffffff}";
+        // Raw log file
+        // Set the file name.
+        logRawFileName = $"rawlogfile_{trialNo:D3}.csv";
+        logRawFile = new StreamWriter(AppData._dataLogDir + "\\" + logRawFileName, false);
+        // Write the header row.
+        //logRawFile.WriteLine($"DeviceID = {PlutoComm.deviceId}");
+        //logRawFile.WriteLine($"FirmwareVersion = {PlutoComm.version}");
+        //logRawFile.WriteLine($"CompileDate = {PlutoComm.compileDate}");
+        //logRawFile.WriteLine($"Actuated = {PlutoComm.actuated}");
+        logRawFile.WriteLine($"Start Datetime = {_writetime}");
+        string[] headernames = { "time", "packetno", "status", "datatype", "errorstatus", "controltype", "calibration",
+            "mechanism", "button", "angle", "torque", "control", "controlbound", "controldir", "target", "desired",
+            "error", "errordiff", "errorsum"
+        };
+        logRawFile.WriteLine(String.Join(", ", headernames));
+
+        // AAN log file
+        // Set the file name.
+        logAanFileName = $"aanlogfile_{trialNo:D3}.csv";
+        logAanFile = new StreamWriter(AppData._dataLogDir + "\\" + logAanFileName, false);
+        // Write the header row.
+        //logAanFile.WriteLine($"DeviceID = {PlutoComm.deviceId}");
+        //logAanFile.WriteLine($"FirmwareVersion = {PlutoComm.version}");
+        //logAanFile.WriteLine($"CompileDate = {PlutoComm.compileDate}");
+        //logAanFile.WriteLine($"Actuated = {PlutoComm.actuated}");
+        logAanFile.WriteLine($"Start Datetime = {_writetime}");
+        headernames = new string[] { "time", "aanstate", "aanstatechange", "aantargetdetails" };
+        logAanFile.WriteLine(String.Join(", ", headernames));
+    }
+
+    public void CreateAdaptLogFile()
+    {
+        // Set the file name.
+        logAdaptFileName = $"adaptlogfile.csv";
+        logAdaptFile = new StreamWriter(AppData._dataLogDir + "\\" + logAdaptFileName, false);
+        // Write the header row.
+        //logAdaptFile.WriteLine($"DeviceID = {PlutoComm.deviceId}");
+        //logAdaptFile.WriteLine($"FirmwareVersion = {PlutoComm.version}");
+        //logAdaptFile.WriteLine($"CompileDate = {PlutoComm.compileDate}");
+        //logAdaptFile.WriteLine($"Actuated = {PlutoComm.actuated}");
+        logAdaptFile.WriteLine($"Start Datetime = {DateTime.Now:yyyy/MM/dd HH-mm-ss.ffffff}");
+        logAdaptFile.WriteLine("trialno, targetposition, initialposition, success, successrate, controlbound, controldir, filename");
+    }
+
+    public void WriteTrialRowInfo(byte successfailure)
+    {
+        // Log data if needed. Else move on.
+        if (logAdaptFile == null) return;
+
+        // Log data
+        String[] rowcomps = new string[]
+        {
+            $"{trialNo}",
+            $"{aanCtrler.targetPosition}",
+            $"{aanCtrler.initialPosition}",
+            $"{successfailure}",
+         //   $"{currControlDir}",
+            $"{logRawFileName}"
+        };
+        if (logAdaptFile != null)
+        {
+            logAdaptFile.WriteLine(String.Join(", ", rowcomps));
+        }
+    }
+
+    private void CloseRawLogFile()
+    {
+        if (logRawFile != null)
+        {
+            // Close the file properly and create a new handle.
+            logRawFile.Close();
+        }
+        logRawFileName = null;
+        logRawFile = null;
+    }
+
+    private void CloseRawAndAanLogFile()
+    {
+        // Close raw file
+        if (logRawFile != null)
+        {
+            // Close the file properly and create a new handle.
+            logRawFile.Close();
+        }
+        logRawFileName = null;
+        logRawFile = null;
+        // Close Aan file
+        if (logAanFile != null)
+        {
+            // Close the file properly and create a new handle.
+            logAanFile.Close();
+        }
+        logAanFileName = null;
+        logAanFile = null;
+    }
+
+    private void CloseAdaptLogFile()
+    {
+        if (logAdaptFile != null)
+        {
+            // Close the file properly and create a new handle.
+            logAdaptFile.Close();
+
+            // Close any raw file that is open.
+            CloseRawLogFile();
+
+            // Clear filename prefix.
+            fileNamePrefix = null;
+        }
+        logAdaptFileName = null;
+        logAdaptFile = null;
+    }
+
+    private void CreateDirectoryIfNeeded(string dirname)
+    {
+        // Ensure the directory exists
+        string directoryPath = Path.GetDirectoryName(dirname);
+        if (!Directory.Exists(directoryPath))
+        {
+            Directory.CreateDirectory(directoryPath);
+            UnityEngine.Debug.Log("Directory created");
+        }
+        else
+        {
+            UnityEngine.Debug.Log("already exist");
+        }
+    }
+
+
+}

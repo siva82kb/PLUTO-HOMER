@@ -8,6 +8,7 @@ using NeuroRehabLibrary;
 using TMPro;
 using System;
 using Unity.Mathematics;
+using System.IO;
 
 public class HatGameController : MonoBehaviour
 {
@@ -110,17 +111,18 @@ public class HatGameController : MonoBehaviour
 
     // AAN class
     private HOMERPlutoAANController aanCtrler;
+    private AANDataLogger dlogger;
 
 
-
-
-
+    private string _dataLogDir = null;
+    private string date = null;
+    private string sessionNum = null;
 
 
     private float targetPosition;
     private float playerPosition;
     public bool targetSpwan = false;
-
+    private bool tempSpawn = false;
     private int outsideAromRangeCount = 0;
     private int totalTargetsSpawned = 0;
 
@@ -154,9 +156,9 @@ public class HatGameController : MonoBehaviour
     }
 
     void Start()
-    {
+    { 
         InitializeGame();
-
+       
     }
 
     void FixedUpdate()
@@ -209,14 +211,12 @@ public class HatGameController : MonoBehaviour
 
     private void UI()
     {
-        float x = Angle2Screen(AppData.aRomValue[0]);
-        float x1 = Angle2Screen(AppData.aRomValue[1]);
-        aromLeft.transform.position = new Vector3(x,
+        aromLeft.transform.position = new Vector3(Angle2Screen(AppData.aRomValue[0]),
            aromLeft.transform.position.y,
            aromLeft.transform.position.z
        );
         aromRight.transform.position = new Vector3(
-            x1,
+            Angle2Screen(AppData.aRomValue[1]),
             aromRight.transform.position.y,
             aromRight.transform.position.z
         );
@@ -234,14 +234,14 @@ public class HatGameController : MonoBehaviour
         switch (_trialState)
         {
             case DiscreteMovementTrialState.Rest:
-                Debug.Log("REST STATE");
-                if (_statetimeout == false) return;
+                if ((_statetimeout == false)&& !targetSpwan) return;
                 SetTrialState(DiscreteMovementTrialState.SetTarget);
+                dlogger.WriteAanStateInforRow();
                 break;
             case DiscreteMovementTrialState.SetTarget:
-                Debug.Log("Target STATE");
                 if (_statetimeout == false) return;
                 SetTrialState(DiscreteMovementTrialState.Moving);
+                dlogger.WriteAanStateInforRow();
                 break;
             case DiscreteMovementTrialState.Moving:
                 // Check of the target has been reached.
@@ -255,6 +255,7 @@ public class HatGameController : MonoBehaviour
                 // Change state if needed.
                 if (_tgtreached || targetSpwan) SetTrialState(DiscreteMovementTrialState.Success);
                 if (_statetimeout) SetTrialState(DiscreteMovementTrialState.Failure);
+                dlogger.WriteAanStateInforRow();
                 break;
             case DiscreteMovementTrialState.Success:
             case DiscreteMovementTrialState.Failure:
@@ -287,11 +288,17 @@ public class HatGameController : MonoBehaviour
             case DiscreteMovementTrialState.Rest:
                 // Reset trial in the AANController.
                 aanCtrler.ResetTrial();
+                dlogger.UpdateLogFiles(trialNo);
                 // Reset stuff.
                 trialDuration = 0f;
                 prevControlBound = PlutoComm.controlBound;
                 currControlBound = 1.0f;
-                trialNo += 1;
+                if(targetSpwan && tempSpawn)
+                {
+                    trialNo += 1;
+                    tempSpawn = false;
+
+                }
                 _tempIntraStateTimer = 0f;
                 targetSpwan = false;
                 break;
@@ -299,19 +306,20 @@ public class HatGameController : MonoBehaviour
                 // Random select target from the appropriate range.
               
                 _trialTarget = targetAngle;
-                PlutoComm.setControlBound(.8f);
+                PlutoComm.setControlBound(1f);
                 break;
             case DiscreteMovementTrialState.Moving:
                 // Reset the intrastate timer.
                 _tempIntraStateTimer = 0f;
-                aanCtrler.SetNewTrialDetails(PlutoComm.angle, _trialTarget, stateDurations[(int)DiscreteMovementTrialState.Moving]);
-               //aanCtrler.SetNewTrialDetails(PlutoComm.angle, _trialTarget, ballFallingTime);
+               // aanCtrler.SetNewTrialDetails(PlutoComm.angle, _trialTarget, stateDurations[(int)DiscreteMovementTrialState.Moving]);
+               aanCtrler.SetNewTrialDetails(PlutoComm.angle, _trialTarget, ballFallingTime);
 
                 break;
             case DiscreteMovementTrialState.Success:
             case DiscreteMovementTrialState.Failure:
                 // Update adaptation row.
                 byte _successbyte = newState == DiscreteMovementTrialState.Success ? (byte)1 : (byte)0;
+                dlogger.WriteTrialRowInfo(_successbyte);
                 break;
         }
         _trialState = newState;
@@ -366,6 +374,7 @@ public class HatGameController : MonoBehaviour
             // Pluto AAN controller
             aanCtrler = new HOMERPlutoAANController(AppData.aRomValue, AppData.pRomValue, 0.85f);
             isRunning = true;
+            dlogger = new AANDataLogger(aanCtrler);
             // Set Control mode.
             PlutoComm.setControlType("POSITIONAAN");
             PlutoComm.setControlBound(currControlBound);
@@ -473,7 +482,7 @@ public class HatGameController : MonoBehaviour
         if (timeLeft > 0 && balldestroyed)
         {
             balldestroyed = false;
-            float ballSpeed = 1f + 0.1f * (1 + gameData.gameSpeedHT);
+            float ballSpeed = 1f + 0.3f * (1 + gameData.gameSpeedHT);
             float trailDuration = (8.0f / ballSpeed) * 0.8f;
             HT_spawnTargets1.instance.trailDuration = trailDuration;
             totalTargetsSpawned++;
@@ -503,7 +512,7 @@ public class HatGameController : MonoBehaviour
 
             PlayerObj = GameObject.FindGameObjectWithTag("Player");
 
-            // Calculate the total distance using Pythagorean theorem
+            // Calculate the total distance 
             float xDistance = spawnPosition.x - PlayerObj.transform.position.x;
             float yDistance = spawnPosition.y - PlayerObj.transform.position.y;
             float totalDistance = Mathf.Sqrt(xDistance * xDistance + yDistance * yDistance);
@@ -519,8 +528,8 @@ public class HatGameController : MonoBehaviour
                 spawnPosition,
                 spawnRotation
             );
-            targetSpwan = ((ballIndex == 0) || (ballIndex == 2) || (ballIndex == 3));
-
+            targetSpwan = ((ballIndex == 0) || (ballIndex == 1) || (ballIndex == 2) || (ballIndex == 3)); //it will be used when bomb added to the game Object 
+            tempSpawn=true;
             target.GetComponent<Rigidbody2D>().velocity = new Vector2(0, -ballSpeed);
             target.transform.localScale = HTDifficultyManager.Scale;
 
@@ -529,7 +538,7 @@ public class HatGameController : MonoBehaviour
             if (totalTargetsSpawned == randomTargetIndex)
             {
                 targetImage.gameObject.SetActive(true);
-                Debug.Log("Displaying the target image!");
+                Debug.Log("Displaying the target blocking image!");
             }
             else
             {
@@ -566,6 +575,12 @@ public class HatGameController : MonoBehaviour
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
         randomTargetIndex = random.Next(1, 11);
         Debug.Log("Random Target:" + randomTargetIndex);
+        date = DateTime.Now.ToString("yyyy-MM-dd");
+        string dateTime = DateTime.Now.ToString("Dyyyy-MM-ddTHH-mm-ss");
+        sessionNum = "Session" + AppData.currentSessionNumber;
+
+        AppData._dataLogDir = Path.Combine(DataManager.directoryPathSession, date, sessionNum, $"{AppData.selectedMechanism}_{AppData.selectedGame}_{dateTime}");
+      
     }
     private float ScreenPositionToAngle(float screenPosition)
     {
@@ -634,5 +649,7 @@ public class HatGameController : MonoBehaviour
     {
         isPressed = true;
     }
+
+
 
 }

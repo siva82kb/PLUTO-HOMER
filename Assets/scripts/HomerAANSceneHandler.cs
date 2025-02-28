@@ -108,7 +108,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
     private HOMERPlutoAANController aanCtrler;
 
     // Target Display Scaling
-    private const float xmax = 12f;
+    private float xmax = 12f;
 
     // Logging related variables
     // Variable to indicate if logging is to be started from the start of the next trial,
@@ -314,8 +314,9 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
             Debug.Log(PlutoComm.MECHANISMS[PlutoComm.mechanism]);
             if (PlutoComm.MECHANISMS[PlutoComm.mechanism] == "HOC")
             {
-                aRomValue = new float[2] { PlutoComm.getHOCAngle(0), PlutoComm.getHOCAngle(3) };
-                pRomValue = new float[2] { PlutoComm.getHOCAngle(0), PlutoComm.getHOCAngle(7) };
+                aRomValue[1] = 0;
+                pRomValue[1] = 0;
+                xmax = 6f;
             }
             Debug.Log($"AROM: [{aRomValue[0]}, {aRomValue[1]}]");
             Debug.Log($"PROM: [{pRomValue[0]}, {pRomValue[1]}]");
@@ -585,7 +586,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         UpdateDataDispay();
 
         // Display AROM/PROM markers.
-        Debug.Log($"{PlutoComm.MECHANISMS[PlutoComm.mechanism]} Calib Angle: {PlutoComm.CALIBANGLE[PlutoComm.mechanism]}");
+        Debug.Log($"{PlutoComm.MECHANISMS[PlutoComm.mechanism]} Calib Angle: {PlutoComm.CALIBANGLE[PlutoComm.mechanism]} AROM: {aRomValue[0]}, {aRomValue[1]}");
         aromLeft.transform.position = new Vector3(
             (2 * aRomValue[0] / PlutoComm.CALIBANGLE[PlutoComm.mechanism]) * xmax,
             aromLeft.transform.position.y,

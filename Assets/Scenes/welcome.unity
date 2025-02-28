@@ -422,8 +422,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 96880455}
-  - component: {fileID: 96880457}
-  - component: {fileID: 96880456}
   - component: {fileID: 96880458}
   m_Layer: 0
   m_Name: sceneHandler
@@ -447,30 +445,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &96880456
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 96880453}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 49de5690d41fe9d44934c8bb1e88273a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &96880457
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 96880453}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b02103ceefc9f64fa91a6dd3c467683, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &96880458
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1208,8 +1182,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 950, y: 50}
+  m_AnchoredPosition: {x: 30.6735, y: 0}
+  m_SizeDelta: {x: 1011.3469, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &503406897
 MonoBehaviour:
@@ -1233,8 +1207,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 'press pluto button to start calibration '
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 19fdcf8687240c84282a0307838c5f96, type: 2}
+  m_sharedMaterial: {fileID: 6678091363555379842, guid: 19fdcf8687240c84282a0307838c5f96, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1264,7 +1238,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 2
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 256
   m_textAlignment: 65535

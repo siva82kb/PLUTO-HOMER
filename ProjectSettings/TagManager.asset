@@ -3,7 +3,12 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - TopCollider
+  - BottomCollider
+  - Top
+  - Bottom
+  - Target
   layers:
   - Default
   - TransparentFX
@@ -40,4 +45,13 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Background
+    uniqueID: 3337055853
+    locked: 0
+  - name: MidGround
+    uniqueID: 2846337845
+    locked: 0
+  - name: ForeGround
+    uniqueID: 2414695357
     locked: 0

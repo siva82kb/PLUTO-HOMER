@@ -67,7 +67,7 @@ public class PlutoAANController
             {
                 successRate += 1;
             }
-        } 
+        }
         else
         {
             if (successRate >= 0)
@@ -133,7 +133,8 @@ public class HOMERPlutoAANController
     // Setter will automatically change the stateChange variable to true/false
     // depending on whether a new state value has been set.
     private HOMERPlutoAANState _state;
-    public HOMERPlutoAANState state {
+    public HOMERPlutoAANState state
+    {
         get => _state;
         private set
         {
@@ -147,7 +148,7 @@ public class HOMERPlutoAANController
     public float trialTime { private set; get; }
     private float[] _newAanTarget;
 
-    public HOMERPlutoAANController(float[] aRomValue, float[] pRomValue, float bndry=0.9f)
+    public HOMERPlutoAANController(float[] aRomValue, float[] pRomValue, float bndry = 0.9f)
     {
         //forgetFactor = forget;
         //assistFactor = assist;
@@ -182,7 +183,7 @@ public class HOMERPlutoAANController
 
         // Check if max duration is reached.
         bool _timeoutDone = (trialTime >= maxDuration) || trialDone;
-        
+
         // Update movement and time queues.
         UpdatePositionTimeQueues(actual, trialTime);
 
@@ -216,10 +217,10 @@ public class HOMERPlutoAANController
                 // Check if the AROM boundary is reached.
                 int _dir = Math.Sign(targetPosition - initialPosition);
                 float _arompos = (actual - aRom[0]) / (aRom[1] - aRom[0]);
-                Debug.Log(_arompos);
+               // Debug.Log(_arompos);
                 if ((_dir > 0 && _arompos >= aromBoundary) || (_dir < 0 && _arompos <= (1 - aromBoundary)))
                 {
-                    Debug.Log("True");
+                    //Debug.Log("True");
                     state = HOMERPlutoAANState.AssistToTarget;
                     // Generate target to assist.
                     GenerateAssistToTargetAanTarget(actual);
@@ -307,7 +308,7 @@ public class HOMERPlutoAANController
         if (targetPosition >= aRom[0] && targetPosition <= aRom[1])
         {
             // Check if initial postiion is in aRom
-            return  _initInArom ? TargetType.InAromFromArom : TargetType.InAromFromProm;
+            return _initInArom ? TargetType.InAromFromArom : TargetType.InAromFromProm;
         }
         // Target in pRom
         // Check if initial position is in aRom

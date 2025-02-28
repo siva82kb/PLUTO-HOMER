@@ -35,17 +35,15 @@ public class MechanismSceneHandler : MonoBehaviour
         // Initialize if needed
         if (AppData.UserData.dTableConfig == null)
         {
-            // Inialize the logger
             AppLogger.StartLogging(SceneManager.GetActiveScene().name);
-            // Initialize.
             AppData.initializeStuff();
         }
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
-        
+        AppLogger.SetCurrentMechanism("");
         // Attach PLUTO button event
         PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
-
+        PlutoComm.calibrate("NOMECH");
         //checking time scale 
         if (Time.timeScale == 0)
         {
@@ -61,6 +59,7 @@ public class MechanismSceneHandler : MonoBehaviour
 
     void Update()
     {
+        PlutoComm.sendHeartbeat();
         // Check if a scene change is needed.
         if (changeScene == true)
         {
@@ -103,7 +102,7 @@ public class MechanismSceneHandler : MonoBehaviour
 
     IEnumerator DelayedAttachListeners()
     {
-        yield return new WaitForSeconds(1f);  
+        yield return new WaitForSeconds(0.3f);  
         AttachToggleListeners();
     }
 
@@ -128,8 +127,9 @@ public class MechanismSceneHandler : MonoBehaviour
             if (toggleComponent != null && toggleComponent.isOn)
             {
                 toggleSelected = true;
-                AppData.selectMechanism = child.name;
-                AppLogger.LogInfo($"Selected '{AppData.selectMechanism}'.");
+                AppData.selectedMechanism = child.name;
+                AppLogger.SetCurrentMechanism(AppData.selectedMechanism);
+                AppLogger.LogInfo($"Selected '{AppData.selectedMechanism}'.");
                 break;
             }
         }
@@ -151,6 +151,7 @@ public class MechanismSceneHandler : MonoBehaviour
     void LoadNextScene()
     {
         AppLogger.LogInfo($"Switching scene to '{nextScene}'.");
+        gameData.setNeutral = false;
         SceneManager.LoadScene(nextScene);
     }
 

@@ -46,7 +46,6 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
     public UnityEngine.UI.Toggle tglDataLog;
 
     // AROM parameters
-    private bool _apromSet = false;
     private float[] aRomValue = new float[2] { -20f, 20f };
 
     // PROM parameters
@@ -135,7 +134,9 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         // Attach callbacks
         AttachControlCallbacks();
         // Connect to the robot.
-        ConnectToRobot.Connect(AppData.COMPort);
+        if (JediComm.serPort.IsOpen == false) { 
+            ConnectToRobot.Connect(AppData.COMPort);
+        }
         // Get device version.
         PlutoComm.getVersion();
         // First make sure the robot is not in any control mode
@@ -151,6 +152,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        Debug.Log($"{aRomValue[0]}, {aRomValue[1]}");
         // PLUTO heartbeat.
         PlutoComm.sendHeartbeat();
 
@@ -192,7 +194,6 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         bool _statetimeout = _deltime >= stateDurations[(int)_trialState];
         // Time when target is reached.
         bool _intgt = Math.Abs(_trialTarget - PlutoComm.angle) <= 5.0f;
-        Debug.Log(_statetimeout);
         switch (_trialState)
         {
             case DiscreteMovementTrialState.Rest:
@@ -298,7 +299,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         btnStartStop.onClick.AddListener(delegate { OnStartStopDemo(); });
 
         // PLUTO Diagnostics Button click.
-        btnDiagnsotics.onClick.AddListener(() => SceneManager.LoadScene(6));
+        btnDiagnsotics.onClick.AddListener(() => SceneManager.LoadScene("plutoDiagnostics"));
 
         // Listen to PLUTO's event
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
@@ -307,21 +308,6 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
 
     private void onNewPlutoData()
     {
-        // Check if ARROM has been set.
-        if (_apromSet == false)
-        {
-            // Adjust AROM/PROM for HOC mechanism
-            Debug.Log(PlutoComm.MECHANISMS[PlutoComm.mechanism]);
-            if (PlutoComm.MECHANISMS[PlutoComm.mechanism] == "HOC")
-            {
-                aRomValue = new float[2] { PlutoComm.getHOCAngle(0), PlutoComm.getHOCAngle(3) };
-                pRomValue = new float[2] { PlutoComm.getHOCAngle(0), PlutoComm.getHOCAngle(7) };
-            }
-            Debug.Log($"AROM: [{aRomValue[0]}, {aRomValue[1]}]");
-            Debug.Log($"PROM: [{pRomValue[0]}, {pRomValue[1]}]");
-            _apromSet = true;
-        }
-
         // Log data if needed. Else move on.
         if (logRawFile == null) return;
 
@@ -374,6 +360,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         {
             logAanFile.WriteLine(String.Join(", ", rowcomps));
         }
+        Debug.Log("Writing ");
     }
 
     private void OnStartStopDemo()
@@ -577,15 +564,14 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
 
     private void UpdateUI()
     {
-        // Enable start/stop button only if APROM is set.
-        Debug.Log(_apromSet);
-        btnStartStop.interactable = _apromSet;
-
         // Update data dispaly
         UpdateDataDispay();
+            
+        // Enable/Disable control panel.
+        string _mech = PlutoComm.MECHANISMS[PlutoComm.mechanism];
+        string _ctrlType = PlutoComm.CONTROLTYPE[PlutoComm.controlType];
 
         // Display AROM/PROM markers.
-        Debug.Log($"{PlutoComm.MECHANISMS[PlutoComm.mechanism]} Calib Angle: {PlutoComm.CALIBANGLE[PlutoComm.mechanism]}");
         aromLeft.transform.position = new Vector3(
             (2 * aRomValue[0] / PlutoComm.CALIBANGLE[PlutoComm.mechanism]) * xmax,
             aromLeft.transform.position.y,

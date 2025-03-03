@@ -103,7 +103,7 @@ public class Pluto_SceneHandler : MonoBehaviour
             // Set the control target.
             PlutoComm.setControlTarget(controlTarget);
         }
-        
+
         // Udpate UI
         UpdateUI();
 
@@ -131,7 +131,7 @@ public class Pluto_SceneHandler : MonoBehaviour
 
         // Button click.
         btnNextRandomTarget.onClick.AddListener(delegate { OnNextRandomTarget(); });
-            
+
         // AAN Demo Button click.
         btnAANDemo.onClick.AddListener(delegate { OnAANDemoSceneLoad(); });
 
@@ -144,7 +144,7 @@ public class Pluto_SceneHandler : MonoBehaviour
 
     private void OnAANDemoSceneLoad()
     {
-        SceneManager.LoadScene(5);
+        SceneManager.LoadScene("homer_aan");
     }
 
     private void PlutoComm_OnMechanismChange()
@@ -531,8 +531,6 @@ public class Pluto_SceneHandler : MonoBehaviour
                 break;
             case CalibrationState.ZERO_SET:
                 float _angval = PlutoComm.angle + PlutoComm.MECHOFFSETVALUE[_mechInx];
-                Debug.Log($"Angle: {_angval}");
-                Debug.Log(PlutoComm.CALIBANGLE[_mechInx]);
                 if (Math.Abs(_angval) >= 0.9 * PlutoComm.CALIBANGLE[_mechInx]
                     && Math.Abs(_angval) <= 1.1 * PlutoComm.CALIBANGLE[_mechInx])
                 {

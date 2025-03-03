@@ -1,4 +1,4 @@
-using System;
+using System; 
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
@@ -12,6 +12,7 @@ using System.Globalization;
 using Unity.VisualScripting;
 using UnityEngine.SceneManagement;
 using System.Text.RegularExpressions;
+using NeuroRehabLibrary;
 
 public class welcomSceneHandler : MonoBehaviour
 {
@@ -26,11 +27,11 @@ public class welcomSceneHandler : MonoBehaviour
     public Image[] pies = new Image[7];
     public bool piChartUpdated = false; 
     private DaySummary[] daySummaries;
-    public static bool changeScene = false;
     public readonly string nextScene = "chooseMechanism";
 
     // Private variables
     private bool attachPlutoButtonEvent = false;
+    bool changeScene = false;
 
     // Start is called before the first frame update
     void Start()
@@ -39,22 +40,40 @@ public class welcomSceneHandler : MonoBehaviour
         AppLogger.StartLogging(SceneManager.GetActiveScene().name);
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
-
-        // Initialize.
-        AppData.initializeStuff();
-        daySummaries = AppData.UserData.CalculateMoveTimePerDay();
-
-        // Update summary display
-        if (!piChartUpdated)
+        // Check if the directory exists
+        if (!Directory.Exists(DataManager.directoryPath))
         {
-            UpdateUserData();
-            UpdatePieChart();
+            // If not, create the directory
+            Directory.CreateDirectory(DataManager.directoryPath);
         }
+            if (!File.Exists(DataManager.filePathConfigData))
+        {
+            SceneManager.LoadScene("configuration");
+        }
+        else
+        {
+            // Initialize.
+            AppData.initializeStuff();
+            //Neuro Library
+            string baseDirectory = DataManager.directoryPathSession;
+            Debug.Log(baseDirectory);
+            SessionManager.Initialize(DataManager.directoryPathSession);
+            SessionManager.Instance.Login();
+            daySummaries = AppData.UserData.CalculateMoveTimePerDay();
+
+            // Update summary display
+            if (!piChartUpdated)
+            {
+                UpdateUserData();
+                UpdatePieChart();
+            }
+        }
+        
     }
 
-    // Update is called once per frame
     void Update()
     {
+       // PlutoComm.sendHeartbeat();
         // Attach PlutoButton release event after 2 seconds if it is not attached already.
         if (!attachPlutoButtonEvent && Time.timeSinceLevelLoad > 2)
         {
@@ -79,7 +98,8 @@ public class welcomSceneHandler : MonoBehaviour
     {
         AppLogger.LogInfo($"Switching to the next scene '{nextScene}'.");
         SceneManager.LoadScene(nextScene);
-    }
+    } 
+
 
     private void UpdateUserData()
     {
@@ -91,7 +111,7 @@ public class welcomSceneHandler : MonoBehaviour
 
     private void UpdatePieChart()
     {
-        int N = daySummaries.Length;
+        int N = daySummaries.Length;  
         for (int i = 0; i < N; i++)
         {
             Debug.Log($"{i} | {daySummaries[i].Day} | {daySummaries[i].Date} | {daySummaries[i].MoveTime}");

@@ -5,9 +5,18 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
-    path: Assets/Scenes/plutoDiagnostiocs.unity
+  - enabled: 1
+    path: Assets/Scenes/plutodiagnostiocs_old.unity
     guid: 2cda990e2423bbf4892e6590ba056729
+  - enabled: 1
+    path: Assets/Scenes/plutoDiagnostics.unity
+    guid: ae638c7fbc692d246bd295bc93aab8a6
+  - enabled: 1
+    path: Assets/Scenes/homer_aan.unity
+    guid: e4566bcb5dba8834dbba39a5ab92d390
+  - enabled: 1
+    path: Assets/Scenes/configuration.unity
+    guid: 5acedfc7e9c3b7248a5a88c47481d77e
   - enabled: 1
     path: Assets/Scenes/welcome.unity
     guid: 6ca3db99d91ceea4ca68eb55d0550929
@@ -20,20 +29,23 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/choosegame.unity
     guid: a290ee357065774418c4a6ac7ae6091e
-  - enabled: 0
+  - enabled: 1
+    path: Assets/Scenes/Assessment.unity
+    guid: fb3e1b235c67ddb4d836b05585e9b29d
+  - enabled: 1
     path: Assets/Scenes/pong_menu.unity
-    guid: c790d31d6177a1a459a946685b8cbdc9
-  - enabled: 0
+    guid: 37b050a3a5de0d348b0db40266ed101c
+  - enabled: 1
+    path: Assets/Games/FlappyBirdStyleAssets/Scenes/FlappyGame.unity
+    guid: 9fc0d4010bbf28b4594072e72b8655ab
+  - enabled: 1
     path: Assets/Scenes/pong_game.unity
-    guid: 4526a8640bed28945a91adf24045ec4d
+    guid: 843303f4dc513b749a4a0dd9991dbe92
+  - enabled: 1
+    path: Assets/Games/Hatrick/_Scenes/HatrickGame.unity
+    guid: 74449f2fed57eb24dbd6d02c5ed4b309
   - enabled: 1
     path: Assets/Scenes/summaryScene.unity
     guid: 9ea6557cdd4880041a1be37a80a05e30
-  - enabled: 1
-    path: Assets/Scenes/homer_aan.unity
-    guid: 9f145429f92e149449428e347fae6809
-  - enabled: 1
-    path: Assets/Scenes/plutoDiagnostics.unity
-    guid: e159e2c4e7633f240b72c735975b2139
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

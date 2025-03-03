@@ -105,6 +105,10 @@ public static class PlutoComm
     static public ushort packetNumber { get; private set; }
     static public float runTime { get; private set; }
     static public float prevRunTime { get; private set; }
+    public static int GetPlutoCodeFromLabel(string[] array, string value)
+    {
+        return Array.IndexOf(array, value) - 1;
+    }
     static public int status
     {
         get
@@ -210,7 +214,7 @@ public static class PlutoComm
     {
         get
         {
-            return (sbyte) currentStateData[5];
+            return (sbyte)currentStateData[5];
         }
     }
     static public float target
@@ -273,7 +277,7 @@ public static class PlutoComm
         currentStateData[2] = 255 * rawBytes[3] + rawBytes[2];
         // Actuated - Mech
         currentStateData[3] = rawBytes[4];
-        
+
         // Handle data based on what type of data it is.
         byte _datatype = (byte)(currentStateData[1] >> 4);
         switch (OUTDATATYPE[_datatype])
@@ -293,9 +297,9 @@ public static class PlutoComm
                 for (int i = 0; i < nSensors; i++)
                 {
                     currentSensorData[i + 1] = BitConverter.ToSingle(
-                        new byte[] { 
+                        new byte[] {
                             rawBytes[offset + 1 + (i * 4)],
-                            rawBytes[offset + 2 + (i * 4)], 
+                            rawBytes[offset + 2 + (i * 4)],
                             rawBytes[offset + 3 + (i * 4)],
                             rawBytes[offset + 4 + (i * 4)] },
                         0
@@ -327,7 +331,7 @@ public static class PlutoComm
                 }
 
                 // Check if the mechanism has been changed.
-                if ((previousStateData[3] >> 4)  != (currentStateData[3] >> 4))
+                if ((previousStateData[3] >> 4) != (currentStateData[3] >> 4))
                 {
                     OnMechanismChange?.Invoke();
                 }
@@ -353,7 +357,7 @@ public static class PlutoComm
 
     public static float getHOCAngle(float disp)
     {
-        return (float) (-disp / HOCScale);
+        return (float)(-disp / HOCScale);
 
     }
 
@@ -378,7 +382,7 @@ public static class PlutoComm
     }
 
     public static void calibrate(string mech)
-    {   
+    {
         JediComm.SendMessage(
             new byte[] {
                 (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "CALIBRATE")],
@@ -400,6 +404,7 @@ public static class PlutoComm
 
     public static void setControlTarget(float target)
     {
+        //Debug.Log("CT running");
         byte[] targetBytes = BitConverter.GetBytes(target);
         JediComm.SendMessage(
             new byte[] {
@@ -413,7 +418,7 @@ public static class PlutoComm
     }
 
     public static void setAANTarget(float tgt0, float t0, float tgt1, float dur)
-    {
+    {// Debug.Log("AAN running");
         Debug.Log($"tgt0: {tgt0:F2} | t0: {t0:F2} | tgt1: {tgt1:F2} | dur: {dur:F2}");
         byte[] tgt0Bytes = BitConverter.GetBytes(tgt0);
         byte[] t0Bytes = BitConverter.GetBytes(t0);
@@ -442,8 +447,9 @@ public static class PlutoComm
     public static void setControlBound(float ctrlBound)
     {
         // Limit the value to be between 0 and 1.
+        //Debug.Log("CB running "+ ctrlBound);
         ctrlBound = Math.Max(0, Math.Min(1, ctrlBound));
-        byte _ctrlboundbyte = (byte) (ctrlBound * 255);
+        byte _ctrlboundbyte = (byte)(ctrlBound * 255);
         JediComm.SendMessage(
             new byte[] {
                 (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "SET_CONTROL_BOUND")],
@@ -454,6 +460,7 @@ public static class PlutoComm
 
     public static void setControlDir(sbyte ctrlDir)
     {
+        Debug.Log("CD running");
         // Limit the value to be between 0 and 1.
         if ((ctrlDir != 1) && (ctrlDir != -1))
         {
@@ -475,7 +482,7 @@ public static class PlutoComm
     public static void sendHeartbeat()
     {
         JediComm.SendMessage(new byte[] { (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "HEARTBEAT")] });
-    }   
+    }
 
 }
 

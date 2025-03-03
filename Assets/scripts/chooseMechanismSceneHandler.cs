@@ -33,7 +33,7 @@ public class MechanismSceneHandler : MonoBehaviour
     void Start()
     {
         // Initialize if needed
-        if (AppData.UserData.dTableConfig == null)
+        if (AppData.userData.dTableConfig == null)
         {
             AppLogger.StartLogging(SceneManager.GetActiveScene().name);
             AppData.initializeStuff();
@@ -73,7 +73,7 @@ public class MechanismSceneHandler : MonoBehaviour
         foreach (Transform child in mehcanismSelectGroup.transform)
         {
             Toggle toggleComponent = child.GetComponent<Toggle>();
-            bool isPrescribed = AppData.UserData.mechMoveTimePrsc[toggleComponent.name] > 0;
+            bool isPrescribed = AppData.userData.mechMoveTimePrsc[toggleComponent.name] > 0;
             // Hide the component if it has no prescribed time.
             toggleComponent.interactable = isPrescribed;
             toggleComponent.gameObject.SetActive(isPrescribed);
@@ -86,7 +86,7 @@ public class MechanismSceneHandler : MonoBehaviour
                 if (timeLeftText != null)
                 {
                     // Set the text to your desired value
-                    timeLeftText.text = $"{AppData.UserData.getTodayMoveTimeForMechanism(toggleComponent.name)} / {AppData.UserData.mechMoveTimePrsc[toggleComponent.name]} min";
+                    timeLeftText.text = $"{AppData.userData.getTodayMoveTimeForMechanism(toggleComponent.name)} / {AppData.userData.mechMoveTimePrsc[toggleComponent.name]} min";
                 }
                 else
                 {

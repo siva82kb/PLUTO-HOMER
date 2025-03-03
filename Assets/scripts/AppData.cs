@@ -25,17 +25,26 @@ public static class PlutoDefs
     }
 }
 
+public static class HomerTherapyConstants
+{
+    public static readonly float SuccessRateThForSpeedIncrement= 0.9f;
+    static public readonly Dictionary<string, float> GameSpeedIncrements = new Dictionary<string, float>  {
+        { "PING-PONG", 0.5f },
+        { "TUK-TUK", 0.2f },
+        { "HAT-Trick", 1f }
+    };
+}
+
+
 public static class AppData
 {
     // COM Port for the device
-    public static readonly string COMPort = "COM4";
-
-    static public float[] offsetAtNeutral = new float[] { 68, 68, 90, 0, 90 , 90  };
+    public static readonly string COMPort = "COM5";
+    static public readonly float[] offsetAtNeutral = new float[] { 68, 68, 90, 0, 90 , 90  };
 
     // Old and new PROM
     public static ROM oldPROM;
     public static ROM newPROM;
-
     public static ROM oldAROM;
     public static ROM newAROM;
 
@@ -48,13 +57,7 @@ public static class AppData
 
 
     public static string _dataLogDir = null;
-    //// Counts to keep track of time for different GUI updatess
-    //public static int[] count = new int[] { 0, 0 };
-    //private static int[] _Th;
-    //public static int[] Th
-    //{
-    //    get { return new int[] { 10, 50, }; }
-    //}
+    
     // Keeping track of time.
     static private double nanosecPerTick = 1.0 / Stopwatch.Frequency;
     static private Stopwatch stp_watch = new Stopwatch();
@@ -62,307 +65,317 @@ public static class AppData
     {
         get { return stp_watch.ElapsedTicks * nanosecPerTick; }
     }
-    //Options to drive 
+    
+    // Options to drive 
     public static string trainingSide = null;
     public static string selectedMechanism=null;
     public static string selectedGame = null;
-    //handling the data
+    
+    // Handling the data
     public static int currentSessionNumber;
     public static string trialDataFileLocation;
     public static string trialDataFileLocation1;
 
-
     //change true to run game from choosegamescene
     public static bool runIndividualGame = false;
+
+    // User data
+    public static PlutoUserData userData;
+
+    // Game data
+    public static HatTrickGame hatTrickGame;
+
     public static void initializeStuff()
     {
         DataManager.createFileStructure();
         ConnectToRobot.Connect(AppData.COMPort);
-        UserData.readAllUserData();
+        AppLogger.LogInfo($"Connected to PLUTO @ {AppData.COMPort}.");
+        userData = new PlutoUserData(DataManager.filePathConfigData, DataManager.filePathSessionData);
+        // Initialize game classes to null.
+        hatTrickGame = null;
         PlutoComm.startSensorStream();
+        AppLogger.LogInfo($"PLUTO SensorStream started.");
     }
+}
 
-    // UserData Class
-    public static class UserData
+// UserData Class
+public class PlutoUserData
+{
+    public DataTable dTableConfig { private set; get; } = null;
+    public DataTable dTableSession { private set; get; } = null;
+    public string hospNumber { private set; get; }
+    public bool rightHand { private set; get; }
+    public DateTime startDate { private set; get; }
+    public Dictionary<string, float> mechMoveTimePrsc { get; private set; } // Prescribed movement time
+    public Dictionary<string, float> mechMoveTimePrev { get; private set; } // Previous movement time 
+    public Dictionary<string, float> mechMoveTimeCurr { get; private set; } // Current movement time
+
+    // Total movement times.
+    public float totalMoveTimePrsc
     {
-        public static DataTable dTableConfig = null;
-        public static DataTable dTableSession = null;
-        public static string hospNumber;
-        public static DateTime startDate;
-        public static Dictionary<string, float> mechMoveTimePrsc { get; private set; } // Prescribed movement time
-        public static Dictionary<string, float> mechMoveTimePrev { get; private set; } // Previous movement time 
-        public static Dictionary<string, float> mechMoveTimeCurr { get; private set; } // Current movement time
-
-        // Total movement times.
-        public static float totalMoveTimePrsc
+        get
         {
-            get
+            if (mechMoveTimePrsc == null)
             {
-                if (mechMoveTimePrsc == null)
-                {
-                    return -1f;
-                }
-                else
-                {
-                    return mechMoveTimePrsc.Values.Sum();
-                }
-            }
-        }
-
-        public static float totalMoveTimePrev
-        {
-            get
-            {
-                if (!File.Exists(DataManager.filePathSessionData))
-                {
-                    return -1f;
-                }
-                if (mechMoveTimePrev == null)
-                {
-                    return -1f;
-                }
-                else
-                {
-                    return mechMoveTimePrev.Values.Sum();
-                }
-            }
-        }
-
-        public static float totalMoveTimeCurr
-        {
-            get
-            {
-                if (!File.Exists(DataManager.filePathSessionData))
-                {
-                    return -1f;
-                }
-                if (mechMoveTimeCurr == null)
-                {
-                    return -1f;
-                }
-                else
-                {
-                    return mechMoveTimeCurr.Values.Sum();
-                }
-            }
-        }
-
-        public static float totalMoveTimeRemaining
-        {
-            get
-            {
-                float _total = 0f;
-
-                if (mechMoveTimePrsc != null && (mechMoveTimePrev == null || mechMoveTimeCurr == null))
-                {
-                    foreach (string mech in PlutoDefs.Mechanisms)
-                    {
-                        _total += mechMoveTimePrsc[mech];
-                    }
-                    return _total; 
-                }
-                else {
-                    foreach (string mech in PlutoDefs.Mechanisms)
-                    {
-                        _total += mechMoveTimePrsc[mech] - mechMoveTimePrev[mech] - mechMoveTimeCurr[mech];
-                    }
-                    return _total;
-                }
-
-               
-            }
-        }
-        public static void readAllUserData()
-        {
-            if (File.Exists(DataManager.filePathConfigData))
-            {
-                dTableConfig = DataManager.loadCSV(DataManager.filePathConfigData);
-            }
-            if (File.Exists(DataManager.filePathSessionData))
-            {
-                dTableSession = DataManager.loadCSV(DataManager.filePathSessionData);
-            }
-            mechMoveTimeCurr = createMoveTimeDictionary();
-            // Read the therapy configuration data.
-            parseTherapyConfigData();
-            if (File.Exists(DataManager.filePathSessionData))
-            {
-                parseMechanismMoveTimePrev();
-            }
-        }
-        private static Dictionary<string, float> createMoveTimeDictionary()
-        {
-            Dictionary<string, float> _temp = new Dictionary<string, float>();
-            for (int i = 0; i < PlutoDefs.Mechanisms.Length; i++)
-            {
-                _temp.Add(PlutoDefs.Mechanisms[i], 0f);
-            }
-            return _temp;
-        }
-
-        public static float getRemainingMoveTime(string mechanism)
-        {
-            return mechMoveTimePrsc[mechanism] - mechMoveTimePrev[mechanism] - mechMoveTimeCurr[mechanism];
-        }
-
-        public static float getTodayMoveTimeForMechanism(string mechanism)
-        {
-            if (mechMoveTimePrev == null || mechMoveTimeCurr == null)
-            {
-                return 0f;
+                return -1f;
             }
             else
             {
-                float result = mechMoveTimePrev[mechanism] + mechMoveTimeCurr[mechanism];
-                return Mathf.Round(result * 100f) / 100f; // Rounds to two decimal places
+                return mechMoveTimePrsc.Values.Sum();
             }
         }
+    }
 
-        public static int getCurrentDayOfTraining()
+    public float totalMoveTimePrev
+    {
+        get
         {
-            TimeSpan duration = DateTime.Now - startDate;
-            return (int)duration.TotalDays;
-        }
-
-        private static void parseMechanismMoveTimePrev()
-        {
-            mechMoveTimePrev = createMoveTimeDictionary();
-            for (int i = 0; i < PlutoDefs.Mechanisms.Length; i++)
+            if (!File.Exists(DataManager.filePathSessionData))
             {
-                // Get the total movement time for each mechanism
-                var _totalMoveTime = dTableSession.AsEnumerable()
-                    .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == DateTime.Now.Date)
-                    .Where(row => row.Field<string>("Mechanism") == PlutoDefs.Mechanisms[i])
-                    .Sum(row => Convert.ToInt32(row["MoveTime"]));
-                mechMoveTimePrev[PlutoDefs.Mechanisms[i]] = _totalMoveTime / 60f;
+                return -1f;
             }
-        }
-
-
-        public static void CalculateGameSpeedForLastUsageDay()
-        {
-            if (dTableSession == null || dTableSession.Rows.Count == 0)
+            if (mechMoveTimePrev == null)
             {
-                UnityEngine.Debug.LogWarning("Session data is not available.");
-                return;
+                return -1f;
             }
-            Dictionary<string, float> gameIncrements = new Dictionary<string, float>
-                {
-                    { "PING-PONG", 0.5f },
-                    { "TUK-TUK", 0.2f },
-                    { "HAT-Trick", 1f }
-                };
-
-
-            var lastUsageDate = dTableSession.AsEnumerable()
-                .Where(row => row.Field<string>("Mechanism") == selectedMechanism)
-                .Select(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date)
-                .Where(date => date < DateTime.Now.Date) // Exclude today
-                .OrderByDescending(date => date)
-                .FirstOrDefault();
-
-            if (lastUsageDate == default(DateTime))
+            else
             {
-                UnityEngine.Debug.LogWarning($"No usage data found for mechanism: {selectedMechanism}");
-                return;
-            }
-
-            UnityEngine.Debug.Log($"Last usage date for mechanism {selectedMechanism}: {lastUsageDate:dd-MM-yyyy}");
-
-            Dictionary<string, float> updatedGameSpeeds = new Dictionary<string, float>();
-
-            foreach (var game in gameIncrements.Keys)
-            {
-                var rows = dTableSession.AsEnumerable()
-                    .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == lastUsageDate)
-                    .Where(row => row.Field<string>("GameName") == game && row.Field<string>("Mechanism") == selectedMechanism);
-
-                float previousGameSpeed = rows.Any() ? rows.Average(row => Convert.ToSingle(row["GameSpeed"])) : 0f;
-                float avgSuccessRate = rows.Any() ? rows.Average(row => Convert.ToSingle(row["SuccessRate"])) : 0f;
-
-                if (avgSuccessRate >= 0.9f)
-                {
-                    updatedGameSpeeds[game] = previousGameSpeed + gameIncrements[game];
-                }
-                else
-                {
-                    updatedGameSpeeds[game] = previousGameSpeed;
-                }
-            }
-            UnityEngine.Debug.Log($"Updated GameSpeeds for Mechanism: {selectedMechanism}");
-            foreach (var game in updatedGameSpeeds)
-            {
-                UnityEngine.Debug.Log($"Game: {game.Key}, Updated GameSpeed: {game.Value}");
-                if (game.Key == "PING-PONG")
-                {
-                    gameData.gameSpeedPP = game.Value;
-                }
-                else if (game.Key == "TUK-TUK")
-                {
-                    gameData.gameSpeedTT = game.Value;
-                }
-                else if (game.Key == "HAT-Trick")
-                {
-                    gameData.gameSpeedHT = game.Value;
-                }
+                return mechMoveTimePrev.Values.Sum();
             }
         }
+    }
 
-        private static void parseTherapyConfigData()
+    public float totalMoveTimeCurr
+    {
+        get
         {
-            DataRow lastRow = dTableConfig.Rows[dTableConfig.Rows.Count - 1];
-            hospNumber = lastRow.Field<string>("hospno");
-            AppData.trainingSide = lastRow.Field<string>("TrainingSide");
-           startDate = DateTime.ParseExact(lastRow.Field<string>("startdate"), "dd-MM-yyyy", CultureInfo.InvariantCulture);
-            mechMoveTimePrsc = createMoveTimeDictionary();//prescribed time
-            for (int i = 0; i < PlutoDefs.Mechanisms.Length; i++)
+            if (!File.Exists(DataManager.filePathSessionData))
             {
-                mechMoveTimePrsc[PlutoDefs.Mechanisms[i]] = float.Parse(lastRow.Field<string>(PlutoDefs.Mechanisms[i]));
+                return -1f;
+            }
+            if (mechMoveTimeCurr == null)
+            {
+                return -1f;
+            }
+            else
+            {
+                return mechMoveTimeCurr.Values.Sum();
             }
         }
+    }
 
-        // Returns today's total movement time in minutes.
-        public static float getPrevTodayMoveTime()
+    public float totalMoveTimeRemaining
+    {
+        get
         {
-            var _totalMoveTimeToday = dTableSession.AsEnumerable()
+            float _total = 0f;
+
+            if (mechMoveTimePrsc != null && (mechMoveTimePrev == null || mechMoveTimeCurr == null))
+            {
+                foreach (string mech in PlutoDefs.Mechanisms)
+                {
+                    _total += mechMoveTimePrsc[mech];
+                }
+                return _total;
+            }
+            else
+            {
+                foreach (string mech in PlutoDefs.Mechanisms)
+                {
+                    _total += mechMoveTimePrsc[mech] - mechMoveTimePrev[mech] - mechMoveTimeCurr[mech];
+                }
+                return _total;
+            }
+        }
+    }
+
+    // Constructor
+    public PlutoUserData(string configData, string sessionData)
+    {
+        if (File.Exists(configData))
+        {
+            dTableConfig = DataManager.loadCSV(configData);
+        }
+        if (File.Exists(sessionData))
+        {
+            dTableSession = DataManager.loadCSV(sessionData);
+        }
+        mechMoveTimeCurr = createMoveTimeDictionary();
+
+        // Read the therapy configuration data.
+        parseTherapyConfigData();
+        if (File.Exists(DataManager.filePathSessionData))
+        {
+            parseMechanismMoveTimePrev();
+        }
+
+        // Is right training side
+        UnityEngine.Debug.Log(dTableConfig.Rows[0]["TrainingSide"].ToString());
+        this.rightHand = dTableConfig.Rows[0]["TrainingSide"].ToString() == "right";
+    }
+
+    private Dictionary<string, float> createMoveTimeDictionary()
+    {
+        Dictionary<string, float> _temp = new Dictionary<string, float>();
+        for (int i = 0; i < PlutoDefs.Mechanisms.Length; i++)
+        {
+            _temp.Add(PlutoDefs.Mechanisms[i], 0f);
+        }
+        return _temp;
+    }
+
+    public float getRemainingMoveTime(string mechanism)
+    {
+        return mechMoveTimePrsc[mechanism] - mechMoveTimePrev[mechanism] - mechMoveTimeCurr[mechanism];
+    }
+
+    public float getTodayMoveTimeForMechanism(string mechanism)
+    {
+        if (mechMoveTimePrev == null || mechMoveTimeCurr == null)
+        {
+            return 0f;
+        }
+        else
+        {
+            float result = mechMoveTimePrev[mechanism] + mechMoveTimeCurr[mechanism];
+            return Mathf.Round(result * 100f) / 100f; // Rounds to two decimal places
+        }
+    }
+
+    public int getCurrentDayOfTraining()
+    {
+        TimeSpan duration = DateTime.Now - startDate;
+        return (int)duration.TotalDays;
+    }
+
+    private void parseMechanismMoveTimePrev()
+    {
+        mechMoveTimePrev = createMoveTimeDictionary();
+        for (int i = 0; i < PlutoDefs.Mechanisms.Length; i++)
+        {
+            // Get the total movement time for each mechanism
+            var _totalMoveTime = dTableSession.AsEnumerable()
                 .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == DateTime.Now.Date)
+                .Where(row => row.Field<string>("Mechanism") == PlutoDefs.Mechanisms[i])
                 .Sum(row => Convert.ToInt32(row["MoveTime"]));
-            UnityEngine.Debug.Log(_totalMoveTimeToday);
-            return _totalMoveTimeToday / 60f;
+            mechMoveTimePrev[PlutoDefs.Mechanisms[i]] = _totalMoveTime / 60f;
         }
-        public static DaySummary[] CalculateMoveTimePerDay(int noOfPastDays = 7)
+    }
+
+    public void calculateGameSpeedForLastUsageDay()
+    {
+        //if (dTableSession == null || dTableSession.Rows.Count == 0)
+        //{
+        //    AppLogger.LogError("Session data is not available.");
+        //    return;
+        //}
+        //// Get the recent data of use for the selected mechanism.
+        //var lastUsageDate = dTableSession.AsEnumerable()
+        //    .Where(row => row.Field<string>("Mechanism") == selectedMechanism)
+        //    .Select(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date)
+        //    .Where(date => date < DateTime.Now.Date) // Exclude today
+        //    .OrderByDescending(date => date)
+        //    .FirstOrDefault();
+        //if (lastUsageDate == default(DateTime))
+        //{
+        //    AppLogger.LogWarning($"No usage data found for mechanism: {selectedMechanism}");
+        //    return;
+        //}
+        //AppLogger.LogInfo($"Last usage date for mechanism {selectedMechanism}: {lastUsageDate:dd-MM-yyyy}");
+
+        //Dictionary<string, float> updatedGameSpeeds = new Dictionary<string, float>();
+        //foreach (var _gameName in HomerTherapyConstants.GameSpeedIncrements.Keys)
+        //{
+        //    var rows = dTableSession.AsEnumerable()
+        //        .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == lastUsageDate)
+        //        .Where(row => row.Field<string>("GameName") == _gameName && row.Field<string>("Mechanism") == selectedMechanism);
+
+        //    float previousGameSpeed = rows.Any() ? rows.Average(row => Convert.ToSingle(row["GameSpeed"])) : 0f;
+        //    float avgSuccessRate = rows.Any() ? rows.Average(row => Convert.ToSingle(row["SuccessRate"])) : 0f;
+
+        //    if (avgSuccessRate >= HomerTherapyConstants.SuccessRateThForSpeedIncrement)
+        //    {
+        //        updatedGameSpeeds[_gameName] = previousGameSpeed + HomerTherapyConstants.GameSpeedIncrements[_gameName];
+        //    }
+        //    else
+        //    {
+        //        updatedGameSpeeds[_gameName] = previousGameSpeed;
+        //    }
+        //}
+        //AppLogger.LogInfo($"Updated GameSpeeds for Mechanism: {selectedMechanism}");
+        //foreach (var game in updatedGameSpeeds)
+        //{
+        //    AppLogger.LogInfo($"Game speed for '{game.Key}' is set to {game.Value}.");
+        //    if (game.Key == "PING-PONG")
+        //    {
+        //        gameData.gameSpeedPP = game.Value;
+        //    }
+        //    else if (game.Key == "TUK-TUK")
+        //    {
+        //        gameData.gameSpeedTT = game.Value;
+        //    }
+        //    else if (game.Key == "HAT-Trick")
+        //    {
+        //        gameData.gameSpeedHT = game.Value;
+        //    }
+        //}
+    }
+
+    private void parseTherapyConfigData()
+    {
+        DataRow lastRow = dTableConfig.Rows[dTableConfig.Rows.Count - 1];
+        hospNumber = lastRow.Field<string>("hospno");
+        AppData.trainingSide = lastRow.Field<string>("TrainingSide");
+        startDate = DateTime.ParseExact(lastRow.Field<string>("startdate"), "dd-MM-yyyy", CultureInfo.InvariantCulture);
+        mechMoveTimePrsc = createMoveTimeDictionary();//prescribed time
+        for (int i = 0; i < PlutoDefs.Mechanisms.Length; i++)
         {
-            // Check if the session file has been loaded and has rows
-            if (dTableSession == null || dTableSession.Rows.Count == 0)
-            {
-                UnityEngine.Debug.LogWarning("Session data is not available or the file is empty.");
-                return new DaySummary[0]; 
-            }
-            DateTime today = DateTime.Now.Date;
-            DaySummary[] daySummaries = new DaySummary[noOfPastDays];
-
-            // Loop through each day, starting from the day before today, going back `noOfPastDays`
-            for (int i = 1; i <= noOfPastDays; i++)
-            {
-                DateTime _day = today.AddDays(-i);
-
-                // Calculate the total move time for the given day. If no data is found, _moveTime will be zero.
-                int _moveTime = dTableSession.AsEnumerable()
-                    .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == _day)
-                    .Sum(row => Convert.ToInt32(row["MoveTime"]));
-
-                daySummaries[i - 1] = new DaySummary
-                {
-                    Day = Miscellaneous.GetAbbreviatedDayName(_day.DayOfWeek),
-                    Date = _day.ToString("dd/MM"),
-                    MoveTime = _moveTime / 60f 
-                };
-
-                UnityEngine.Debug.Log($"{i} | {daySummaries[i - 1].Day} | {daySummaries[i - 1].Date} | {daySummaries[i - 1].MoveTime}");
-            }
-
-            return daySummaries;
+            mechMoveTimePrsc[PlutoDefs.Mechanisms[i]] = float.Parse(lastRow.Field<string>(PlutoDefs.Mechanisms[i]));
         }
+    }
+
+    // Returns today's total movement time in minutes.
+    public float getPrevTodayMoveTime()
+    {
+        var _totalMoveTimeToday = dTableSession.AsEnumerable()
+            .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == DateTime.Now.Date)
+            .Sum(row => Convert.ToInt32(row["MoveTime"]));
+        UnityEngine.Debug.Log(_totalMoveTimeToday);
+        return _totalMoveTimeToday / 60f;
+    }
+
+    public DaySummary[] CalculateMoveTimePerDay(int noOfPastDays = 7)
+    {
+        //// Check if the session file has been loaded and has rows
+        //if (dTableSession == null || dTableSession.Rows.Count == 0)
+        //{
+        //    UnityEngine.Debug.LogWarning("Session data is not available or the file is empty.");
+        //    return new DaySummary[0];
+        //}
+        //DateTime today = DateTime.Now.Date;
+        //DaySummary[] daySummaries = new DaySummary[noOfPastDays];
+
+        //// Loop through each day, starting from the day before today, going back `noOfPastDays`
+        //for (int i = 1; i <= noOfPastDays; i++)
+        //{
+        //    DateTime _day = today.AddDays(-i);
+
+        //    // Calculate the total move time for the given day. If no data is found, _moveTime will be zero.
+        //    int _moveTime = dTableSession.AsEnumerable()
+        //        .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == _day)
+        //        .Sum(row => Convert.ToInt32(row["MoveTime"]));
+
+        //    daySummaries[i - 1] = new DaySummary
+        //    {
+        //        Day = Miscellaneous.GetAbbreviatedDayName(_day.DayOfWeek),
+        //        Date = _day.ToString("dd/MM"),
+        //        MoveTime = _moveTime / 60f
+        //    };
+
+        //    UnityEngine.Debug.Log($"{i} | {daySummaries[i - 1].Day} | {daySummaries[i - 1].Date} | {daySummaries[i - 1].MoveTime}");
+        //}
+        //return daySummaries;
+        return null;
     }
 }
 
@@ -371,6 +384,21 @@ public static class Miscellaneous
     public static string GetAbbreviatedDayName(DayOfWeek dayOfWeek)
     {
         return dayOfWeek.ToString().Substring(0, 3);
+    }
+}
+
+public class PlutoMechanism
+{
+    public string name { private set; get; }
+    public ROM aRomPrev { private set; get; }
+    public ROM aRomCurr { private set; get; }
+    public ROM pRomPrev { private set; get; }
+    public ROM pRomCurr { private set; get; }
+
+    public PlutoMechanism(string name)
+    {
+        this.name = name;
+
     }
 }
 
@@ -428,7 +456,6 @@ public class ROM
         }
     }
 
-
     public ROM( float angmin, float angmax, float aromAngMin, float aromAngMax, string mch, bool tofile)
     {
         promTmin = angmin;
@@ -453,10 +480,7 @@ public class ROM
         {
             file.WriteLine(datetime + ", " + promTmin.ToString() + ", " + promTmax.ToString() + ", " +  aromTmin.ToString() + ", " + aromTmax.ToString()+"");
         }
-
-       
     }
-
 
     public (float tmin, float tmax) GetTminTmax()
     {
@@ -464,18 +488,19 @@ public class ROM
     }
 }
 
-
-
+/// <summary>
+/// Stores global game-related data and settings.
+/// </summary>
 public static class gameData
 {
-    //Assessment check
+    // Assessment check
     public static bool isPROMcompleted=false;
     public static bool isAROMcompleted = false;
-    //AAN controller check
+    // AAN controller check
     public static bool isBallReached = false;
     public static bool targetSpwan = false;
     public static bool isAROMEnabled = false;
-    //game
+    // Game
     public static bool isGameLogging;
     public static string game;
     public static int gameScore;
@@ -631,6 +656,7 @@ public static class gameData
         }
     }
 }
+
 public class DataLogger
 {
     public string currFileName { get; private set; }
@@ -674,8 +700,6 @@ public class DataLogger
         }
     }
 }
-
-
 
 
 public class AANDataLogger

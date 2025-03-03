@@ -30,7 +30,6 @@ public class assessmentSceneHandler : MonoBehaviour
     public static float[] assistProfile = new float[steps];
 
 
-  
     void Start()
     {
         //AppData.initializeStuff();

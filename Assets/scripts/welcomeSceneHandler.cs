@@ -54,13 +54,12 @@ public class welcomSceneHandler : MonoBehaviour
         {
             // Initialize.
             AppData.initializeStuff();
-            //Neuro Library
+            // Neuro Library
             string baseDirectory = DataManager.directoryPathSession;
             Debug.Log(baseDirectory);
             SessionManager.Initialize(DataManager.directoryPathSession);
             SessionManager.Instance.Login();
-            daySummaries = AppData.UserData.CalculateMoveTimePerDay();
-
+            daySummaries = AppData.userData.CalculateMoveTimePerDay();
             // Update summary display
             if (!piChartUpdated)
             {
@@ -73,14 +72,13 @@ public class welcomSceneHandler : MonoBehaviour
 
     void Update()
     {
-       // PlutoComm.sendHeartbeat();
+        //PlutoComm.sendHeartbeat();
         // Attach PlutoButton release event after 2 seconds if it is not attached already.
-        if (!attachPlutoButtonEvent && Time.timeSinceLevelLoad > 2)
+        if (!attachPlutoButtonEvent && Time.timeSinceLevelLoad > 1)
         {
             attachPlutoButtonEvent = true;
             PlutoComm.OnButtonReleased += onPlutoButtonReleased;
         }
-        
         // Check if it time to switch to the next scene
         if (changeScene == true ) {
             LoadTargetScene();
@@ -103,9 +101,9 @@ public class welcomSceneHandler : MonoBehaviour
 
     private void UpdateUserData()
     {
-        userName.text = AppData.UserData.hospNumber;
-        timeRemainingToday.text = $"{AppData.UserData.totalMoveTimeRemaining} min";
-        todaysDay.text = AppData.UserData.getCurrentDayOfTraining().ToString();
+        userName.text = AppData.userData.hospNumber;
+        timeRemainingToday.text = $"{AppData.userData.totalMoveTimeRemaining} min";
+        todaysDay.text = AppData.userData.getCurrentDayOfTraining().ToString();
         todaysDate.text = DateTime.Now.ToString("ddd, dd-MM-yyyy");
     }
 
@@ -117,7 +115,7 @@ public class welcomSceneHandler : MonoBehaviour
             Debug.Log($"{i} | {daySummaries[i].Day} | {daySummaries[i].Date} | {daySummaries[i].MoveTime}");
             prevDays[i].text = daySummaries[i].Day;
             prevDates[i].text = daySummaries[i].Date;
-            pies[i].fillAmount = daySummaries[i].MoveTime / AppData.UserData.totalMoveTimePrsc;
+            pies[i].fillAmount = daySummaries[i].MoveTime / AppData.userData.totalMoveTimePrsc;
             pies[i].color = new Color32(148,234,107,255);
         }
         piChartUpdated = true;

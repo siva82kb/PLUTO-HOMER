@@ -36,7 +36,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
     {
 
         // Initialize if needed
-        if (AppData.UserData.dTableConfig == null)
+        if (AppData.userData.dTableConfig == null)
         {
             // Inialize the logger
             AppLogger.StartLogging(SceneManager.GetActiveScene().name);
@@ -50,7 +50,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
         AppLogger.SetCurrentGame("");
-        AppData.UserData.CalculateGameSpeedForLastUsageDay();
+        AppData.userData.calculateGameSpeedForLastUsageDay();
         PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
 
         //tes

@@ -105,6 +105,8 @@ public static class AppLogger
     public static string currentMechanism { get; private set; } = "";
     public static string currentGame { get; private set; } = "";
 
+    public static bool DEBUG = true;
+
     public static bool isLogging
     {
         get
@@ -180,8 +182,10 @@ public static class AppLogger
         {
             if (logWriter != null)
             {
-                logWriter.WriteLine($"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} [{currentScene}] [{currentMechanism}] [{currentGame}] {message}");
+                string _msg = $"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} [{currentScene}] [{currentMechanism}] [{currentGame}] {message}";
+                logWriter.WriteLine(_msg);
                 logWriter.Flush();
+                if (DEBUG) Debug.Log(_msg);
             }
         }
     }

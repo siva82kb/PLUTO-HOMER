@@ -94,7 +94,6 @@ public static class PlutoComm
     static private int[] currentStateData = new int[32];
     static private float[] currentSensorData = new float[10];
 
-
     // Public variables
     static public DateTime previousTime { get; private set; }
     static public DateTime currentTime { get; private set; }
@@ -511,7 +510,6 @@ public static class ConnectToRobot
                 JediComm.Connect();
             }
         }
-
     }
     public static void disconnect()
     {

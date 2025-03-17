@@ -5,50 +5,45 @@ using TMPro;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using static AppData;
+using System;
 
 public class calibrationSceneHandler : MonoBehaviour
 {
-    private string selectedMechanism;
-    private bool isCalibrating = false;
-    private float togetherPosition = 0.0f;
-    private float togetherAngle = 0f;
-    private float separationPosition = 11.0f;
-    private float separationAngle = 180.0f;
-    private float separationAngleWFE = 140.0f;
     public TextMeshProUGUI textMessage;
     public TextMeshProUGUI mechText;
     public TextMeshProUGUI angText;
-    private static bool connect = false;
     public Button exit;
+    
+    private string selectedMechanism;
+    private bool isCalibrating = false;
+    //private float togetherPosition = 0.0f;
+    //private float togetherAngle = 0f;
+    //private float separationPosition = 11.0f;
+    //private float separationAngle = 180.0f;
+    //private float separationAngleWFE = 140.0f;
+    //private static bool connect = false;
     private string prevScene = "chooseMechanism";
-    private string nextScene = "choosegame";
-
-
+    private string nextScene = "chooseGame";
 
     void Start()
     {
-
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
         selectedMechanism = AppData.selectedMechanism;
         mechText.text = PlutoComm.MECHANISMSTEXT[PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, selectedMechanism)];
+
+        // Attach callback.
+        if (ConnectToRobot.isPLUTO)
+        {
+            PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
+        }
         exit.onClick.AddListener(OnExitButtonClicked);
     }
 
     void Update()
     {
         PlutoComm.sendHeartbeat();
-        if (Input.GetKeyDown(KeyCode.C) && !isCalibrating)
-        {
-            PerformCalibration();
-        }
-
-        if (ConnectToRobot.isPLUTO)
-        {
-            PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
-        }
-
-        if (isCalibrating)
+        if ((Input.GetKeyDown(KeyCode.C) && !isCalibrating) || isCalibrating)
         {
             PerformCalibration();
             isCalibrating = false;
@@ -64,87 +59,60 @@ public class calibrationSceneHandler : MonoBehaviour
             return;
         }
 
-        switch (selectedMechanism)
-        {
-            case "HOC":
-                StartCoroutine(autoCalibrateHOC());
-                break;
-
-            case "WFE":
-            case "WURD":
-                StartCoroutine(autoCalibrate(togetherAngle, separationAngleWFE));
-                break;
-
-            case "FPS":
-                StartCoroutine(autoCalibrate(togetherAngle, separationAngle));
-                break;
-
-            case "FME1":
-            case "FME2":
-                StartCoroutine(autoCalibrate(togetherAngle, separationAngle));
-                break;
-
-            default:
-                Debug.LogError("Unknown mechanism type selected: " + selectedMechanism);
-                break;
-        }
+        // Start the calibration process.
+        StartCoroutine(autoCalibrate());
     }
 
-
-    IEnumerator autoCalibrateHOC()
+    IEnumerator autoCalibrate()
     {
-
         textMessage.color = Color.black;
         textMessage.text = "Calibrating...";
 
-        float currentDistance = PlutoComm.getHOCDisplay(PlutoComm.angle);
-        ApplyTorqueToSep(currentDistance, togetherPosition);
+        // Move the robot to the extreme position.
+        ApplyCounterClockwiseTorque();
         yield return new WaitForSeconds(1.5f);
-
-
-        PlutoComm.calibrate(selectedMechanism);
         
-        ApplyTorque(PlutoComm.getHOCDisplay(PlutoComm.angle), separationPosition);
-
-        yield return new WaitForSeconds(1.5f);
-
-        if (!CheckPositionSeparation(PlutoComm.getHOCDisplay(PlutoComm.angle), separationPosition)) yield break;
-
-        ApplyTorqueToSep(PlutoComm.getHOCDisplay(PlutoComm.angle), togetherPosition);
-
-        yield return new WaitForSeconds(1.5f);
-        if (!CheckPositionTogether(PlutoComm.getHOCDisplay(PlutoComm.angle), togetherPosition)) yield break;
-        textMsg();
-        Invoke("LoadNextScene", 0.4f);
-    }
-
-    IEnumerator autoCalibrate(float togetherAngle, float separationAngle)
-    {
-        textMessage.color = Color.black;
-        textMessage.text = "Calibrating...";
-
-        float currentAngle = PlutoComm.angle;
-        float temp0 = -90f;
-        float temp1 = 90f;
-       // ApplyTorque(currentAngle, togetherAngle);
-        ApplyTorque(currentAngle, temp0);
-        yield return new WaitForSeconds(1.5f);
-
+        // Send the calibration command.
         PlutoComm.calibrate(AppData.selectedMechanism);
+        yield return new WaitForSeconds(0.5f);
 
         //ApplyTorqueToSep(PlutoComm.angle, separationAngle);
-        ApplyTorqueToSep(PlutoComm.angle, temp1);
-
-        yield return new WaitForSeconds(1.5f); 
-        if (!CheckPositionSeparation(PlutoComm.angle, temp1)) yield break;
-        ApplyTorque(PlutoComm.angle, temp0);
-
-
+        ApplyClockwiseTorque();
         yield return new WaitForSeconds(1.5f);
 
-        if (!CheckPositionTogether(PlutoComm.angle, temp0)) yield break;
-        textMsg();
-         
+        // Check if the ROM is correct.
+        int mechInx = Array.IndexOf(PlutoComm.MECHANISMS, selectedMechanism);
+        float _angval = PlutoComm.angle + PlutoComm.MECHOFFSETVALUE[mechInx];
+        isCalibrating = false;
+        if (Math.Abs(_angval) < 0.9 * PlutoComm.CALIBANGLE[mechInx]
+            || Math.Abs(_angval) > 1.1 * PlutoComm.CALIBANGLE[mechInx])
+        {
+            // Error in calibration
+            PlutoComm.setControlType("NONE");
+            textMessage.text = $"Try Again.";
+            textMessage.color = Color.red;
+            yield break;
+        }
+        // All good.
+        textMessage.text = "Calibration Done";
+        textMessage.color = new Color32(62, 214, 111, 255);
+
+        // Move the robot to the neutral position.
+        PlutoComm.setControlType("POSITION");
+        PlutoComm.setControlBound(1f);
+        // Set the target to zero slowly.
+        float _initAngle = PlutoComm.angle;
+        int N = 20;
+        for (int i = 0; i < N; i++)
+        {
+            PlutoComm.setControlTarget((N - i) * _initAngle / N);
+            yield return new WaitForSeconds(0.1f);
+        }
+        PlutoComm.setControlTarget(0.0f);
+        PlutoComm.setControlType("NONE");
+        yield return new WaitForSeconds(1.5f);
+
+        // Go to the next scene.
         Invoke("LoadNextScene", 0.4f);
     }
 
@@ -153,13 +121,15 @@ public class calibrationSceneHandler : MonoBehaviour
         AppLogger.LogInfo($"Switching scene to '{nextScene}'.");
         SceneManager.LoadScene(nextScene);
     }
-    private void ApplyTorque(float currentPos, float targetPos)
+
+    private void ApplyCounterClockwiseTorque()
     {
         float torqueValue = -0.1f;
         PlutoComm.setControlType("TORQUE");
         PlutoComm.setControlTarget(torqueValue);
     }
-    private void ApplyTorqueToSep(float currentPos, float targetPos)
+
+    private void ApplyClockwiseTorque()
     {
         float torqueValue = 0.1f;
         PlutoComm.setControlType("TORQUE");
@@ -225,12 +195,12 @@ public class calibrationSceneHandler : MonoBehaviour
         PlutoComm.setControlType(PlutoComm.CONTROLTYPE[0]);
     }
 
-    private void textMsg()
+    private void displaySuccessMessage()
     {
         isCalibrating = false;
         textMessage.text = "Calibration Done";
         textMessage.color = new Color32(62, 214, 111, 255);
-        PlutoComm.setControlType(PlutoComm.CONTROLTYPE[0]);
+        
     }
     private void OnExitButtonClicked()
     {

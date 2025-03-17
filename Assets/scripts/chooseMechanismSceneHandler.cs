@@ -32,25 +32,26 @@ public class MechanismSceneHandler : MonoBehaviour
 
     void Start()
     {
+        // Reset mechanisms.
+        PlutoComm.calibrate("NOMECH");
+
         // Initialize if needed
-        if (AppData.userData.dTableConfig == null)
+        if (AppData.userData == null)
         {
             AppLogger.StartLogging(SceneManager.GetActiveScene().name);
             AppData.initializeStuff();
         }
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
-        AppLogger.SetCurrentMechanism("");
-        // Attach PLUTO button event
-        PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
-        PlutoComm.calibrate("NOMECH");
-        //checking time scale 
-        if (Time.timeScale == 0)
-        {
-            Time.timeScale = 1;
-        }
-        exit.onClick.AddListener(OnExitButtonClicked);
-        nextButton.onClick.AddListener(OnNextButtonClicked);
+        AppLogger.SetCurrentMechanism(PlutoComm.MECHANISMS[PlutoComm.mechanism]);
+
+        // Update timescale
+        Time.timeScale = Time.timeScale == 0 ? 1 : Time.timeScale;
+
+        // Attach callbacks.
+        AttachCallbacks();
+
+        // Update the options that are to be displayed.
         UpdateMechanismToggleButtons();
 
         // Attach listeners to the toggles to update the toggleSelected variable
@@ -68,15 +69,27 @@ public class MechanismSceneHandler : MonoBehaviour
         }
     }
 
+    private void AttachCallbacks()
+    {
+        // Attach PLUTO button event
+        PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
+        
+        // Exit and Next buttons
+        exit.onClick.AddListener(OnExitButtonClicked);
+        nextButton.onClick.AddListener(OnNextButtonClicked);
+    }
+
     private void UpdateMechanismToggleButtons()
     {
         foreach (Transform child in mehcanismSelectGroup.transform)
         {
             Toggle toggleComponent = child.GetComponent<Toggle>();
             bool isPrescribed = AppData.userData.mechMoveTimePrsc[toggleComponent.name] > 0;
+            
             // Hide the component if it has no prescribed time.
             toggleComponent.interactable = isPrescribed;
             toggleComponent.gameObject.SetActive(isPrescribed);
+            
             // Update the time trained in the timeLeft component of toggleCompoent.
             Transform timeLeftTransform = toggleComponent.transform.Find("timeLeft");
             if (timeLeftTransform != null)
@@ -128,14 +141,13 @@ public class MechanismSceneHandler : MonoBehaviour
             {
                 toggleSelected = true;
                 AppData.selectedMechanism = child.name;
-                AppLogger.SetCurrentMechanism(AppData.selectedMechanism);
-                AppLogger.LogInfo($"Selected '{AppData.selectedMechanism}'.");
+                AppLogger.LogInfo($"Selected mechanism: {AppData.selectedMechanism}");
                 break;
             }
         }
     }
 
-    public void OnPlutoButtonReleased()
+    private void OnPlutoButtonReleased()
     {
         if (toggleSelected)
         {
@@ -144,14 +156,14 @@ public class MechanismSceneHandler : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Select at least one toggle to proceed.");
+            Debug.LogWarning("No mechanism selected to proceed.");
         }
     }
 
     void LoadNextScene()
     {
         AppLogger.LogInfo($"Switching scene to '{nextScene}'.");
-        gameData.setNeutral = false;
+        //gameData.setNeutral = false;
         SceneManager.LoadScene(nextScene);
     }
 
@@ -168,6 +180,7 @@ public class MechanismSceneHandler : MonoBehaviour
     {
         StartCoroutine(LoadSummaryScene());
     }
+
     private void OnNextButtonClicked()
     {
         if (toggleSelected)
@@ -176,6 +189,7 @@ public class MechanismSceneHandler : MonoBehaviour
             toggleSelected = false;
         }
     }
+
     private void OnDestroy()
     {
         if (ConnectToRobot.isPLUTO)

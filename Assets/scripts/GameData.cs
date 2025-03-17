@@ -4,27 +4,26 @@ using UnityEngine;
 
 public abstract class BaseGame
 {
-    public string gameName;
-    public string mechanism;
-    public bool isGameLogging;
-    public bool targetSpwan = false;
+    public string gameName { protected set; get; }
+    public string mechanism { protected set; get; }
+    public bool isGameLogging { protected set; get; }
+    public bool targetSpwan { protected set; get; } = false;
     
-    public int gameScore;
-    public abstract string[] gameEvents { get; }
-    public int eventNumber;
+    public int gameScore { protected set; get; }
+    public abstract string[] gameEvents { protected set; get; }
+    public int eventNumber { protected set; get; }
 
-    public float targetPosition;
-    public float playerPosition;
-    public float gameSpeed;
+    public float targetPosition { protected set; get; }
+    public float playerPosition { protected set; get; }
+    public float gameSpeed { protected set; get; }
 
-    public float successRate;
-    public bool setNeutral = false;
-    private DataLogger dataLog;
+    public float successRate { protected set; get; }
+    public bool setNeutral { protected set; get; } = false;
+    protected DataLogger dataLog;
 
-    public BaseGame(string gameName, string mechanism)
+    public BaseGame(string mech)
     {
-        this.gameName = gameName;
-        this.mechanism = mechanism;
+        mechanism = mech;
     }
 
     //private static readonly string[] gameHeader = new string[] {
@@ -163,13 +162,17 @@ public class HatTrickGame : BaseGame
 {
     public override string[] gameEvents
     {
+        protected set { }
         get
         {
             return new string[] { "MOVING", "BALLCAUGHT", "BOMBCAUGHT", "BALLMISSED", "BOMBMISSED" };
         }
     }
-    public HatTrickGame(string gameName, string mechanism) : base(gameName, mechanism)
+    public HatTrickGame(string mech) : base(mech)
     {
+        gameName = "HatTrick";
+        mechanism = mechanism;
+        dataLog = null;
     }
 }
 

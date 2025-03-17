@@ -145,6 +145,7 @@ public static class AppLogger
         if (isLogging)
         {
             currentScene = scene;
+            LogInfo($"{currentScene} scene started.");
         }
     }
 
@@ -153,6 +154,7 @@ public static class AppLogger
         if (isLogging)
         {
             currentMechanism = mechanism;
+            LogInfo($"PLUTO mechanism set to {currentMechanism}.");
         }
     }
 
@@ -161,6 +163,7 @@ public static class AppLogger
         if (isLogging)
         {
             currentGame = game;
+            LogInfo($"PLUTO game set to {currentGame}.");
         }
     }
 

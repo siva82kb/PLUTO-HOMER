@@ -67,13 +67,14 @@ public class welcomSceneHandler : MonoBehaviour
                 UpdatePieChart();
             }
         }
-        
+
     }
 
     void Update()
     {
         //PlutoComm.sendHeartbeat();
-        // Attach PlutoButton release event after 2 seconds if it is not attached already.
+        // Attach PlutoButton release event after 1 seconds if it is not attached already.
+        //Debug.Log($"{attachPlutoButtonEvent} {Time.timeSinceLevelLoad} {changeScene} {PlutoComm.frameRate} {PlutoComm.button}");
         if (!attachPlutoButtonEvent && Time.timeSinceLevelLoad > 1)
         {
             attachPlutoButtonEvent = true;
@@ -119,6 +120,14 @@ public class welcomSceneHandler : MonoBehaviour
             pies[i].color = new Color32(148,234,107,255);
         }
         piChartUpdated = true;
+    }
+
+    private void OnDestroy()
+    {
+        if (ConnectToRobot.isPLUTO)
+        {
+            PlutoComm.OnButtonReleased -= onPlutoButtonReleased;
+        }
     }
 
     private void OnApplicationQuit()

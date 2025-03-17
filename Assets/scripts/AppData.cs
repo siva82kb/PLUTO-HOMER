@@ -39,7 +39,7 @@ public static class HomerTherapyConstants
 public static class AppData
 {
     // COM Port for the device
-    public static readonly string COMPort = "COM5";
+    public static readonly string COMPort = "COM6";
     static public readonly float[] offsetAtNeutral = new float[] { 68, 68, 90, 0, 90 , 90  };
 
     // Old and new PROM
@@ -68,7 +68,7 @@ public static class AppData
     
     // Options to drive 
     public static string trainingSide = null;
-    public static string selectedMechanism=null;
+    public static string selectedMechanism = null;
     public static string selectedGame = null;
     
     // Handling the data
@@ -89,6 +89,7 @@ public static class AppData
     {
         DataManager.createFileStructure();
         ConnectToRobot.Connect(AppData.COMPort);
+        PlutoComm.getVersion();
         AppLogger.LogInfo($"Connected to PLUTO @ {AppData.COMPort}.");
         userData = new PlutoUserData(DataManager.filePathConfigData, DataManager.filePathSessionData);
         // Initialize game classes to null.
@@ -346,36 +347,34 @@ public class PlutoUserData
 
     public DaySummary[] CalculateMoveTimePerDay(int noOfPastDays = 7)
     {
-        //// Check if the session file has been loaded and has rows
-        //if (dTableSession == null || dTableSession.Rows.Count == 0)
-        //{
-        //    UnityEngine.Debug.LogWarning("Session data is not available or the file is empty.");
-        //    return new DaySummary[0];
-        //}
-        //DateTime today = DateTime.Now.Date;
-        //DaySummary[] daySummaries = new DaySummary[noOfPastDays];
+        // Check if the session file has been loaded and has rows
+        if (dTableSession == null || dTableSession.Rows.Count == 0)
+        {
+            AppLogger.LogWarning("Session data is not available or the file is empty.");
+            return new DaySummary[0];
+        }
+        DateTime today = DateTime.Now.Date;
+        DaySummary[] daySummaries = new DaySummary[noOfPastDays];
 
-        //// Loop through each day, starting from the day before today, going back `noOfPastDays`
-        //for (int i = 1; i <= noOfPastDays; i++)
-        //{
-        //    DateTime _day = today.AddDays(-i);
+        // Loop through each day, starting from the day before today, going back `noOfPastDays`
+        for (int i = 1; i <= noOfPastDays; i++)
+        {
+            DateTime _day = today.AddDays(-i);
 
-        //    // Calculate the total move time for the given day. If no data is found, _moveTime will be zero.
-        //    int _moveTime = dTableSession.AsEnumerable()
-        //        .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == _day)
-        //        .Sum(row => Convert.ToInt32(row["MoveTime"]));
+            // Calculate the total move time for the given day. If no data is found, _moveTime will be zero.
+            int _moveTime = dTableSession.AsEnumerable()
+                .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == _day)
+                .Sum(row => Convert.ToInt32(row["MoveTime"]));
 
-        //    daySummaries[i - 1] = new DaySummary
-        //    {
-        //        Day = Miscellaneous.GetAbbreviatedDayName(_day.DayOfWeek),
-        //        Date = _day.ToString("dd/MM"),
-        //        MoveTime = _moveTime / 60f
-        //    };
-
-        //    UnityEngine.Debug.Log($"{i} | {daySummaries[i - 1].Day} | {daySummaries[i - 1].Date} | {daySummaries[i - 1].MoveTime}");
-        //}
-        //return daySummaries;
-        return null;
+            daySummaries[i - 1] = new DaySummary
+            {
+                Day = Miscellaneous.GetAbbreviatedDayName(_day.DayOfWeek),
+                Date = _day.ToString("dd/MM"),
+                MoveTime = _moveTime / 60f
+            };
+            UnityEngine.Debug.Log($"{i} | {daySummaries[i - 1].Day} | {daySummaries[i - 1].Date} | {daySummaries[i - 1].MoveTime}");
+        }
+        return daySummaries;
     }
 }
 

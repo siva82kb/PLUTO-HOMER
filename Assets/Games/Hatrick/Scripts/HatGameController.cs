@@ -158,7 +158,6 @@ public class HatGameController : MonoBehaviour
     void Start()
     { 
         InitializeGame();
-       
     }
 
     void FixedUpdate()
@@ -546,9 +545,6 @@ public class HatGameController : MonoBehaviour
             }
         }
     }
-
-
-
 
     private void InitializeGame()
     {

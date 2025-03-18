@@ -27,6 +27,7 @@ public class FlappyColumn : MonoBehaviour
             gameData.events = Array.IndexOf(gameData.tukEvents, "passed");
             Debug.Log("Passed");
             FlappyGameControl.instance.BirdScored();
+          //  gameData.birdPassed = true;
         }
 
     }

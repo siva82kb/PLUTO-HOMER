@@ -5,8 +5,8 @@ public class PongPlayerController : MonoBehaviour
 {
     public float speed = 10;
 
-    static float topBound = 4.5F;
-    static float bottomBound = -4.5F;
+    static float topBound = 5.5F;
+    static float bottomBound = -5.5F;
     public float ballTrajetoryPrediction;
     public static float playSize;
 
@@ -21,7 +21,9 @@ public class PongPlayerController : MonoBehaviour
         Time.timeScale = 0;
         topBound = playSize - this.transform.localScale.y / 4;
         bottomBound = -topBound;
-
+       // gameData.positionY1 = playerMovementArea(AppData.aRomValue[0]);
+       // gameData.positionY2 = playerMovementArea(AppData.aRomValue[1]);
+       // Debug.Log($"y1_{gameData.positionY1},y2_{gameData.positionY2}");
        // previousPlayerPosition = transform.position;
     }
     void Update()
@@ -30,27 +32,28 @@ public class PongPlayerController : MonoBehaviour
         if (gameData.isAROMEnabled)
         {
             this.transform.position = new Vector2(this.transform.position.x, playerMovementAreaAROM(PlutoComm.angle));
-            Debug.Log("arom exe");
+           // Debug.Log("arom exe");
 
         }
         else { 
         this.transform.position = new Vector2(this.transform.position.x, playerMovementArea(PlutoComm.angle));
+           // Debug.Log($"player-y-pos-{playerMovementArea(PlutoComm.angle)}+ angle :{PlutoComm.angle}");
         }
     }
 
     public static float playerMovementArea(float angle)
     {
-        ROM promAng = new ROM(AppData.selectedMechanism);
-        float tmin = promAng.promTmin;
-        float tmax = promAng.promTmax;
+        //ROM promAng = new ROM(AppData.selectedMechanism);
+        float tmin = AppData.pRomValue[0];
+        float tmax = AppData.pRomValue[1];
         return Mathf.Clamp(-playSize + (angle - tmin) * (2 * playSize) / (tmax - tmin), bottomBound, topBound);
     }
 
     public static float playerMovementAreaAROM(float angle)
     {
-        ROM aromAng = new ROM(AppData.selectedMechanism);
-        float tmin = aromAng.aromTmin;
-        float tmax = aromAng.aromTmax;
+        //ROM aromAng = new ROM(AppData.selectedMechanism);
+        float tmin = AppData.aRomValue[0];
+        float tmax = AppData.aRomValue[1];
         return Mathf.Clamp(-playSize + (angle - tmin) * (2 * playSize) / (tmax - tmin), bottomBound, topBound);
     }
 

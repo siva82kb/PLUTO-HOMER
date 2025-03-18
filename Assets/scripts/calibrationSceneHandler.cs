@@ -14,8 +14,6 @@ public class calibrationSceneHandler : MonoBehaviour
     public TextMeshProUGUI mechText;
     public TextMeshProUGUI angText;
     public Button exit;
-
-    //private string selectedMechanism;
     private bool startCalibration = false;
     private bool isCalibrating = false;
     private bool doneCalibration = false;
@@ -73,7 +71,7 @@ public class calibrationSceneHandler : MonoBehaviour
         // Move the robot to the extreme position.
         ApplyCounterClockwiseTorque();
         yield return new WaitForSeconds(1.5f);
-        
+
         // Send the calibration command.
         PlutoComm.calibrate(AppData.selectedMechanism);
         yield return new WaitForSeconds(0.5f);
@@ -153,7 +151,6 @@ public class calibrationSceneHandler : MonoBehaviour
 
     private void OnPlutoButtonReleased()
     {
-        Debug.Log($"PLUTObutton: {doneCalibration}, {isCalibrating}");
         if (!doneCalibration && !isCalibrating && !startCalibration)
         {
             startCalibration = true;

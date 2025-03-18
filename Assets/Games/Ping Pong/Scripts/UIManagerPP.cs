@@ -13,6 +13,7 @@ public class UIManagerPP : MonoBehaviour
     GameObject[] pauseObjects, finishObjects;
     public BoundController rightBound;
     public BoundController leftBound;
+
     public bool isFinished;
     public bool isPressed=false;
     public bool playerWon, enemyWon;
@@ -32,6 +33,12 @@ public class UIManagerPP : MonoBehaviour
     private System.Random random = new System.Random();
     private GameSession currentGameSession;
 
+    public GameObject aromLeft, aromRight;
+
+    static float topBound = 5.5F;
+    static float bottomBound = -5.5F;
+    public static float playSize;
+
     void Start()
     {
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
@@ -49,6 +56,11 @@ public class UIManagerPP : MonoBehaviour
             aromRange.onValueChanged.AddListener(OnToggleSpawnArea);
         }
         randomTargetIndex = random.Next(1, gameData.winningScore);
+
+        playSize = Camera.main.orthographicSize;
+        topBound = playSize - this.transform.localScale.y / 4;
+        bottomBound = -topBound;
+
     }
     void Update()
     {
@@ -120,6 +132,10 @@ public class UIManagerPP : MonoBehaviour
         {
             targetImage.gameObject.SetActive(false);
         }
+        aromLeft.transform.position = new Vector2(aromLeft.transform.position.x, playerMovementAreaAROM(AppData.aRomValue[0]));
+        aromRight.transform.position = new Vector2(aromLeft.transform.position.x, playerMovementAreaAROM(AppData.aRomValue[1]));
+        //Debug.Log($"ypos--{playerMovementAreaAROM(PlutoComm.angle)}+ angle-{PlutoComm.angle},{playerMovementAreaAROM(AppData.aRomValue[1])}");
+        //if (PlutoComm.angle < AppData.pRomValue[1] && PlutoComm.angle > AppData.pRomValue[0]) Debug.Log($"position {PlutoComm.angle},{playerMovementAreaAROM(PlutoComm.angle)}");
     }
 
     private void OnToggleSpawnArea(bool isEnabled)
@@ -166,6 +182,14 @@ public class UIManagerPP : MonoBehaviour
         showPaused();
         AppLogger.LogInfo("PingPong game Paused");
         gameData.isGameLogging = false;
+    }
+
+    public static float playerMovementAreaAROM(float angle)
+    {
+        //ROM aromAng = new ROM(AppData.selectedMechanism);
+        float tmin = AppData.pRomValue[0];
+        float tmax = AppData.pRomValue[1];
+        return Mathf.Clamp(-playSize + (angle - tmin) * (2 * playSize) / (tmax - tmin), bottomBound, topBound);
     }
 
     private void resumeGame()

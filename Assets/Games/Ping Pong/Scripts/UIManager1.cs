@@ -11,7 +11,9 @@ public class UIManager1 : MonoBehaviour
     public BoundController leftBound;
     public Button playButton;
     public Button exitButton;
-    public static bool isButtonPressed=false;
+    public static bool isButtonPressed = false;
+    private string choosegameScene = "choosegame";
+    private string gameScene = "pong_game";
     void Start()
     {
 
@@ -38,7 +40,7 @@ public class UIManager1 : MonoBehaviour
     //loads inputted level
     public void onExitButtonClicked()
     {
-        SceneManager.LoadScene("choosegame");
+        SceneManager.LoadScene(choosegameScene);
         AppLogger.LogInfo("Switching scene to choosegame.");
     }
     public void onPlutoButtonReleased()
@@ -47,7 +49,7 @@ public class UIManager1 : MonoBehaviour
     }
     void LoadNextScene()
     {
-        SceneManager.LoadScene("pong_game");
+        SceneManager.LoadScene(gameScene);
         AppLogger.LogInfo("Switching scene to pong_game."); 
 
     }

@@ -18,7 +18,7 @@ using UnityEngine;
 public static class PlutoDefs
 {
     public static readonly string[] Mechanisms = new string[] { "WFE", "WURD", "FPS", "HOC", "FME1", "FME2" };
-    
+
     public static int getMechanimsIndex(string mech)
     {
         return Array.IndexOf(Mechanisms, mech);
@@ -27,7 +27,7 @@ public static class PlutoDefs
 
 public static class HomerTherapyConstants
 {
-    public static readonly float SuccessRateThForSpeedIncrement= 0.9f;
+    public static readonly float SuccessRateThForSpeedIncrement = 0.9f;
     static public readonly Dictionary<string, float> GameSpeedIncrements = new Dictionary<string, float>  {
         { "PING-PONG", 0.5f },
         { "TUK-TUK", 0.2f },
@@ -39,8 +39,8 @@ public static class HomerTherapyConstants
 public static class AppData
 {
     // COM Port for the device
-    public static readonly string COMPort = "COM6";
-    static public readonly float[] offsetAtNeutral = new float[] { 68, 68, 90, 0, 90 , 90  };
+    public static readonly string COMPort = "COM5";
+    static public readonly float[] offsetAtNeutral = new float[] { 68, 68, 90, 0, 90, 90 };
 
     // Old and new PROM
     public static ROM oldPROM;
@@ -48,16 +48,16 @@ public static class AppData
     public static ROM oldAROM;
     public static ROM newAROM;
 
-    public static float[] aRomValue=new float[2];
-    public static float[] pRomValue =new float[2];
+    public static float[] aRomValue = new float[2];
+    public static float[] pRomValue = new float[2];
     //temp storage for PROM min and max
 
-    public static float promTmin=0f;
-    public static float promTmax=0f;
+    public static float promTmin = 0f;
+    public static float promTmax = 0f;
 
 
     public static string _dataLogDir = null;
-    
+
     // Keeping track of time.
     static private double nanosecPerTick = 1.0 / Stopwatch.Frequency;
     static private Stopwatch stp_watch = new Stopwatch();
@@ -65,12 +65,12 @@ public static class AppData
     {
         get { return stp_watch.ElapsedTicks * nanosecPerTick; }
     }
-    
+
     // Options to drive 
     public static string trainingSide = null;
     public static string selectedMechanism;
     public static string selectedGame = null;
-    
+
     // Handling the data
     public static int currentSessionNumber;
     public static string trialDataFileLocation;
@@ -436,14 +436,14 @@ public class ROM
                     lastLine = file.ReadLine();
                 }
             }
-            values = lastLine.Split(','); 
+            values = lastLine.Split(',');
             if (values[0].Trim() != null)
             {
                 // Assign values if mechanism matches
                 datetime = values[0].Trim();
                 promTmin = float.Parse(values[1].Trim());
                 promTmax = float.Parse(values[2].Trim());
-                aromTmin=float.Parse(values[3].Trim());
+                aromTmin = float.Parse(values[3].Trim());
                 aromTmax = float.Parse(values[4].Trim());
             }
             else
@@ -462,12 +462,12 @@ public class ROM
         }
     }
 
-    public ROM( float angmin, float angmax, float aromAngMin, float aromAngMax, string mch, bool tofile)
+    public ROM(float angmin, float angmax, float aromAngMin, float aromAngMax, string mch, bool tofile)
     {
         promTmin = angmin;
         promTmax = angmax;
         aromTmin = aromAngMin;
-        aromTmax=aromAngMax;
+        aromTmax = aromAngMax;
         mech = mch;
         datetime = DateTime.Now.ToString();
 
@@ -484,7 +484,7 @@ public class ROM
         //UnityEngine.Debug.Log(_fname);
         using (StreamWriter file = new StreamWriter(_fname, true))
         {
-            file.WriteLine(datetime + ", " + promTmin.ToString() + ", " + promTmax.ToString() + ", " +  aromTmin.ToString() + ", " + aromTmax.ToString()+"");
+            file.WriteLine(datetime + ", " + promTmin.ToString() + ", " + promTmax.ToString() + ", " + aromTmin.ToString() + ", " + aromTmax.ToString() + "");
         }
     }
 
@@ -500,7 +500,7 @@ public class ROM
 public static class gameData
 {
     // Assessment check
-    public static bool isPROMcompleted=false;
+    public static bool isPROMcompleted = false;
     public static bool isAROMcompleted = false;
     // AAN controller check
     public static bool isBallReached = false;
@@ -515,7 +515,7 @@ public static class gameData
     public static int enemyScore;
     public static string playerPos = "0";
     public static string playerPosition = "0";
-    public static string enemyPos="0";
+    public static string enemyPos = "0";
     public static string playerHit = "0";
     public static string enemyHit = "0";
     public static string wallBounce = "0";
@@ -567,7 +567,7 @@ public static class gameData
                 isLogging = false;
             }
         }
-        else if(AppData.selectedGame == "hatTrick")
+        else if (AppData.selectedGame == "hatTrick")
         {
             if (fname != "")
             {
@@ -684,7 +684,7 @@ public class DataLogger
         if (log)
         {
             UnityEngine.Debug.Log("Stored");
-            if(fileData != null)
+            if (fileData != null)
             {
                 UnityEngine.Debug.Log("Data available");
             }

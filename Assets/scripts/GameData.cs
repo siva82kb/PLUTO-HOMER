@@ -8,7 +8,7 @@ public abstract class BaseGame
     public string mechanism { protected set; get; }
     public bool isGameLogging { protected set; get; }
     public bool targetSpwan { protected set; get; } = false;
-    
+
     public int gameScore { protected set; get; }
     public abstract string[] gameEvents { protected set; get; }
     public int eventNumber { protected set; get; }

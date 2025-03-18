@@ -1,8 +1,8 @@
 using System;
 using UnityEngine;
-using UnityEngine.SceneManagement;  
-using UnityEngine.UI;  
-using System.Collections.Generic; 
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using System.Collections.Generic;
 using System.Collections;
 using TMPro;
 using UnityEditor.U2D.Aseprite;
@@ -14,7 +14,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
     public Button changeMech;
     public TMP_Text result;
 
-    private bool toggleSelected = false;  
+    private bool toggleSelected = false;
     private string selectedGame;
     private string changeScene = "chooseMechanism";
     //private static bool isButtonPressed = false;
@@ -25,10 +25,10 @@ public class ChooseGameSceneHandler : MonoBehaviour
         { "hatTrick", "HatrickGame" }
     };
     private bool lisRunning = false;
-    private bool targetReached = false; 
-    private const float targetTolerance = 5.0f; 
+    private bool targetReached = false;
+    private const float targetTolerance = 5.0f;
     private bool isRunning = false;
-    
+
     private float targetAngle = 0;
 
 
@@ -92,7 +92,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
         //}
     }
     void Update()
-    {   
+    {
         PlutoComm.sendHeartbeat();
         // Check if PLUTO button is pressed for moving to the next scene.
         //if (isButtonPressed)
@@ -104,7 +104,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
         if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.R))
         {
             //assessment();
-           SceneManager.LoadScene("Assessment");
+            SceneManager.LoadScene("Assessment");
         }
 
         //if (isRunning && !targetReached)
@@ -127,7 +127,6 @@ public class ChooseGameSceneHandler : MonoBehaviour
         AttachToggleListeners();
         playButton.onClick.AddListener(OnPlayButtonClicked);
         changeMech.onClick.AddListener(OnMechButtonClicked);
-        
         // PLUTO Button
         PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
     }
@@ -141,7 +140,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
         PlutoComm.setControlDir(1);
         PlutoComm.setAANTarget(PlutoComm.angle, 0f, 0f, 2f);
         isRunning = true;
-        
+
         Debug.Log($"Started moving mechanism to {targetAngle} degrees.");
     }
 
@@ -158,15 +157,15 @@ public class ChooseGameSceneHandler : MonoBehaviour
     }
 
     void CheckToggleStates()
-    { 
+    {
         foreach (Transform child in toggleGroup.transform)
         {
             Toggle toggleComponent = child.GetComponent<Toggle>();
             if (toggleComponent != null && toggleComponent.isOn)
             {
-                selectedGame = toggleComponent.name;  
-                toggleSelected = true; 
-                break; 
+                selectedGame = toggleComponent.name;
+                toggleSelected = true;
+                break;
             }
         }
     }
@@ -183,7 +182,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
     private void OnMechButtonClicked()
     {
         SceneManager.LoadScene(changeScene);
-     
+
     }
 
     private void LoadSelectedGameScene(string game)
@@ -220,14 +219,14 @@ public class ChooseGameSceneHandler : MonoBehaviour
 
     private void assessment()
     {
-        string date = AppData.oldAROM.datetime; 
+        string date = AppData.oldAROM.datetime;
         Debug.Log($"AppData.oldAROM.datetime: {date}");
 
         if (!string.IsNullOrEmpty(date))
         {
             DateTime oldDate;
             if (DateTime.TryParseExact(date, "dd-MM-yyyy HH:mm:ss", null, System.Globalization.DateTimeStyles.None, out oldDate))
-            {  
+            {
                 DateTime currentDate = DateTime.Now;
                 TimeSpan timeDifference = currentDate - oldDate;
 
@@ -235,7 +234,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
 
                 if (timeDifference.TotalDays >= 7)
                 {
-                    SceneManager.LoadScene("Assessment"); 
+                    SceneManager.LoadScene("Assessment");
                 }
                 else
                 {

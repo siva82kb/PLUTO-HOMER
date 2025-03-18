@@ -38142,7 +38142,7 @@ MonoBehaviour:
   aromHandler: {fileID: 413374364}
   promImage: {fileID: 8209750394438654337}
   aromImage: {fileID: 1786077524}
-  promImagedisabled: {fileID: 0}
+  promImagedisabled: {fileID: 1381128801}
   aromImageDisabled: {fileID: 605279202}
   Ins: {fileID: 2003915166}
   aromSelected:

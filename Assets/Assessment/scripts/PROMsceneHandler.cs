@@ -33,7 +33,7 @@ public class PROMsceneHandler : MonoBehaviour
 
     bool AssessmentValid;
 
-    private float _tmin, _tmax;
+    private float _tmin=0f, _tmax=0f;
 
     public GameObject nextButton;
     public GameObject startButton;
@@ -65,12 +65,14 @@ public class PROMsceneHandler : MonoBehaviour
     void Start()
     {
         // Initialize the assessment data.
-        AppData.assessData = new AssessmentData(AppData.selectedGame, AppData.trainingSide);
+        AppData.assessData = new AssessmentData(AppData.selectedMechanism, AppData.trainingSide);
         AppLogger.LogInfo(
             "ROM data loaded for mechanism {mech}: "
             + $"AROM [{AppData.assessData.oldRom.aromMin}, {AppData.assessData.oldRom.aromMax}],"
             + $"PROM [{AppData.assessData.oldRom.promMin} ,  {AppData.assessData.oldRom.promMax}]"
         );
+        Debug.Log($"AROM [{AppData.assessData.oldRom.aromMin}, {AppData.assessData.oldRom.aromMax}],"
+            + $"PROM [{AppData.assessData.oldRom.promMin} ,  {AppData.assessData.oldRom.promMax}]");
         InitializeAssessment();
     }
 
@@ -81,10 +83,9 @@ public class PROMsceneHandler : MonoBehaviour
 
         // Disble the button to move to the next assessment.
         nextButton.SetActive(false);
-
         // Update the min and max values.
         angLimit = AppData.selectedMechanism == "HOC" ? PlutoComm.CALIBANGLE[PlutoComm.mechanism] : PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-        promSlider.Setup(-angLimit, angLimit, AppData.oldROM.promMin, AppData.oldROM.promMax);
+        promSlider.Setup(-angLimit, angLimit, AppData.assessData.oldRom.promMin, AppData.assessData.oldRom.promMax);
         promSlider.minAng = 0;
         promSlider.maxAng = 0;
 
@@ -96,10 +97,6 @@ public class PROMsceneHandler : MonoBehaviour
         (_rinx, _linx) = AppData.trainingSide == "right" ? (1, 0) : (0, 1);
         rText.text = DirectionText[PlutoComm.mechanism][_rinx];
         lText.text = DirectionText[PlutoComm.mechanism][_linx];
-
-        // Not sure what this is.
-        _tmin = 180f;
-        _tmax = -180f;
 
         // Set the state to INIT.
         _state = AssessStates.INIT;
@@ -124,9 +121,7 @@ public class PROMsceneHandler : MonoBehaviour
 
     void Update()
     {
-        // Update joint angle text
-        Debug.Log(PlutoComm.angle);
-        Debug.Log(AppData.assessData);
+
         jointAngle.text = ((int)PlutoComm.angle).ToString();
         jointAngleHoc.text = ((int)PlutoComm.getHOCDisplay(PlutoComm.angle)).ToString();
 
@@ -142,7 +137,7 @@ public class PROMsceneHandler : MonoBehaviour
                 float currentMinCM = ConvertToCM(promSlider.minAng);
                 float currentMaxCM = ConvertToCM(promSlider.maxAng);
                 relaxText.text = "Assessment Completed \n"
-                                 + FormatRelaxText(AppData.oldROM.promMin, AppData.oldROM.promMax) 
+                                 + FormatRelaxText(AppData.assessData.oldRom.promMin, AppData.assessData.oldRom.promMax) 
                                  + "Current PROM: " + currentMinCM.ToString("0.0") + "cm : " 
                                  + currentMaxCM.ToString("0.0") + "cm (Aperture: "
                                  + Mathf.Abs(currentMaxCM - currentMinCM).ToString("0.0") + "cm)\n";
@@ -150,7 +145,7 @@ public class PROMsceneHandler : MonoBehaviour
             else
             {
                 relaxText.text = "Assessment Completed \n"
-                                 + FormatRelaxText(AppData.oldROM.promMin, AppData.oldROM.promMax)
+                                 + FormatRelaxText(AppData.assessData.oldRom.promMin, AppData.assessData.oldRom.promMax)
                                  + "|| " + "Current PROM: " + (int)promSlider.minAng + " : "
                                  + (int)promSlider.maxAng + " (" + (int)(promSlider.maxAng - promSlider.minAng) + "°)\n";
             }
@@ -165,6 +160,7 @@ public class PROMsceneHandler : MonoBehaviour
         {
             case AssessStates.INIT:
                 startButton.SetActive(true);
+
                 if (isButtonPressed || Input.GetKeyDown(KeyCode.Return))
                 {
                     startAssessment();
@@ -229,9 +225,11 @@ public class PROMsceneHandler : MonoBehaviour
         nextButton.SetActive(false);
         _tmin = promSlider.minAng;
         _tmax = promSlider.maxAng;
+
+        AppData.assessData.SetNewPromValues(_tmin, _tmax);
         //assessmentSaved = true;
         //Debug.Log("Onsave : " + _tmin + " , " + _tmax);
-        gameData.isPROMcompleted = true;
+        //gameData.isPROMcompleted = true;
         AppData.promMin = _tmin;
         AppData.promMax = _tmax;
 

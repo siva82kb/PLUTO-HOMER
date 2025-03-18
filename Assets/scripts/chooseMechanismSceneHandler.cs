@@ -26,14 +26,16 @@ public class MechanismSceneHandler : MonoBehaviour
     public Button nextButton;
     public Button exit;
     private static bool changeScene = false;
-    private bool toggleSelected = false;
+    private string selectedMechanism = null;
     private string nextScene = "calibration";
     private string exitScene = "Summary";
 
     void Start()
     {
         // Reset mechanisms.
+        PlutoComm.sendHeartbeat();
         PlutoComm.calibrate("NOMECH");
+        AppData.selectedMechanism = null;
 
         // Initialize if needed
         if (AppData.userData == null)
@@ -42,7 +44,8 @@ public class MechanismSceneHandler : MonoBehaviour
             AppData.initializeStuff();
         }
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
-        AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
+        AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");
+        Debug.Log(PlutoComm.MECHANISMS[PlutoComm.mechanism]);
         AppLogger.SetCurrentMechanism(PlutoComm.MECHANISMS[PlutoComm.mechanism]);
 
         // Update timescale
@@ -134,13 +137,15 @@ public class MechanismSceneHandler : MonoBehaviour
 
     void CheckToggleStates()
     {
+        selectedMechanism = null;
         foreach (Transform child in mehcanismSelectGroup.transform)
         {
             Toggle toggleComponent = child.GetComponent<Toggle>();
             if (toggleComponent != null && toggleComponent.isOn)
             {
-                toggleSelected = true;
-                AppLogger.LogInfo($"Selected mechanism: {AppData.selectedMechanism}");
+                selectedMechanism = child.name; ;
+                AppData.selectedMechanism = selectedMechanism;
+                AppLogger.LogInfo($"Selected mechanism '{AppData.selectedMechanism}'.");
                 break;
             }
         }
@@ -148,10 +153,10 @@ public class MechanismSceneHandler : MonoBehaviour
 
     private void OnPlutoButtonReleased()
     {
-        if (toggleSelected)
+        if (selectedMechanism != null)
         {
             changeScene = true;
-            toggleSelected = false;
+            selectedMechanism = null;
         }
         else
         {
@@ -182,10 +187,10 @@ public class MechanismSceneHandler : MonoBehaviour
 
     private void OnNextButtonClicked()
     {
-        if (toggleSelected)
+        if (selectedMechanism != null)
         {
             LoadNextScene();
-            toggleSelected = false;
+            selectedMechanism = null;
         }
     }
 

@@ -68,13 +68,7 @@ public static class AppData
 
     // Options to drive 
     public static string trainingSide = null;
-    public static string selectedMechanism
-    {
-        get
-        {
-            return PlutoComm.MECHANISMS[PlutoComm.mechanism];
-        }
-    }
+    public static string selectedMechanism;
     public static string selectedGame = null;
 
     // Handling the data
@@ -95,11 +89,18 @@ public static class AppData
     {
         DataManager.createFileStructure();
         ConnectToRobot.Connect(AppData.COMPort);
-        PlutoComm.getVersion();
         AppLogger.LogInfo($"Connected to PLUTO @ {AppData.COMPort}.");
+        // Set control to NONE, calibrate and get version.
+        PlutoComm.sendHeartbeat();
+        PlutoComm.setControlType("NONE");
+        PlutoComm.calibrate("NOMECH");
+        PlutoComm.getVersion();
+        // Initialize user data.
         userData = new PlutoUserData(DataManager.filePathConfigData, DataManager.filePathSessionData);
         // Initialize game classes to null.
         hatTrickGame = null;
+        // Start sensorstream.
+        PlutoComm.sendHeartbeat(); 
         PlutoComm.startSensorStream();
         AppLogger.LogInfo($"PLUTO SensorStream started.");
     }
@@ -392,20 +393,20 @@ public static class Miscellaneous
     }
 }
 
-public class PlutoMechanism
-{
-    public string name { private set; get; }
-    public ROM aRomPrev { private set; get; }
-    public ROM aRomCurr { private set; get; }
-    public ROM pRomPrev { private set; get; }
-    public ROM pRomCurr { private set; get; }
+//public class PlutoMechanism
+//{
+//    public string name { private set; get; }
+//    public ROM aRomPrev { private set; get; }
+//    public ROM aRomCurr { private set; get; }
+//    public ROM pRomPrev { private set; get; }
+//    public ROM pRomCurr { private set; get; }
 
-    public PlutoMechanism(string name)
-    {
-        this.name = name;
+//    public PlutoMechanism(string name)
+//    {
+//        this.name = name;
 
-    }
-}
+//    }
+//}
 
 public class ROM
 {

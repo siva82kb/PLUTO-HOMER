@@ -73,7 +73,7 @@ public class MechanismSceneHandler : MonoBehaviour
     {
         // Attach PLUTO button event
         PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
-        
+
         // Exit and Next buttons
         exit.onClick.AddListener(OnExitButtonClicked);
         nextButton.onClick.AddListener(OnNextButtonClicked);
@@ -85,11 +85,11 @@ public class MechanismSceneHandler : MonoBehaviour
         {
             Toggle toggleComponent = child.GetComponent<Toggle>();
             bool isPrescribed = AppData.userData.mechMoveTimePrsc[toggleComponent.name] > 0;
-            
+
             // Hide the component if it has no prescribed time.
             toggleComponent.interactable = isPrescribed;
             toggleComponent.gameObject.SetActive(isPrescribed);
-            
+
             // Update the time trained in the timeLeft component of toggleCompoent.
             Transform timeLeftTransform = toggleComponent.transform.Find("timeLeft");
             if (timeLeftTransform != null)
@@ -115,7 +115,7 @@ public class MechanismSceneHandler : MonoBehaviour
 
     IEnumerator DelayedAttachListeners()
     {
-        yield return new WaitForSeconds(0.3f);  
+        yield return new WaitForSeconds(0.3f);
         AttachToggleListeners();
     }
 
@@ -140,7 +140,6 @@ public class MechanismSceneHandler : MonoBehaviour
             if (toggleComponent != null && toggleComponent.isOn)
             {
                 toggleSelected = true;
-                AppData.selectedMechanism = child.name;
                 AppLogger.LogInfo($"Selected mechanism: {AppData.selectedMechanism}");
                 break;
             }
@@ -156,7 +155,7 @@ public class MechanismSceneHandler : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("No mechanism selected to proceed.");
+            AppLogger.LogWarning("PLUTO Button pressed with selecting a mechanism.");
         }
     }
 
@@ -198,4 +197,3 @@ public class MechanismSceneHandler : MonoBehaviour
         }
     }
 }
-

@@ -172,10 +172,10 @@ public class HT_spawnTargets1 : MonoBehaviour
 
     public bool isInPROM(float angle)
     {
-        AppData.oldAROM = new ROM(AppData.selectedMechanism);
+        //AppData.oldAROM = new ROM(AppData.selectedMechanism);
 
-        float tmin = AppData.oldAROM.aromTmin;
-        float tmax = AppData.oldAROM.aromTmax;
+        float tmin = AppData.aRomValue[0];
+        float tmax = AppData.aRomValue[1];
         if (angle < tmin || angle > tmax)
         {
             Debug.Log("prom target");
@@ -217,11 +217,11 @@ public class HT_spawnTargets1 : MonoBehaviour
     public float RandomAngle()
     {
         float prevtargetAngle = targetAngle;
-        AppData.newPROM = new ROM(AppData.selectedMechanism);
+       // AppData.newPROM = new ROM(AppData.selectedMechanism);
 
 
-        float newPROM_tmin = AppData.newPROM.promTmin;
-        float newPROM_tmax = AppData.newPROM.promTmax;
+        float newPROM_tmin = AppData.pRomValue[0];
+        float newPROM_tmax = AppData.pRomValue[1];
         float tempAngle = Random.Range(newPROM_tmin, newPROM_tmax);
 
 
@@ -236,11 +236,11 @@ public class HT_spawnTargets1 : MonoBehaviour
     }
     public float Angle2Screen(float angle)
     {
-        AppData.newPROM = new ROM(AppData.selectedMechanism);
+        //AppData.newPROM = new ROM(AppData.selectedMechanism);
 
 
-        float newPROM_tmin = AppData.newPROM.promTmin;
-        float newPROM_tmax = AppData.newPROM.promTmax;
+        float newPROM_tmin = AppData.pRomValue[0];
+        float newPROM_tmax = AppData.pRomValue[1];
         //Debug.Log(newPROM_tmin + "+" + newPROM_tmax);
 
 
@@ -252,11 +252,7 @@ public class HT_spawnTargets1 : MonoBehaviour
     {
 
         isFlaccidControlOn = false;
-
         //checkIfFlaccid();
-
-
-
         initialTorque = 0;
         stopClock = trailDuration;
         onceReached = false;
@@ -276,43 +272,6 @@ public class HT_spawnTargets1 : MonoBehaviour
     }
    
 
-    //float normalController(float amp)
-    //{
-    //    float time = trailDuration - stopClock;
-    //    time = (time / trailDuration);
-
-    //    //Debug.Log(amp);
-    //    if (dontAssistTrial)
-    //    {
-    //        prevTorq = 0;
-    //    }
-    //    else
-    //    {
-    //        if (Mathf.Abs(targetAngle - PlutoComm.angle) > 5 && initialDirection == getDirection() && !onceReached)
-    //        {
-    //            reduceOppositeTimer = 0;
-    //            prevTorq = Mathf.SmoothStep(initialTorque, amp, Mathf.Clamp(time, 0, trailDuration));
-
-    //        }
-    //        else
-    //        {
-    //            onceReached = true;
-
-    //            if (Mathf.Abs(targetAngle - PlutoComm.angle) > 3)
-    //            {
-    //                reduceOppositeTimer += Time.deltaTime;
-    //                reduceOppositeTimer = Mathf.Min(reduceOppositeTimer, 3);
-    //                if (Mathf.Abs(prevTorq) > 0.05)
-    //                    prevTorq = prevTorq + getDirection() * reduceOppositeTimer * 0.01f;
-    //            }
-
-
-    //        }
-    //    }
-    //    prevTorq = Mathf.Clamp(prevTorq, 0.03f, 0.04f);
-
-    //    return prevTorq;
-    //}
    
 }
 

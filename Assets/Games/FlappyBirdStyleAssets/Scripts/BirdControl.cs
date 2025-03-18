@@ -183,31 +183,33 @@ public class BirdControl : MonoBehaviour
                 isDead = true;
                 anime.SetTrigger("Die");
             }
+            //gameData.birdCollided = true;
 
         }
 
     }
     public static float Angle2Screen(float angle)
     {
-        ROM promAng = new ROM(AppData.selectedMechanism);
-        float tmin = promAng.promTmin;
-        float tmax = promAng.promTmax;
+        //ROM promAng = new ROM(AppData.selectedMechanism);
+        float tmin = AppData.pRomValue[0];
+        float tmax = AppData.pRomValue[1];
 
         //return (-playSize + (angle - tmin) * (2 * playSize) / (tmax - tmin));
 
-        return Mathf.Lerp(-playSize, playSize, (angle - tmin) / (tmax - tmin));
+        //return Mathf.Lerp(-playSize, playSize, (angle - tmin) / (tmax - tmin));
 
 
-
+        return (-2.3f + (angle - tmin) * (playSize) / (tmax - tmin));
     }
 
 
     public static float playerMovementAreaAROM(float angle)
     {
-        ROM aromAng = new ROM(AppData.selectedMechanism);
-        float tmin = aromAng.aromTmin;
-        float tmax = aromAng.aromTmax;
-        return (-playSize + (angle - tmin) * (2 * playSize) / (tmax - tmin));
+        //ROM aromAng = new ROM(AppData.selectedMechanism);
+        float tmin = AppData.aRomValue[0];
+        float tmax = AppData.aRomValue[1];
+        return (-2.3f + (angle - tmin) * (playSize) / (tmax - tmin));
+
 
     }
 

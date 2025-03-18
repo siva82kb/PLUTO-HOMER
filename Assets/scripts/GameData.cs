@@ -8,7 +8,7 @@ public abstract class BaseGame
     public string mechanism { protected set; get; }
     public bool isGameLogging { protected set; get; }
     public bool targetSpwan { protected set; get; } = false;
-    
+
     public int gameScore { protected set; get; }
     public abstract string[] gameEvents { protected set; get; }
     public int eventNumber { protected set; get; }
@@ -16,6 +16,9 @@ public abstract class BaseGame
     public float targetPosition { protected set; get; }
     public float playerPosition { protected set; get; }
     public float gameSpeed { protected set; get; }
+
+    public ROM arom;
+    public ROM prom;
 
     public float successRate { protected set; get; }
     public bool setNeutral { protected set; get; } = false;
@@ -172,7 +175,14 @@ public class HatTrickGame : BaseGame
     {
         gameName = "HatTrick";
         mechanism = mechanism;
+        arom = null;
+        prom = null;
         dataLog = null;
+
+        // Read AROM and PROM from file.
+
+        // Read previous game speed.
+
     }
 }
 

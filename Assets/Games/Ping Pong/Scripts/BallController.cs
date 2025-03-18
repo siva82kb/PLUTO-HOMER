@@ -90,7 +90,10 @@ public class BallController : MonoBehaviour
             float predictedY = TrajectoryPredictor.PredictHitY(transform.position, newVelocity, playerBoundX, topBound, bottomBound, bounceMultiplier);
 
             gameData.predictedHitY = predictedY;
-            Debug.Log("y pos:" + gameData.predictedHitY);
+            //   Debug.Log("y pos:" + gameData.predictedHitY);
+
+            //temp
+            //gameData.enemyHitt = true;
         }
 
         if (col.gameObject.tag == "Player")
@@ -102,7 +105,10 @@ public class BallController : MonoBehaviour
             Vector2 d = new Vector2(-1, y).normalized;
             initVelocity(d * speed);
             gameData.events = Array.IndexOf(gameData.pongEvents, "playerHit");
-            
+
+
+            //temp
+           // gameData.playerHitt = true;
         }
         if (col.gameObject.name == "BottomBound")
         {

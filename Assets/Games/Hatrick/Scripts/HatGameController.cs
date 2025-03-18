@@ -44,6 +44,15 @@ public class HatGameController : MonoBehaviour
     private float targetAngle;
 
     private GameSession currentGameSession;
+    //gamedataLog
+    GameObject Player1, Target, Enemy;
+    public static string dateTime1;
+    public static string date1;
+    public static string sessionNum1;
+
+    string fileName;
+    float time;
+
 
     private bool isPlaying = false;
     private float Player;
@@ -79,7 +88,7 @@ public class HatGameController : MonoBehaviour
     }
     private DiscreteMovementTrialState _trialState;
     private static readonly IReadOnlyList<float> stateDurations = Array.AsReadOnly(new float[] {
-        0.30f,          // Rest duration
+        1.30f,          // Rest duration
         0.10f,          // Target set duration
         3.50f,          // Moving duration
         0.10f,          // Successful reach
@@ -133,6 +142,7 @@ public class HatGameController : MonoBehaviour
     private int randomTargetIndex;
     private int spawnCounter = 0;
     private System.Random random = new System.Random();
+    private string prevScene = "choosegame";
     public bool IsPlaying
     {
         get { return isPlaying; }
@@ -158,6 +168,7 @@ public class HatGameController : MonoBehaviour
     void Start()
     { 
         InitializeGame();
+       
     }
 
     void FixedUpdate()
@@ -383,8 +394,12 @@ public class HatGameController : MonoBehaviour
             // Start the state machine.
             SetTrialState(DiscreteMovementTrialState.Rest);
 
+            if (!AppData.runIndividualGame)
+            {
+                StartNewGameSession();
+            }
 
-            StartNewGameSession();
+            //StartNewGameSession();
             gameData.isGameLogging = true;
 
             StartButton.SetActive(false);
@@ -464,7 +479,10 @@ public class HatGameController : MonoBehaviour
         isPlaying = false;
         gameData.isGameLogging = false;
         PlutoComm.setControlType("NONE");
-        EndCurrentGameSession();
+        if (!AppData.runIndividualGame)
+        {
+            EndCurrentGameSession();
+        }
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
 
         AppLogger.LogInfo("Game Over.");
@@ -545,6 +563,9 @@ public class HatGameController : MonoBehaviour
             }
         }
     }
+
+
+
 
     private void InitializeGame()
     {
@@ -638,8 +659,12 @@ public class HatGameController : MonoBehaviour
     }
     public void exitGame()
     {
-        EndCurrentGameSession();
-        SceneManager.LoadScene("choosegame");
+        if (!AppData.runIndividualGame)
+        {
+            EndCurrentGameSession();
+
+        }
+        SceneManager.LoadScene(prevScene);
     }
     private void onPlutoButtonReleased()
     {

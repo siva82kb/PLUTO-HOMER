@@ -21,6 +21,7 @@ public class BallSpawnerController : MonoBehaviour
             ballClone = Instantiate(ball, this.transform.position, this.transform.rotation) as GameObject;
             ballClone.transform.SetParent(this.transform);
             EnemyController.stopWatch = 0;
+            gameData.targetSpwan = true;
         }
 
 

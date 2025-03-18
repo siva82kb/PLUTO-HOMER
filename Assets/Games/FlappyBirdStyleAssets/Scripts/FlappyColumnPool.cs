@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
+
 public class FlappyColumnPool : MonoBehaviour
 {
     enum AssessStates
@@ -11,7 +11,7 @@ public class FlappyColumnPool : MonoBehaviour
         NIGHT = 3
     };
 
-    public int _state; 
+    public int _state;
     public static FlappyColumnPool instance;
     public int columnPoolSize = 5;
     private GameObject[] columns;
@@ -19,19 +19,16 @@ public class FlappyColumnPool : MonoBehaviour
     public GameObject[] backgrounds;
     public float columnMin = -5.3f;
     public float ColumnMax = 1.3f;
-    public Vector2 objectPoolPosition = new Vector2(-15,-25);
+    public Vector2 objectPoolPosition = new Vector2(-15, -25);
     private float timeSinceLastSpawn = 3;
     public float spawnRate = 4;
     private float spawnXposition = 16;
     private int CurrentColumn = 0;
     private GameObject[] top;
     private GameObject[] bottom;
-    public Image targetImage;
-    private int randomTargetIndex;
-    private int spawnCounter = 0;
-    private System.Random random = new System.Random();
 
-    public  int difficultyLevel =10;
+
+    public int difficultyLevel = 10;
     bool setup;
 
     float prevSpawnTime;
@@ -47,24 +44,28 @@ public class FlappyColumnPool : MonoBehaviour
             Destroy(gameObject);
         }
     }
-
+    // Start is called before the first frame update
     void Start()
     {
+        // _state = 0;
 
         setup = false;
-        randomTargetIndex= random.Next(1,11);
+
 
 
     }
 
+    // Update is called once per frame
     void Update()
     {
         prevSpawnTime += Time.deltaTime;
         if (!setup)
         {
+            // Debug.Log(AppData.startGameLevel);
             int y = Random.Range(0, 3);
+            Debug.Log("state:" + y);
             _state = y;
-           
+
             FlappyColumnPool.instance.difficultyLevel = 6;
             columns = new GameObject[columnPoolSize];
             for (int i = 0; i < columnPoolSize; i++)
@@ -78,15 +79,7 @@ public class FlappyColumnPool : MonoBehaviour
             setup = true;
         }
 
-        FlappyGameControl.instance.scrollSpeed = -2 - 2 * (.1f + gameData.gameSpeedTT);
-        if(spawnCounter == randomTargetIndex) {
-            targetImage.gameObject.SetActive(true);
-            Debug.Log("Displaying the target image!");
-        }
-        else
-        {
-            targetImage.gameObject.SetActive(false);
-        }
+        FlappyGameControl.instance.scrollSpeed = -2 - 2 * (.1f +gameData.gameSpeedTT);
     }
 
     public void chooseBackground()
@@ -102,11 +95,10 @@ public class FlappyColumnPool : MonoBehaviour
         if (!FlappyGameControl.instance.gameOver && prevSpawnTime > 2)
         {
             prevSpawnTime = 0;
-            spawnCounter++;
             float x = Random.Range(1, 7);
-            columns[CurrentColumn].transform.position = new Vector2(BirdControl.rb2d.transform.position.x+ spawnXposition, FB_spawnTargets.instance.TargetSpawn().y);
+            columns[CurrentColumn].transform.position = new Vector2(BirdControl.rb2d.transform.position.x + spawnXposition, FB_spawnTargets.instance.TargetSpawn().y);
             columns[CurrentColumn].tag = "Target";
-            if(CurrentColumn == 0)
+            if (CurrentColumn == 0)
             {
                 columns[columnPoolSize - 1].tag = "Untagged";
             }
@@ -115,14 +107,14 @@ public class FlappyColumnPool : MonoBehaviour
                 columns[CurrentColumn - 1].tag = "Untagged";
 
             }
-                       
-           //FB_spawnTargets.instance.trailDuration = Mathf.Clamp((BirdControl.rb2d.transform.position.x + -columns[CurrentColumn].transform.position.x) / FlappyGameControl.instance.scrollSpeed,2,4);
+
+            //FB_spawnTargets.instance.trailDuration = Mathf.Clamp((BirdControl.rb2d.transform.position.x + -columns[CurrentColumn].transform.position.x) / FlappyGameControl.instance.scrollSpeed,2,4);
             CurrentColumn += 1;
             if (CurrentColumn >= columnPoolSize)
             {
                 CurrentColumn = 0;
             }
-            
+
         }
     }
 }

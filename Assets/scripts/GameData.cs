@@ -180,7 +180,7 @@ public class HatTrickGame : BaseGame
         dataLog = null;
 
         // Read AROM and PROM from file.
-
+        arom = new ROM(mech);
         // Read previous game speed.
 
     }

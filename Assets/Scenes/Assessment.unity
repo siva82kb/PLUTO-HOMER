@@ -7997,9 +7997,9 @@ MonoBehaviour:
   currepositionHoc: {fileID: 1200861006}
   aromSlider: {fileID: 528539155}
   promSlider: {fileID: 0}
-  panelControl: {fileID: 1932140814}
   isSelected: 0
   isInteractable: 0
+  panelControl: {fileID: 1932140814}
 --- !u!114 &413374365
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -38142,7 +38142,7 @@ MonoBehaviour:
   aromHandler: {fileID: 413374364}
   promImage: {fileID: 8209750394438654337}
   aromImage: {fileID: 1786077524}
-  PromImagedisabled: {fileID: 1381128801}
+  promImagedisabled: {fileID: 0}
   aromImageDisabled: {fileID: 605279202}
   Ins: {fileID: 2003915166}
   aromSelected:
@@ -44227,19 +44227,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 447638ce8b953ac4ebb3c7a78e086d7c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  isSelected: 1
   lText: {fileID: 1948570589}
   rText: {fileID: 538157347}
   insText: {fileID: 2003915166}
   cText: {fileID: 188136809}
   relaxText: {fileID: 1265882813}
-  JointAngle: {fileID: 6630573}
-  JointAngleHoc: {fileID: 1075589465}
+  jointAngle: {fileID: 6630573}
+  jointAngleHoc: {fileID: 1075589465}
   nextButton: {fileID: 1194691562}
   startButton: {fileID: 1276971196}
   CurrPositioncursor: {fileID: 2756669748342342149}
   CurrPositioncursorHoc: {fileID: 1207974071}
   promSlider: {fileID: 2870106807345754064}
+  promSliderHOC: {fileID: 0}
+  isSelected: 1
+  inst: 0
   panelControl: {fileID: 1932140814}
 --- !u!114 &8209750394461808014
 MonoBehaviour:

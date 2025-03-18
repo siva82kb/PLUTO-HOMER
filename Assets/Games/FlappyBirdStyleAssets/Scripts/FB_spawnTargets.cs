@@ -302,11 +302,11 @@ public class FB_spawnTargets : MonoBehaviour
     }
     private float ScreenPositionToAngle(float screenPosition)
     {
-        AppData.newPROM = new ROM(AppData.selectedMechanism);
+        AppData.newROM = new ROM(AppData.selectedMechanism);
 
 
-        float newPROM_tmin = AppData.newPROM.promTmin;
-        float newPROM_tmax = AppData.newPROM.promTmax;
+        float newPROM_tmin = AppData.newROM.promMin;
+        float newPROM_tmax = AppData.newROM.promMax;
         float angle = Mathf.Lerp(
             newPROM_tmin / 2,
             newPROM_tmax / 2,
@@ -317,11 +317,11 @@ public class FB_spawnTargets : MonoBehaviour
     public bool isInPROM(float angle)
     {
 
-        AppData.newPROM = new ROM(AppData.selectedMechanism);
+        AppData.newROM = new ROM(AppData.selectedMechanism);
 
 
-        float newPROM_tmin = AppData.newPROM.promTmin;
-        float newPROM_tmax = AppData.newPROM.promTmax;
+        float newPROM_tmin = AppData.newROM.promMin;
+        float newPROM_tmax = AppData.newROM.promMax;
         if (angle < newPROM_tmin || angle > newPROM_tmax)
         {
             Debug.Log("prom target");
@@ -334,8 +334,8 @@ public class FB_spawnTargets : MonoBehaviour
     public float RandomAngle()
     {
         ROM promAng = new ROM(AppData.selectedMechanism);
-        float tmin = promAng.promTmin;
-        float tmax = promAng.promTmax;
+        float tmin = promAng.promMin;
+        float tmax = promAng.promMax;
         float prevtargetAngle = targetAngle;
         float tempAngle = Random.Range(tmin, tmax);
         while (Mathf.Abs(tempAngle - prevtargetAngle) < Mathf.Abs(tmax - tmin) / 2.5f)
@@ -350,8 +350,8 @@ public class FB_spawnTargets : MonoBehaviour
     public float Angle2Screen(float angle)
     {
         ROM promAng = new ROM(AppData.selectedMechanism);
-        float tmin = promAng.promTmin;
-        float tmax = promAng.promTmax;
+        float tmin = promAng.promMin;
+        float tmax = promAng.promMax;
 
         return (-2f + (angle - tmin) * (playSize) / (tmax - tmin));
 

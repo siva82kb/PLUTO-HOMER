@@ -22,6 +22,8 @@ public class calibrationSceneHandler : MonoBehaviour
 
     void Start()
     {
+        // Check if user is not initialized.
+
         // Set mechanism to NOMECH.
         PlutoComm.sendHeartbeat();
         // Set mechanism to the selected mechanism.

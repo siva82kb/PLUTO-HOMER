@@ -30,6 +30,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
     private bool isRunning = false;
 
     private float targetAngle = 0;
+    private bool loadgame = false;
 
 
     void Start()
@@ -94,6 +95,11 @@ public class ChooseGameSceneHandler : MonoBehaviour
     void Update()
     {
         PlutoComm.sendHeartbeat();
+        if (loadgame)
+        {
+            LoadSelectedGameScene(selectedGame);
+            loadgame = false;
+        }
         // Check if PLUTO button is pressed for moving to the next scene.
         //if (isButtonPressed)
         //{
@@ -172,9 +178,9 @@ public class ChooseGameSceneHandler : MonoBehaviour
 
     private void OnPlayButtonClicked()
     {
-        if (toggleSelected)
+        if (toggleSelected && !loadgame)
         {
-            LoadSelectedGameScene(selectedGame);
+            loadgame = true;
             toggleSelected = false;
         }
     }
@@ -210,16 +216,16 @@ public class ChooseGameSceneHandler : MonoBehaviour
     
     public void OnPlutoButtonReleased()
     {
-        if (toggleSelected)
+        if (toggleSelected & !loadgame)
         {
             toggleSelected = false;
-            LoadSelectedGameScene(selectedGame);
+            loadgame = true;
         }
     }
 
     private void assessment()
     {
-        string date = AppData.oldAROM.datetime;
+        string date = AppData.oldROM.datetime;
         Debug.Log($"AppData.oldAROM.datetime: {date}");
 
         if (!string.IsNullOrEmpty(date))

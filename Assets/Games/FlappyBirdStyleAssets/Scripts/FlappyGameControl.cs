@@ -232,8 +232,8 @@ public class FlappyGameControl : MonoBehaviour
     public float Angle2Screen(float angle)
     {
         ROM promAng = new ROM(AppData.selectedMechanism);
-        float tmin = promAng.promTmin;
-        float tmax = promAng.promTmax;
+        float tmin = promAng.promMin;
+        float tmax = promAng.promMax;
 
         return (-3.0f + (angle - tmin) * (playSize) / (tmax - tmin));
 
@@ -242,8 +242,8 @@ public class FlappyGameControl : MonoBehaviour
     public float Angle2Screen2(float angle)
     {
         ROM promAng = new ROM(AppData.selectedMechanism);
-        float tmin = promAng.promTmin;
-        float tmax = promAng.promTmax;
+        float tmin = promAng.promMin;
+        float tmax = promAng.promMax;
 
         return (-4.3f+(angle - tmin) * (playSize) / (tmax - tmin));
 

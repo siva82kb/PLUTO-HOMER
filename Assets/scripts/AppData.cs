@@ -15,6 +15,7 @@ using System.Text;
 using XCharts.Runtime;
 using System.Diagnostics;
 using UnityEngine;
+using System.Diagnostics.Contracts;
 public static class PlutoDefs
 {
     public static readonly string[] Mechanisms = new string[] { "WFE", "WURD", "FPS", "HOC", "FME1", "FME2" };
@@ -39,22 +40,21 @@ public static class HomerTherapyConstants
 public static class AppData
 {
     // COM Port for the device
-    public static readonly string COMPort = "COM5";
-    static public readonly float[] offsetAtNeutral = new float[] { 68, 68, 90, 0, 90, 90 };
+    public static readonly string COMPort = "COM4";
+    //static public readonly float[] offsetAtNeutral = new float[] { 68, 68, 90, 0, 90, 90 };
 
-    // Old and new PROM
-    public static ROM oldPROM;
-    public static ROM newPROM;
-    public static ROM oldAROM;
-    public static ROM newAROM;
+    // Old and new PROM used by assessment scene
+    public static ROM oldROM;
+    public static ROM newROM;
+    //public static ROM oldAROM;
+    //public static ROM newAROM;
 
     public static float[] aRomValue = new float[2];
     public static float[] pRomValue = new float[2];
     //temp storage for PROM min and max
 
-    public static float promTmin = 0f;
-    public static float promTmax = 0f;
-
+    public static float promMin = 0f;
+    public static float promMax = 0f;
 
     public static string _dataLogDir = null;
 
@@ -67,7 +67,14 @@ public static class AppData
     }
 
     // Options to drive 
-    public static string trainingSide = null;
+    public static string trainingSide
+    {
+        get
+        {
+            if (AppData.userData == null) return null;
+            return AppData.userData.rightHand ? "right" : "left";
+        }
+    }
     public static string selectedMechanism;
     public static string selectedGame = null;
 
@@ -76,8 +83,11 @@ public static class AppData
     public static string trialDataFileLocation;
     public static string trialDataFileLocation1;
 
-    //change true to run game from choosegamescene
+    // Change true to run game from choosegamescene
     public static bool runIndividualGame = false;
+
+    // Assessment data. Used only by the assessment scene.
+    public static AssessmentData assessData = null;
 
     // User data
     public static PlutoUserData userData;
@@ -333,7 +343,8 @@ public class PlutoUserData
     {
         DataRow lastRow = dTableConfig.Rows[dTableConfig.Rows.Count - 1];
         hospNumber = lastRow.Field<string>("hospno");
-        AppData.trainingSide = lastRow.Field<string>("TrainingSide");
+        rightHand = lastRow.Field<string>("TrainingSide") == "right";
+        //AppData.trainingSide = ; // lastRow.Field<string>("TrainingSide");
         startDate = DateTime.ParseExact(lastRow.Field<string>("startdate"), "dd-MM-yyyy", CultureInfo.InvariantCulture);
         mechMoveTimePrsc = createMoveTimeDictionary();//prescribed time
         for (int i = 0; i < PlutoDefs.Mechanisms.Length; i++)
@@ -393,32 +404,69 @@ public static class Miscellaneous
     }
 }
 
-//public class PlutoMechanism
-//{
-//    public string name { private set; get; }
-//    public ROM aRomPrev { private set; get; }
-//    public ROM aRomCurr { private set; get; }
-//    public ROM pRomPrev { private set; get; }
-//    public ROM pRomCurr { private set; get; }
+/// <summary>
+/// This class contains all the necessary information to run the assessment scene.
+/// </summary>
+public class AssessmentData
+{
+    public string mechanism { get; private set; }
+    public bool promCompleted { get; private set; }
+    public bool aromCompleted { get; private set; }
+    public ROM oldRom { get; private set; }
+    public ROM newRom { get; private set; }
+    public string side { get; private set; }
 
-//    public PlutoMechanism(string name)
-//    {
-//        this.name = name;
+    public AssessmentData(string mech, string side)
+    {
+        mechanism = mech;
+        oldRom = new ROM(mech);
+        newRom = new ROM();
+        promCompleted = false;
+        aromCompleted = false;
+        this.side = side;
+    }
 
-//    }
-//}
+    public void SetNewPromValues(float pmin, float pmax)
+    {
+        newRom.promMin = pmin;
+        newRom.promMax = pmax;
+        if (pmin != 0 || pmax != 0)
+        {
+            promCompleted = true;
+        }
+    }
+
+    public void SetNewAromValues(float amin, float amax)
+    {
+        newRom.promMin = amin;
+        newRom.promMax = amax;
+        if (amin != 0 || amax != 0)
+        {
+            aromCompleted = true;
+        }
+    }
+
+    public void SaveAssessmentData()
+    {
+        if (promCompleted && aromCompleted)
+        {
+            // Save the new ROM values to the file.
+            newRom.WriteToAssessmentFile();
+        }
+    }
+}
 
 public class ROM
 {
     // Class attributes to store data read from the file
     public string datetime;
     public string side;
-    public float promTmin;
-    public float promTmax;
-    public float aromTmin;
-    public float aromTmax;
+    public float promMin;
+    public float promMax;
+    public float aromMin;
+    public float aromMax;
     public string mech;
-    public string filePath = DataManager.directoryAPROMData;
+    public string filePath { get; private set; } = DataManager.directoryAPROMData;
 
     // Constructor that reads the file and initializes values based on the mechanism
     public ROM(string mechanismName)
@@ -426,34 +474,30 @@ public class ROM
         string lastLine = "";
         string[] values;
         string fileName = $"{filePath}/{mechanismName}.csv";
-
         try
         {
             using (StreamReader file = new StreamReader(fileName))
             {
-                while (!file.EndOfStream)
-                {
-                    lastLine = file.ReadLine();
-                }
+                while (!file.EndOfStream) lastLine = file.ReadLine();
             }
             values = lastLine.Split(',');
             if (values[0].Trim() != null)
             {
                 // Assign values if mechanism matches
                 datetime = values[0].Trim();
-                promTmin = float.Parse(values[1].Trim());
-                promTmax = float.Parse(values[2].Trim());
-                aromTmin = float.Parse(values[3].Trim());
-                aromTmax = float.Parse(values[4].Trim());
+                promMin = float.Parse(values[1].Trim());
+                promMax = float.Parse(values[2].Trim());
+                aromMin = float.Parse(values[3].Trim());
+                aromMax = float.Parse(values[4].Trim());
             }
             else
             {
                 // Handle case when no matching mechanism is found
                 datetime = null;
-                promTmin = 0;
-                promTmax = 0;
-                aromTmin = 0;
-                aromTmax = 0;
+                promMin = 0;
+                promMax = 0;
+                aromMin = 0;
+                aromMax = 0;
             }
         }
         catch (Exception ex)
@@ -464,18 +508,23 @@ public class ROM
 
     public ROM(float angmin, float angmax, float aromAngMin, float aromAngMax, string mch, bool tofile)
     {
-        promTmin = angmin;
-        promTmax = angmax;
-        aromTmin = aromAngMin;
-        aromTmax = aromAngMax;
+        promMin = angmin;
+        promMax = angmax;
+        aromMin = aromAngMin;
+        aromMax = aromAngMax;
         mech = mch;
-        datetime = DateTime.Now.ToString();
+        datetime = null;
+        side = null;
+    }
 
-        if (tofile)
-        {
-            // Write data to assessment file.
-            WriteToAssessmentFile();
-        }
+    public ROM()
+    {
+        promMin = 0;
+        promMax = 0;
+        aromMin = 0;
+        aromMax = 0;
+        mech = null;
+        datetime = DateTime.Now.ToString();
     }
 
     public void WriteToAssessmentFile()
@@ -484,13 +533,13 @@ public class ROM
         //UnityEngine.Debug.Log(_fname);
         using (StreamWriter file = new StreamWriter(_fname, true))
         {
-            file.WriteLine(datetime + ", " + promTmin.ToString() + ", " + promTmax.ToString() + ", " + aromTmin.ToString() + ", " + aromTmax.ToString() + "");
+            file.WriteLine(datetime + ", " + promMin.ToString() + ", " + promMax.ToString() + ", " + aromMin.ToString() + ", " + aromMax.ToString() + "");
         }
     }
 
-    public (float tmin, float tmax) GetTminTmax()
+    public (float tmin, float tmax) GetMinMax()
     {
-        return (promTmin, promTmax);
+        return (promMin, promMax);
     }
 }
 

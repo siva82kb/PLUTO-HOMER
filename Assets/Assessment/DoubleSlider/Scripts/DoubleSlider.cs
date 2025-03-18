@@ -283,18 +283,12 @@ namespace TS.DoubleSlider
             _initialMinValue = val;
             _initialMaxValue = val;
 
-        
-          
             _sliderMin.Setup(_initialMinValue, _minValue, _maxValue, MinValueChanged);
             _sliderMax.Setup(_initialMaxValue, _minValue, _maxValue, MaxValueChanged);
        
-            
-
-
             MinValueChanged(val);
             MaxValueChanged(val);
 
-            
             _currePostion.minValue = _minValue;
             _currePostion.maxValue = _maxValue;
        

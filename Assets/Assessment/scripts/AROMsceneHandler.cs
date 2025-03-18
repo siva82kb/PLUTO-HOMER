@@ -18,6 +18,7 @@ public class AROMsceneHandler : MonoBehaviour
         INIT = 0,
         ASSESS = 1
     };
+
     bool assessmentSaved;
     public TMP_Text lText;
     public TMP_Text rText;
@@ -29,7 +30,7 @@ public class AROMsceneHandler : MonoBehaviour
 
     public TMP_Text warningText;
     bool AssessmentValid;
-    private float _tmin, _tmax, _tmin1, _tmax1;
+    private float _tmin, _tmax;
     private float prommin, prommax;
 
     public GameObject nextButton;
@@ -62,13 +63,13 @@ public class AROMsceneHandler : MonoBehaviour
 
     void Start()
     {
-
-        //InitializeAssessment();
-        //aromSlider.UpdateMinMaxvalues = false;
     }
 
     private void InitializeAssessment()
     {
+        // Set control to NONE.
+        PlutoComm.setControlType("NONE");
+
         aromSlider.UpdateMinMaxvalues = false;
         gameData.isAROMcompleted = false;
         nextButton.SetActive(false);
@@ -82,37 +83,32 @@ public class AROMsceneHandler : MonoBehaviour
         {
             using (var writer = new StreamWriter(dir, false, Encoding.UTF8))
             {
-                writer.WriteLine("datetime,promTmin,promTmax,aromTmin,aromTmax");
+                writer.WriteLine("datetime,promMin,promMax,aromMin,aromMax");
             }
         }
 
-        int mechanismIndex = Array.IndexOf(PlutoComm.MECHANISMS, AppData.selectedMechanism);
-        angLimit = (mechanismIndex != 4) ? AppData.offsetAtNeutral[PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, AppData.selectedMechanism)] : 100.42f;
-
-        aromSlider.Setup(-angLimit, angLimit, AppData.oldAROM.aromTmin, AppData.oldAROM.aromTmax);
+        angLimit = AppData.selectedMechanism == "HOC" ? PlutoComm.CALIBANGLE[PlutoComm.mechanism] : PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+        aromSlider.Setup(-angLimit, angLimit, AppData.oldROM.aromMin, AppData.oldROM.aromMax);
         aromSlider.minAng = aromSlider.maxAng = 0;
 
-        bool isSpecialCase = (mechanismIndex == 4);
-        cText.gameObject.SetActive(isSpecialCase);
+        // Handle HOC and other mechanisms differently.
+        cText.gameObject.SetActive(AppData.selectedMechanism == "HOC");
         rText.gameObject.SetActive(true);
         lText.gameObject.SetActive(true);
-        cText.text = isSpecialCase ? "Closed" : "";
+        cText.text = AppData.selectedMechanism == "HOC"  ? "Closed" : "";
 
+        // Handle the right and left sides differently.
         (_rinx, _linx) = AppData.trainingSide == "right" ? (1, 0) : (0, 1);
-        rText.text = DirectionText[mechanismIndex][_rinx];
-        lText.text = DirectionText[mechanismIndex][_linx];
+        rText.text = DirectionText[PlutoComm.mechanism][_rinx];
+        lText.text = DirectionText[PlutoComm.mechanism][_linx];
 
         _tmin = 180f;
         _tmax = -180f;
-        _tmin1 = 180f;
-        _tmax1 = -180f;
-
-
-
+           
+        // Set initial state.
         _state = AssessStates.INIT;
 
         UpdateGUI();
-        PlutoComm.setControlType("NONE");
     }
 
     public void OnStartButtonClick()
@@ -134,7 +130,6 @@ public class AROMsceneHandler : MonoBehaviour
     }
     void Update()
     {
-
         if (isSelected)
         {
             switch (_state)
@@ -143,8 +138,7 @@ public class AROMsceneHandler : MonoBehaviour
                     gameData.isAROMcompleted = false;
                     if (!isInteractable)
                     {
-
-                        AppData.oldAROM = new ROM(AppData.selectedMechanism);
+                        AppData.oldROM = new ROM(AppData.selectedMechanism);
                         PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
                         InitializeAssessment();
                         isInteractable = true;
@@ -152,9 +146,9 @@ public class AROMsceneHandler : MonoBehaviour
                     startButton.SetActive(true);
 
 
-                    prommin = AppData.promTmin;
+                    prommin = AppData.promMin;
 
-                    prommax = AppData.promTmax;
+                    prommax = AppData.promMax;
 
                     if (isButtonPressed || Input.GetKeyDown(KeyCode.Return))
                     {
@@ -164,20 +158,20 @@ public class AROMsceneHandler : MonoBehaviour
                     if (isRestarting)
                     {
                         relaxText.color = Color.red;
-                        relaxText.text = " AROM Should not Exceed PROM \n " +
+                        relaxText.text = "AROM Should not Exceed PROM \n " +
                                          "Please REDO PROM AGAIN";
                     }
                     else
 
                         relaxText.color = Color.white;
-                   relaxText.text = FormatRelaxText(AppData.oldAROM.aromTmin, AppData.oldAROM.aromTmax);
+                   relaxText.text = FormatRelaxText(AppData.oldROM.aromMin, AppData.oldROM.aromMax);
                     break;
                 case AssessStates.ASSESS:
 
                     _tmin = aromSlider.minAng;
                     _tmax = aromSlider.maxAng;
                     relaxText.color = Color.white;
-                    relaxText.text = FormatRelaxText(AppData.oldAROM.aromTmin, AppData.oldAROM.aromTmax);
+                    relaxText.text = FormatRelaxText(AppData.oldROM.aromMin, AppData.oldROM.aromMax);
 
                     nextButton.SetActive(true);
 
@@ -253,13 +247,12 @@ public class AROMsceneHandler : MonoBehaviour
         aromSlider.UpdateMinMaxvalues = true;
     }
 
-
     public void onSavePressed()
     {
         _tmin = aromSlider.minAng;
         _tmax = aromSlider.maxAng;
 
-        AppData.newAROM = new ROM(AppData.promTmin, AppData.promTmax, _tmin, _tmax,
+        AppData.newROM = new ROM(AppData.promMin, AppData.promMax, _tmin, _tmax,
          AppData.selectedMechanism, true);
 
         if (Array.IndexOf(PlutoComm.MECHANISMS, AppData.selectedMechanism) == 4)

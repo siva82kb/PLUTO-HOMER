@@ -343,9 +343,9 @@ public class HatGameController : MonoBehaviour
 
     private float SpawnTargetArea()
     {
-        AppData.newAROM = new ROM(AppData.selectedMechanism);
-        float aromMin = AppData.newAROM.aromTmin;
-        float aromMax = AppData.newAROM.aromTmax;
+        AppData.newROM = new ROM(AppData.selectedMechanism);
+        float aromMin = AppData.newROM.promMax;
+        float aromMax = AppData.newROM.promMax;
 
         float xMin = MapAROMToPROMPlaySize(aromMin);
         float xMax = MapAROMToPROMPlaySize(aromMax);
@@ -357,9 +357,9 @@ public class HatGameController : MonoBehaviour
     }
     private float MapAROMToPROMPlaySize(float angle)
     {
-        AppData.newPROM = new ROM(AppData.selectedMechanism);
-        float promMin = AppData.newPROM.promTmin;
-        float promMax = AppData.newPROM.promTmax;
+        AppData.newROM = new ROM(AppData.selectedMechanism);
+        float promMin = AppData.newROM.promMax;
+        float promMax = AppData.newROM.promMax;
         float promRange = promMax - promMin;
         float normalizedAROM = (angle - promMin) / promRange;
 

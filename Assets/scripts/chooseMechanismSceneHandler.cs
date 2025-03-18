@@ -140,7 +140,6 @@ public class MechanismSceneHandler : MonoBehaviour
             if (toggleComponent != null && toggleComponent.isOn)
             {
                 toggleSelected = true;
-                AppData.selectedMechanism = child.name;
                 AppLogger.LogInfo($"Selected mechanism: {AppData.selectedMechanism}");
                 break;
             }
@@ -156,7 +155,7 @@ public class MechanismSceneHandler : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("No mechanism selected to proceed.");
+            AppLogger.LogWarning("PLUTO Button pressed with selecting a mechanism.");
         }
     }
 

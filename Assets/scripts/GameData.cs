@@ -17,6 +17,9 @@ public abstract class BaseGame
     public float playerPosition { protected set; get; }
     public float gameSpeed { protected set; get; }
 
+    public ROM arom;
+    public ROM prom;
+
     public float successRate { protected set; get; }
     public bool setNeutral { protected set; get; } = false;
     protected DataLogger dataLog;
@@ -172,7 +175,14 @@ public class HatTrickGame : BaseGame
     {
         gameName = "HatTrick";
         mechanism = mechanism;
+        arom = null;
+        prom = null;
         dataLog = null;
+
+        // Read AROM and PROM from file.
+
+        // Read previous game speed.
+
     }
 }
 

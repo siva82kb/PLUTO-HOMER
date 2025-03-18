@@ -16,12 +16,6 @@ public class calibrationSceneHandler : MonoBehaviour
     
     private string selectedMechanism;
     private bool isCalibrating = false;
-    //private float togetherPosition = 0.0f;
-    //private float togetherAngle = 0f;
-    //private float separationPosition = 11.0f;
-    //private float separationAngle = 180.0f;
-    //private float separationAngleWFE = 140.0f;
-    //private static bool connect = false;
     private string prevScene = "chooseMechanism";
     private string nextScene = "chooseGame";
 
@@ -99,12 +93,12 @@ public class calibrationSceneHandler : MonoBehaviour
 
         // Move the robot to the neutral position.
         PlutoComm.setControlType("POSITION");
-        PlutoComm.setControlBound(1f);
         // Set the target to zero slowly.
         float _initAngle = PlutoComm.angle;
         int N = 20;
         for (int i = 0; i < N; i++)
         {
+            PlutoComm.setControlBound(1.0f * (i + 1) / N);
             PlutoComm.setControlTarget((N - i) * _initAngle / N);
             yield return new WaitForSeconds(0.1f);
         }
@@ -141,67 +135,6 @@ public class calibrationSceneHandler : MonoBehaviour
         isCalibrating = true;
     }
 
-
-    private bool CheckPositionTogether(float currentPosition, float targetPosition)
-    {
-        float targetPos = targetPosition + 1.5f;
-        if (currentPosition <= targetPos)
-        {
-            return true;
-        }
-        else
-        {
-            errMsg();
-            return false;
-        }
-    }
-
-    private bool CheckPositionSeparation(float currentPosition, float targetPosition)
-    {
-        if (selectedMechanism == "HOC") {
-            float targetPos = targetPosition - 3f;
-            if (currentPosition >= targetPos)
-            {
-                return true;
-            }
-            else
-            {
-                errMsg();
-                return false;
-            }
-        }
-        else
-        {
-            float targetPos = targetPosition - 2f;
-            if (currentPosition >= targetPos)
-            {
-                return true;
-            }
-            else
-            {
-                errMsg();
-                return false;
-            }
-        }
-
-    }
-
-    private void errMsg()
-    {
-        textMessage.text = $"Try Again.";
-        textMessage.color = Color.red;
-        isCalibrating = false;
-        PlutoComm.calibrate(AppData.selectedMechanism);
-        PlutoComm.setControlType(PlutoComm.CONTROLTYPE[0]);
-    }
-
-    private void displaySuccessMessage()
-    {
-        isCalibrating = false;
-        textMessage.text = "Calibration Done";
-        textMessage.color = new Color32(62, 214, 111, 255);
-        
-    }
     private void OnExitButtonClicked()
     {
         SceneManager.LoadScene(prevScene);

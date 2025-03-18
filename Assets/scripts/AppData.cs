@@ -68,7 +68,13 @@ public static class AppData
     
     // Options to drive 
     public static string trainingSide = null;
-    public static string selectedMechanism = null;
+    public static string selectedMechanism
+    {
+        get
+        {
+            return PlutoComm.MECHANISMS[PlutoComm.mechanism];
+        }
+    }
     public static string selectedGame = null;
     
     // Handling the data
@@ -265,61 +271,61 @@ public class PlutoUserData
 
     public void calculateGameSpeedForLastUsageDay()
     {
-        //if (dTableSession == null || dTableSession.Rows.Count == 0)
-        //{
-        //    AppLogger.LogError("Session data is not available.");
-        //    return;
-        //}
-        //// Get the recent data of use for the selected mechanism.
-        //var lastUsageDate = dTableSession.AsEnumerable()
-        //    .Where(row => row.Field<string>("Mechanism") == selectedMechanism)
-        //    .Select(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date)
-        //    .Where(date => date < DateTime.Now.Date) // Exclude today
-        //    .OrderByDescending(date => date)
-        //    .FirstOrDefault();
-        //if (lastUsageDate == default(DateTime))
-        //{
-        //    AppLogger.LogWarning($"No usage data found for mechanism: {selectedMechanism}");
-        //    return;
-        //}
-        //AppLogger.LogInfo($"Last usage date for mechanism {selectedMechanism}: {lastUsageDate:dd-MM-yyyy}");
+        if (dTableSession == null || dTableSession.Rows.Count == 0)
+        {
+            AppLogger.LogError("Session data is not available.");
+            return;
+        }
+        // Get the recent data of use for the selected mechanism.
+        var lastUsageDate = dTableSession.AsEnumerable()
+            .Where(row => row.Field<string>("Mechanism") == AppData.selectedMechanism)
+            .Select(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date)
+            .Where(date => date < DateTime.Now.Date) // Exclude today
+            .OrderByDescending(date => date)
+            .FirstOrDefault();
+        if (lastUsageDate == default(DateTime))
+        {
+            AppLogger.LogWarning($"No usage data found for mechanism: {selectedMechanism}");
+            return;
+        }
+        AppLogger.LogInfo($"Last usage date for mechanism {selectedMechanism}: {lastUsageDate:dd-MM-yyyy}");
 
-        //Dictionary<string, float> updatedGameSpeeds = new Dictionary<string, float>();
-        //foreach (var _gameName in HomerTherapyConstants.GameSpeedIncrements.Keys)
-        //{
-        //    var rows = dTableSession.AsEnumerable()
-        //        .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == lastUsageDate)
-        //        .Where(row => row.Field<string>("GameName") == _gameName && row.Field<string>("Mechanism") == selectedMechanism);
+        Dictionary<string, float> updatedGameSpeeds = new Dictionary<string, float>();
+        foreach (var _gameName in HomerTherapyConstants.GameSpeedIncrements.Keys)
+        {
+            var rows = dTableSession.AsEnumerable()
+                .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == lastUsageDate)
+                .Where(row => row.Field<string>("GameName") == _gameName && row.Field<string>("Mechanism") == selectedMechanism);
 
-        //    float previousGameSpeed = rows.Any() ? rows.Average(row => Convert.ToSingle(row["GameSpeed"])) : 0f;
-        //    float avgSuccessRate = rows.Any() ? rows.Average(row => Convert.ToSingle(row["SuccessRate"])) : 0f;
+            float previousGameSpeed = rows.Any() ? rows.Average(row => Convert.ToSingle(row["GameSpeed"])) : 0f;
+            float avgSuccessRate = rows.Any() ? rows.Average(row => Convert.ToSingle(row["SuccessRate"])) : 0f;
 
-        //    if (avgSuccessRate >= HomerTherapyConstants.SuccessRateThForSpeedIncrement)
-        //    {
-        //        updatedGameSpeeds[_gameName] = previousGameSpeed + HomerTherapyConstants.GameSpeedIncrements[_gameName];
-        //    }
-        //    else
-        //    {
-        //        updatedGameSpeeds[_gameName] = previousGameSpeed;
-        //    }
-        //}
-        //AppLogger.LogInfo($"Updated GameSpeeds for Mechanism: {selectedMechanism}");
-        //foreach (var game in updatedGameSpeeds)
-        //{
-        //    AppLogger.LogInfo($"Game speed for '{game.Key}' is set to {game.Value}.");
-        //    if (game.Key == "PING-PONG")
-        //    {
-        //        gameData.gameSpeedPP = game.Value;
-        //    }
-        //    else if (game.Key == "TUK-TUK")
-        //    {
-        //        gameData.gameSpeedTT = game.Value;
-        //    }
-        //    else if (game.Key == "HAT-Trick")
-        //    {
-        //        gameData.gameSpeedHT = game.Value;
-        //    }
-        //}
+            if (avgSuccessRate >= HomerTherapyConstants.SuccessRateThForSpeedIncrement)
+            {
+                updatedGameSpeeds[_gameName] = previousGameSpeed + HomerTherapyConstants.GameSpeedIncrements[_gameName];
+            }
+            else
+            {
+                updatedGameSpeeds[_gameName] = previousGameSpeed;
+            }
+        }
+        AppLogger.LogInfo($"Updated GameSpeeds for Mechanism: {selectedMechanism}");
+        foreach (var game in updatedGameSpeeds)
+        {
+            AppLogger.LogInfo($"Game speed for '{game.Key}' is set to {game.Value}.");
+            if (game.Key == "PING-PONG")
+            {
+                gameData.gameSpeedPP = game.Value;
+            }
+            else if (game.Key == "TUK-TUK")
+            {
+                gameData.gameSpeedTT = game.Value;
+            }
+            else if (game.Key == "HAT-Trick")
+            {
+                gameData.gameSpeedHT = game.Value;
+            }
+        }
     }
 
     private void parseTherapyConfigData()

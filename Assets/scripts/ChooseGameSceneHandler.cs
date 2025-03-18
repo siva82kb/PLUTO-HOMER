@@ -53,7 +53,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
         //targetAngle= AppData.offsetAtNeutral[PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, AppData.selectedMechanism)];
         // Update App Logger
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
-        AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
+        AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");
         AppLogger.SetCurrentGame("");
         //AppData.userData.calculateGameSpeedForLastUsageDay();
 
@@ -191,11 +191,6 @@ public class ChooseGameSceneHandler : MonoBehaviour
         if (gameScenes.TryGetValue(game, out string sceneName))
         {
             AppLogger.LogInfo($"{game} selected.");
-            //if (AppData.selectedMechanism != "HOC" && !gameData.setNeutral)
-            //{
-            //    gameData.setNeutral = true;
-            //    //PlutoComm.calibrate(AppData.selectedMechanism); //its temp, needs to set 0 using control type 
-            //}
             // Instantitate the game object and load the appropriate scene.
             switch(game)
             {

@@ -39,7 +39,7 @@ public class welcomSceneHandler : MonoBehaviour
         // Inialize the logger
         AppLogger.StartLogging(SceneManager.GetActiveScene().name);
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
-        AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
+        AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");
         // Check if the directory exists
         if (!Directory.Exists(DataManager.directoryPath))
         {
@@ -72,9 +72,6 @@ public class welcomSceneHandler : MonoBehaviour
 
     void Update()
     {
-        //PlutoComm.sendHeartbeat();
-        // Attach PlutoButton release event after 1 seconds if it is not attached already.
-        //Debug.Log($"{attachPlutoButtonEvent} {Time.timeSinceLevelLoad} {changeScene} {PlutoComm.frameRate} {PlutoComm.button}");
         if (!attachPlutoButtonEvent && Time.timeSinceLevelLoad > 1)
         {
             attachPlutoButtonEvent = true;

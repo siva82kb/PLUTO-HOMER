@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using static AppData;
 using System;
+using Unity.VisualScripting;
 
 public class calibrationSceneHandler : MonoBehaviour
 {
@@ -13,17 +14,23 @@ public class calibrationSceneHandler : MonoBehaviour
     public TextMeshProUGUI mechText;
     public TextMeshProUGUI angText;
     public Button exit;
-    
-    private string selectedMechanism;
+
+    //private string selectedMechanism;
+    private bool startCalibration = false;
     private bool isCalibrating = false;
+    private bool doneCalibration = false;
     private string prevScene = "chooseMechanism";
     private string nextScene = "chooseGame";
 
     void Start()
     {
+        // Set mechanism to NOMECH.
+        PlutoComm.sendHeartbeat();
+        // Set mechanism to the selected mechanism.
+        PlutoComm.calibrate(AppData.selectedMechanism);
+        
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
-        AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
-        selectedMechanism = AppData.selectedMechanism;
+        AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");
         mechText.text = PlutoComm.MECHANISMSTEXT[PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, selectedMechanism)];
 
         // Attach callback.
@@ -37,12 +44,13 @@ public class calibrationSceneHandler : MonoBehaviour
     void Update()
     {
         PlutoComm.sendHeartbeat();
-        if ((Input.GetKeyDown(KeyCode.C) && !isCalibrating) || isCalibrating)
+        angText.text = PlutoComm.angle.ToString("F3");
+        // Check of calibration is started.
+        if (!isCalibrating && startCalibration)
         {
             PerformCalibration();
-            isCalibrating = false;
+            startCalibration = false;
         }
-        angText.text = PlutoComm.angle.ToString("F3");
     }
 
     private void PerformCalibration()
@@ -75,7 +83,7 @@ public class calibrationSceneHandler : MonoBehaviour
         yield return new WaitForSeconds(1.5f);
 
         // Check if the ROM is correct.
-        int mechInx = Array.IndexOf(PlutoComm.MECHANISMS, selectedMechanism);
+        int mechInx = Array.IndexOf(PlutoComm.MECHANISMS, AppData.selectedMechanism);
         float _angval = PlutoComm.angle + PlutoComm.MECHOFFSETVALUE[mechInx];
         isCalibrating = false;
         if (Math.Abs(_angval) < 0.9 * PlutoComm.CALIBANGLE[mechInx]
@@ -83,13 +91,18 @@ public class calibrationSceneHandler : MonoBehaviour
         {
             // Error in calibration
             PlutoComm.setControlType("NONE");
+            PlutoComm.calibrate("NOMECH");
             textMessage.text = $"Try Again.";
             textMessage.color = Color.red;
+            AppLogger.LogError($"Calibration failed for {AppData.selectedMechanism}.");
+            isCalibrating = false;
+            doneCalibration = false;
             yield break;
         }
         // All good.
         textMessage.text = "Calibration Done";
         textMessage.color = new Color32(62, 214, 111, 255);
+        AppLogger.LogError($"Calibration was successful for {AppData.selectedMechanism}.");
 
         // Move the robot to the neutral position.
         PlutoComm.setControlType("POSITION");
@@ -105,6 +118,14 @@ public class calibrationSceneHandler : MonoBehaviour
         PlutoComm.setControlTarget(0.0f);
         PlutoComm.setControlType("NONE");
         yield return new WaitForSeconds(1.5f);
+
+        // Set selected mechanism.
+        AppData.selectedMechanism = PlutoComm.MECHANISMS[PlutoComm.mechanism];
+        AppLogger.SetCurrentMechanism(AppData.selectedMechanism);
+
+        // Update flags.
+        isCalibrating = false;
+        doneCalibration = true;
 
         // Go to the next scene.
         Invoke("LoadNextScene", 0.4f);
@@ -132,7 +153,11 @@ public class calibrationSceneHandler : MonoBehaviour
 
     private void OnPlutoButtonReleased()
     {
-        isCalibrating = true;
+        Debug.Log($"PLUTObutton: {doneCalibration}, {isCalibrating}");
+        if (!doneCalibration && !isCalibrating && !startCalibration)
+        {
+            startCalibration = true;
+        }
     }
 
     private void OnExitButtonClicked()

@@ -68,13 +68,7 @@ public static class AppData
     
     // Options to drive 
     public static string trainingSide = null;
-    public static string selectedMechanism
-    {
-        get
-        {
-            return PlutoComm.MECHANISMS[PlutoComm.mechanism];
-        }
-    }
+    public static string selectedMechanism;
     public static string selectedGame = null;
     
     // Handling the data
@@ -95,11 +89,18 @@ public static class AppData
     {
         DataManager.createFileStructure();
         ConnectToRobot.Connect(AppData.COMPort);
-        PlutoComm.getVersion();
         AppLogger.LogInfo($"Connected to PLUTO @ {AppData.COMPort}.");
+        // Set control to NONE, calibrate and get version.
+        PlutoComm.sendHeartbeat();
+        PlutoComm.setControlType("NONE");
+        PlutoComm.calibrate("NOMECH");
+        PlutoComm.getVersion();
+        // Initialize user data.
         userData = new PlutoUserData(DataManager.filePathConfigData, DataManager.filePathSessionData);
         // Initialize game classes to null.
         hatTrickGame = null;
+        // Start sensorstream.
+        PlutoComm.sendHeartbeat(); 
         PlutoComm.startSensorStream();
         AppLogger.LogInfo($"PLUTO SensorStream started.");
     }
@@ -285,17 +286,17 @@ public class PlutoUserData
             .FirstOrDefault();
         if (lastUsageDate == default(DateTime))
         {
-            AppLogger.LogWarning($"No usage data found for mechanism: {selectedMechanism}");
+            AppLogger.LogWarning($"No usage data found for mechanism: {AppData.selectedMechanism}");
             return;
         }
-        AppLogger.LogInfo($"Last usage date for mechanism {selectedMechanism}: {lastUsageDate:dd-MM-yyyy}");
+        AppLogger.LogInfo($"Last usage date for mechanism {AppData.selectedMechanism}: {lastUsageDate:dd-MM-yyyy}");
 
         Dictionary<string, float> updatedGameSpeeds = new Dictionary<string, float>();
         foreach (var _gameName in HomerTherapyConstants.GameSpeedIncrements.Keys)
         {
             var rows = dTableSession.AsEnumerable()
                 .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == lastUsageDate)
-                .Where(row => row.Field<string>("GameName") == _gameName && row.Field<string>("Mechanism") == selectedMechanism);
+                .Where(row => row.Field<string>("GameName") == _gameName && row.Field<string>("Mechanism") == AppData.selectedMechanism);
 
             float previousGameSpeed = rows.Any() ? rows.Average(row => Convert.ToSingle(row["GameSpeed"])) : 0f;
             float avgSuccessRate = rows.Any() ? rows.Average(row => Convert.ToSingle(row["SuccessRate"])) : 0f;
@@ -309,7 +310,7 @@ public class PlutoUserData
                 updatedGameSpeeds[_gameName] = previousGameSpeed;
             }
         }
-        AppLogger.LogInfo($"Updated GameSpeeds for Mechanism: {selectedMechanism}");
+        AppLogger.LogInfo($"Updated GameSpeeds for Mechanism: {AppData.selectedMechanism}");
         foreach (var game in updatedGameSpeeds)
         {
             AppLogger.LogInfo($"Game speed for '{game.Key}' is set to {game.Value}.");
@@ -392,20 +393,20 @@ public static class Miscellaneous
     }
 }
 
-public class PlutoMechanism
-{
-    public string name { private set; get; }
-    public ROM aRomPrev { private set; get; }
-    public ROM aRomCurr { private set; get; }
-    public ROM pRomPrev { private set; get; }
-    public ROM pRomCurr { private set; get; }
+//public class PlutoMechanism
+//{
+//    public string name { private set; get; }
+//    public ROM aRomPrev { private set; get; }
+//    public ROM aRomCurr { private set; get; }
+//    public ROM pRomPrev { private set; get; }
+//    public ROM pRomCurr { private set; get; }
 
-    public PlutoMechanism(string name)
-    {
-        this.name = name;
+//    public PlutoMechanism(string name)
+//    {
+//        this.name = name;
 
-    }
-}
+//    }
+//}
 
 public class ROM
 {

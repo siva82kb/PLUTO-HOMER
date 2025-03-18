@@ -145,16 +145,17 @@ public static class AppLogger
         if (isLogging)
         {
             currentScene = scene;
-            LogInfo($"{currentScene} scene started.");
+            LogInfo($"Scene set to '{currentScene}'.");
         }
     }
 
     public static void SetCurrentMechanism(string mechanism)
     {
+        Debug.Log(mechanism);
         if (isLogging)
         {
             currentMechanism = mechanism;
-            LogInfo($"PLUTO mechanism set to {currentMechanism}.");
+            LogInfo($"PLUTO mechanism set to '{currentMechanism}'.");
         }
     }
 
@@ -163,7 +164,7 @@ public static class AppLogger
         if (isLogging)
         {
             currentGame = game;
-            LogInfo($"PLUTO game set to {currentGame}.");
+            LogInfo($"PLUTO game set to '{currentGame}'.");
         }
     }
 
@@ -185,7 +186,8 @@ public static class AppLogger
         {
             if (logWriter != null)
             {
-                string _msg = $"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} [{currentScene}] [{currentMechanism}] [{currentGame}] {message}";
+                string _user = AppData.userData != null ? AppData.userData.hospNumber : "";
+                string _msg = $"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} [{_user}] [{currentScene}] [{currentMechanism}] [{currentGame}] {message}";
                 logWriter.WriteLine(_msg);
                 logWriter.Flush();
                 if (DEBUG) Debug.Log(_msg);

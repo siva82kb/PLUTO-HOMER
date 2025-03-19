@@ -71,8 +71,6 @@ public class PROMsceneHandler : MonoBehaviour
             + $"AROM [{AppData.assessData.oldRom.aromMin}, {AppData.assessData.oldRom.aromMax}],"
             + $"PROM [{AppData.assessData.oldRom.promMin} ,  {AppData.assessData.oldRom.promMax}]"
         );
-        Debug.Log($"AROM [{AppData.assessData.oldRom.aromMin}, {AppData.assessData.oldRom.aromMax}],"
-            + $"PROM [{AppData.assessData.oldRom.promMin} ,  {AppData.assessData.oldRom.promMax}]");
         InitializeAssessment();
     }
 
@@ -95,8 +93,8 @@ public class PROMsceneHandler : MonoBehaviour
 
         // Update the left and right text.
         (_rinx, _linx) = AppData.trainingSide == "right" ? (1, 0) : (0, 1);
-        rText.text = DirectionText[PlutoComm.mechanism][_rinx];
-        lText.text = DirectionText[PlutoComm.mechanism][_linx];
+        rText.text = DirectionText[PlutoComm.mechanism - 1][_rinx];
+        lText.text = DirectionText[PlutoComm.mechanism - 1][_linx];
 
         // Set the state to INIT.
         _state = AssessStates.INIT;

@@ -44241,7 +44241,6 @@ MonoBehaviour:
   promSlider: {fileID: 2870106807345754064}
   promSliderHOC: {fileID: 0}
   isSelected: 1
-  inst: 0
   panelControl: {fileID: 1932140814}
 --- !u!114 &8209750394461808014
 MonoBehaviour:

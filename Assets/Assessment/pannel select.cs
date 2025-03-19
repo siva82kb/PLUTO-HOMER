@@ -59,18 +59,6 @@ public class assessmentSceneHandler : MonoBehaviour
         PlutoComm.sendHeartbeat();
     }
 
-    public void writeAssesmentFileAndExit()
-    {
-        if (gameData.isPROMcompleted && gameData.isAROMcompleted)
-        {
-            SceneManager.LoadScene(chooseGameScene);
-            Debug.Log("Wrote successfully");
-        }
-        else
-        {
-            Debug.Log("APROM not completed");
-        }
-    }
 
     public void SelectpROM()
     {

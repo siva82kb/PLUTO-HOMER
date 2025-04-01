@@ -62,7 +62,7 @@ public class PROMsceneHandler : MonoBehaviour
         // Initialize the assessment data.
         AppData.assessData = new AssessmentData(AppData.selectedMechanism, AppData.trainingSide);
         AppLogger.LogInfo(
-            "ROM data loaded for mechanism {mech}: "
+            $"ROM data loaded for mechanism {AppData.selectedMechanism}: "
             + $"AROM [{AppData.assessData.oldRom.aromMin}, {AppData.assessData.oldRom.aromMax}],"
             + $"PROM [{AppData.assessData.oldRom.promMin} ,  {AppData.assessData.oldRom.promMax}]"
         );

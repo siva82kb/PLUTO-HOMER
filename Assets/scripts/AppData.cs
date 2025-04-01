@@ -426,6 +426,20 @@ public class AssessmentData
         this.side = side;
     }
 
+    public void ResetPromValues()
+    {
+        newRom.promMin = 0;
+        newRom.promMax = 0;
+        promCompleted = false;
+    }
+
+    public void ResetAromValues()
+    {
+        newRom.aromMin = 0;
+        newRom.aromMax = 0;
+        aromCompleted = false;
+    }
+
     public void SetNewPromValues(float pmin, float pmax)
     {
         newRom.promMin = pmin;

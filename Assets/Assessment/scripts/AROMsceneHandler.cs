@@ -180,7 +180,6 @@ public class AROMsceneHandler : MonoBehaviour
 
     public void OnRedoaromButtonClick()
     {
-
         InitializeAssessment();
         Debug.Log("Assessment Restarted");
         aromSlider.UpdateMinMaxvalues = false;
@@ -209,7 +208,6 @@ public class AROMsceneHandler : MonoBehaviour
         _tmax = aromSlider.maxAng;
 
         AppData.assessData.SetNewAromValues(_tmin,_tmax);
-
         AppData.assessData.SaveAssessmentData();
 
         if (AppData.selectedMechanism == "HOC")

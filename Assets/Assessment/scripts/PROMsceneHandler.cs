@@ -15,37 +15,34 @@ public class PROMsceneHandler : MonoBehaviour
 
     enum AssessStates
     {
-        INIT = 0,
-        ASSESS = 1
+        INIT,
+        ASSESS
     };
-    bool assessmentSaved;
-    private bool isPaused = false;
     private bool isButtonPressed = false;
     public TMP_Text lText;
     public TMP_Text rText;
     public TMP_Text insText;
     public TMP_Text cText;
-    //public TMP_Text statusText;
     public TMP_Text relaxText;
 
     public TMP_Text jointAngle;
     public TMP_Text jointAngleHoc;
 
-    bool AssessmentValid;
-
-    private float _tmin, _tmax;
+    private int _linx, _rinx;
+    private float _tmin = 0f, _tmax  =0f;
 
     public GameObject nextButton;
     public GameObject startButton;
     public GameObject CurrPositioncursor;
     public GameObject CurrPositioncursorHoc;
+
     private AssessStates _state;
 
     private float angLimit;
     public DoubleSlider promSlider;
     public DoubleSlider promSliderHOC;
     public bool isSelected = false;
-    public bool inst = false;
+
     public assessmentSceneHandler panelControl;
 
 
@@ -59,8 +56,6 @@ public class PROMsceneHandler : MonoBehaviour
          new string[] { "", "" }
      };
 
-    private int _linx, _rinx;
-    internal bool interactable;
 
     void Start()
     {
@@ -81,7 +76,6 @@ public class PROMsceneHandler : MonoBehaviour
 
         // Disble the button to move to the next assessment.
         nextButton.SetActive(false);
-
         // Update the min and max values.
         if (AppData.selectedMechanism == "HOC")
         {
@@ -94,7 +88,6 @@ public class PROMsceneHandler : MonoBehaviour
             promSlider.minAng = 0;
             promSlider.maxAng = 0;
         }
-            
 
         // Update central text.
         cText.gameObject.SetActive(AppData.selectedMechanism == "HOC");
@@ -102,19 +95,15 @@ public class PROMsceneHandler : MonoBehaviour
 
         // Update the left and right text.
         (_rinx, _linx) = AppData.trainingSide == "right" ? (1, 0) : (0, 1);
-        rText.text = DirectionText[PlutoComm.mechanism][_rinx];
-        lText.text = DirectionText[PlutoComm.mechanism][_linx];
-
-        // Not sure what this is.
-        _tmin = 180f;
-        _tmax = -180f;
+        rText.text = DirectionText[PlutoComm.mechanism - 1][_rinx];
+        lText.text = DirectionText[PlutoComm.mechanism - 1][_linx];
 
         // Set the state to INIT.
         _state = AssessStates.INIT;
         // Attach callback for PLUTO button release.
         PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
 
-        UpdateGUI();
+        UpdateStatusText();
     }
 
     private void DisablePromGameObjects()
@@ -139,7 +128,7 @@ public class PROMsceneHandler : MonoBehaviour
         if (isSelected)
         {
             runaAssessmentStateMachine();
-            UpdateGUI();
+            UpdateStatusText();
         }
         else
         {
@@ -148,7 +137,7 @@ public class PROMsceneHandler : MonoBehaviour
                 float currentMinCM = ConvertToCM(promSlider.minAng);
                 float currentMaxCM = ConvertToCM(promSlider.maxAng);
                 relaxText.text = "Assessment Completed \n"
-                                 + FormatRelaxText(AppData.oldROM.promMin, AppData.oldROM.promMax) 
+                                 + FormatRelaxText(AppData.assessData.oldRom.promMin, AppData.assessData.oldRom.promMax) 
                                  + "Current PROM: " + currentMinCM.ToString("0.0") + "cm : " 
                                  + currentMaxCM.ToString("0.0") + "cm (Aperture: "
                                  + Mathf.Abs(currentMaxCM - currentMinCM).ToString("0.0") + "cm)\n";
@@ -156,7 +145,7 @@ public class PROMsceneHandler : MonoBehaviour
             else
             {
                 relaxText.text = "Assessment Completed \n"
-                                 + FormatRelaxText(AppData.oldROM.promMin, AppData.oldROM.promMax)
+                                 + FormatRelaxText(AppData.assessData.oldRom.promMin, AppData.assessData.oldRom.promMax)
                                  + "|| " + "Current PROM: " + (int)promSlider.minAng + " : "
                                  + (int)promSlider.maxAng + " (" + (int)(promSlider.maxAng - promSlider.minAng) + "°)\n";
             }
@@ -171,6 +160,7 @@ public class PROMsceneHandler : MonoBehaviour
         {
             case AssessStates.INIT:
                 startButton.SetActive(true);
+
                 if (isButtonPressed || Input.GetKeyDown(KeyCode.Return))
                 {
                     startAssessment();
@@ -198,13 +188,12 @@ public class PROMsceneHandler : MonoBehaviour
     public void OnRedoPromClick()
     {
         _state = AssessStates.INIT;
-        AssessmentValid = false;
         isButtonPressed = false;
-        gameData.isAROMcompleted = false;
+
         // Reinitialize the assessment process
         InitializeAssessment();
 
-        UpdateGUI();
+        UpdateStatusText();
         panelControl.SelectpROM();
         Debug.Log("Redo PROM: Reset to INIT state.");
     }
@@ -235,9 +224,9 @@ public class PROMsceneHandler : MonoBehaviour
         nextButton.SetActive(false);
         _tmin = promSlider.minAng;
         _tmax = promSlider.maxAng;
-        //assessmentSaved = true;
-        //Debug.Log("Onsave : " + _tmin + " , " + _tmax);
-        gameData.isPROMcompleted = true;
+
+        AppData.assessData.SetNewPromValues(_tmin, _tmax);
+
         AppData.promMin = _tmin;
         AppData.promMax = _tmax;
 
@@ -245,29 +234,12 @@ public class PROMsceneHandler : MonoBehaviour
         CurrPositioncursor.SetActive(false);
         CurrPositioncursorHoc.SetActive(false);
 
-        promSlider.minAng = AppData.promMin;
-        nextButton.SetActive(false);
-
-        if (Array.IndexOf(PlutoComm.MECHANISMS, AppData.selectedMechanism) == 4)
-        {
-            float currentMinCM = Mathf.Abs(Mathf.Deg2Rad * _tmin * 6f);
-            float currentMaxCM = Mathf.Abs(Mathf.Deg2Rad * -_tmax * 6f);
-
-            relaxText.text = "Assessment Completed \n" +
-                            "Current PROM: " + currentMinCM.ToString("0.0") + "cm : " + currentMaxCM.ToString("0.0")
-                            + "cm (Aperture: " + Mathf.Abs(currentMaxCM - currentMinCM).ToString("0.0") + "cm)\n";
-        }
-        else
-        {
-            relaxText.text = "Assessment Completed \n " +
-            "Current PROM: " + (int)_tmin + " : " + (int)_tmax + " (" + (int)(_tmax - _tmin) + " °)\n";
-        }
     }
 
     private string FormatRelaxText(float min, float max)
     {
         return AppData.selectedMechanism == "HOC" ?
-            $"Prev PROM: {ConvertToCM(min)}cm : {ConvertToCM(max)}cm (Aperture: {ConvertToCM(max - min)}cm)" :
+            $"Prev PROM: {ConvertToCM(min).ToString("0.0")}cm : {ConvertToCM(max).ToString("0.0")}cm (Aperture: {ConvertToCM(max - min).ToString("0.0")}cm)" :
             $"Prev PROM: {(int)min} : {(int)max} ({(int)(max - min)}°)";
     }
 
@@ -281,19 +253,9 @@ public class PROMsceneHandler : MonoBehaviour
 
     }
 
-    void OnApplicationQuit()
-    {
-        JediComm.Disconnect();
-    }
-
-    private void UpdateGUI()
-    {
-        UpdateStatusText();
-    }
-
     private void UpdateStatusText()
     {
-        if (Array.IndexOf(PlutoComm.MECHANISMS, AppData.selectedMechanism) != 4)
+        if (AppData.selectedMechanism != "HOC")
         {
             jointAngle.text = (PlutoComm.angle).ToString("0.0");
         }

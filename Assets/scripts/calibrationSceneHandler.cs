@@ -104,17 +104,22 @@ public class calibrationSceneHandler : MonoBehaviour
         textMessage.color = new Color32(62, 214, 111, 255);
         AppLogger.LogError($"Calibration was successful for {AppData.selectedMechanism}.");
 
-        // Move the robot to the neutral position.
-        PlutoComm.setControlType("POSITION");
-        // Set the target to zero slowly.
-        float _initAngle = PlutoComm.angle;
-        int N = 20;
-        for (int i = 0; i < N; i++)
-        {
-            PlutoComm.setControlBound(1.0f * (i + 1) / N);
-            PlutoComm.setControlTarget((N - i) * _initAngle / N);
-            yield return new WaitForSeconds(0.1f);
+        //HOC assessment UI  works based on closed position,
+        if(PlutoComm.MECHANISMS[PlutoComm.mechanism] != "HOC") {
+            // Move the robot to the neutral position.
+            PlutoComm.setControlType("POSITION");
+            // Set the target to zero slowly.
+            float _initAngle = PlutoComm.angle;
+            int N = 20;
+            for (int i = 0; i < N; i++)
+            {
+                PlutoComm.setControlBound(1.0f * (i + 1) / N);
+                PlutoComm.setControlTarget((N - i) * _initAngle / N);
+                yield return new WaitForSeconds(0.1f);
+            }
         }
+        if (PlutoComm.MECHANISMS[PlutoComm.mechanism] == "HOC") PlutoComm.calibrate(AppData.selectedMechanism);
+
         PlutoComm.setControlTarget(0.0f);
         PlutoComm.setControlType("NONE");
         yield return new WaitForSeconds(1.5f);

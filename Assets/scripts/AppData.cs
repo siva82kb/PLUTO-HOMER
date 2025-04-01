@@ -40,7 +40,7 @@ public static class HomerTherapyConstants
 public static class AppData
 {
     // COM Port for the device
-    public static readonly string COMPort = "COM4";
+    public static readonly string COMPort = "COM5";
     //static public readonly float[] offsetAtNeutral = new float[] { 68, 68, 90, 0, 90, 90 };
 
     // Old and new PROM used by assessment scene
@@ -447,17 +447,20 @@ public class AssessmentData
         if (pmin != 0 || pmax != 0)
         {
             promCompleted = true;
+
         }
+
     }
 
     public void SetNewAromValues(float amin, float amax)
     {
-        newRom.promMin = amin;
-        newRom.promMax = amax;
+        newRom.aromMin = amin;
+        newRom.aromMax = amax;
         if (amin != 0 || amax != 0)
         {
             aromCompleted = true;
         }
+
     }
 
     public void SaveAssessmentData()
@@ -467,6 +470,7 @@ public class AssessmentData
             // Save the new ROM values to the file.
             newRom.WriteToAssessmentFile();
         }
+
     }
 }
 
@@ -543,8 +547,8 @@ public class ROM
 
     public void WriteToAssessmentFile()
     {
-        string _fname = Path.Combine(filePath, mech + ".csv");
-        UnityEngine.Debug.Log(_fname);
+        string _fname = Path.Combine(filePath, AppData.selectedMechanism + ".csv");
+        //UnityEngine.Debug.Log(_fname);
         using (StreamWriter file = new StreamWriter(_fname, true))
         {
             file.WriteLine(datetime + ", " + promMin.ToString() + ", " + promMax.ToString() + ", " + aromMin.ToString() + ", " + aromMax.ToString() + "");

@@ -204,8 +204,7 @@ public class AROMsceneHandler : MonoBehaviour
             curreposition.SetActive(true);
             currepositionHoc.SetActive(Array.IndexOf(PlutoComm.MECHANISMS, AppData.selectedMechanism) == 4);
 
-            relaxText.text = " AROM Do not Exceed PROM \n " +
-            "Please REDO PROM AGAIN";
+            relaxText.text = " AROM Do not Exceed PROM \n " + "Please REDO PROM AGAIN";
         }
         else
         {
@@ -219,7 +218,6 @@ public class AROMsceneHandler : MonoBehaviour
 
     public void OnRedoaromButtonClick()
     {
-
         InitializeAssessment();
         Debug.Log("Assessment Restarted");
         Start();
@@ -230,6 +228,7 @@ public class AROMsceneHandler : MonoBehaviour
     {
         Start();
     }
+
     public void OnNextButtonClick()
     {
         checkAromLimits();
@@ -253,7 +252,7 @@ public class AROMsceneHandler : MonoBehaviour
         _tmax = aromSlider.maxAng;
 
         AppData.newROM = new ROM(AppData.promMin, AppData.promMax, _tmin, _tmax,
-         AppData.selectedMechanism, true);
+        AppData.selectedMechanism, true);
 
         if (Array.IndexOf(PlutoComm.MECHANISMS, AppData.selectedMechanism) == 4)
         {

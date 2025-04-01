@@ -426,6 +426,20 @@ public class AssessmentData
         this.side = side;
     }
 
+    public void ResetPromValues()
+    {
+        newRom.promMin = 0;
+        newRom.promMax = 0;
+        promCompleted = false;
+    }
+
+    public void ResetAromValues()
+    {
+        newRom.aromMin = 0;
+        newRom.aromMax = 0;
+        aromCompleted = false;
+    }
+
     public void SetNewPromValues(float pmin, float pmax)
     {
         newRom.promMin = pmin;
@@ -530,7 +544,7 @@ public class ROM
     public void WriteToAssessmentFile()
     {
         string _fname = Path.Combine(filePath, mech + ".csv");
-        //UnityEngine.Debug.Log(_fname);
+        UnityEngine.Debug.Log(_fname);
         using (StreamWriter file = new StreamWriter(_fname, true))
         {
             file.WriteLine(datetime + ", " + promMin.ToString() + ", " + promMax.ToString() + ", " + aromMin.ToString() + ", " + aromMax.ToString() + "");

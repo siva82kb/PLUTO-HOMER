@@ -37,6 +37,7 @@ public class assessmentSceneHandler : MonoBehaviour
         // Check if userData is null.
         if (AppData.userData == null)
         {
+            AppLogger.LogError("User data is null. Initializing dummy stuff.");
             // Initialize.
             AppData.initializeStuff();
             // Neuro Library

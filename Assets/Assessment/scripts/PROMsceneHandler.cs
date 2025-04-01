@@ -65,9 +65,9 @@ public class PROMsceneHandler : MonoBehaviour
     void Start()
     {
         // Initialize the assessment data.
-        AppData.assessData = new AssessmentData(AppData.selectedGame, AppData.trainingSide);
+        AppData.assessData = new AssessmentData(AppData.selectedMechanism, AppData.trainingSide);
         AppLogger.LogInfo(
-            "ROM data loaded for mechanism {mech}: "
+            $"ROM data loaded for mechanism {AppData.selectedMechanism}: "
             + $"AROM [{AppData.assessData.oldRom.aromMin}, {AppData.assessData.oldRom.aromMax}],"
             + $"PROM [{AppData.assessData.oldRom.promMin} ,  {AppData.assessData.oldRom.promMax}]"
         );
@@ -83,10 +83,18 @@ public class PROMsceneHandler : MonoBehaviour
         nextButton.SetActive(false);
 
         // Update the min and max values.
-        angLimit = AppData.selectedMechanism == "HOC" ? PlutoComm.CALIBANGLE[PlutoComm.mechanism] : PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-        promSlider.Setup(-angLimit, angLimit, AppData.oldROM.promMin, AppData.oldROM.promMax);
-        promSlider.minAng = 0;
-        promSlider.maxAng = 0;
+        if (AppData.selectedMechanism == "HOC")
+        {
+            angLimit = PlutoComm.CALIBANGLE[PlutoComm.mechanism];
+        } else
+        {
+            angLimit = PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+            UnityEngine.Debug.Log(promSlider);
+            promSlider.Setup(-angLimit, angLimit, AppData.assessData.oldRom.promMin, AppData.assessData.oldRom.promMax);
+            promSlider.minAng = 0;
+            promSlider.maxAng = 0;
+        }
+            
 
         // Update central text.
         cText.gameObject.SetActive(AppData.selectedMechanism == "HOC");
@@ -125,8 +133,6 @@ public class PROMsceneHandler : MonoBehaviour
     void Update()
     {
         // Update joint angle text
-        Debug.Log(PlutoComm.angle);
-        Debug.Log(AppData.assessData);
         jointAngle.text = ((int)PlutoComm.angle).ToString();
         jointAngleHoc.text = ((int)PlutoComm.getHOCDisplay(PlutoComm.angle)).ToString();
 

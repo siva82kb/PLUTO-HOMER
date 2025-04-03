@@ -120,6 +120,12 @@ public class AROMsceneHandler : MonoBehaviour
             runaAssessmentStateMachine();
             UpdateStatusText();
         }
+        else
+        {
+            _state = AssessStates.INIT;
+            isRestarting = false;
+            relaxText.color = Color.white;
+        }
       
     }
     void runaAssessmentStateMachine()

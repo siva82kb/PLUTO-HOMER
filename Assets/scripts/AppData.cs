@@ -58,6 +58,10 @@ public static class AppData
 
     public static string _dataLogDir = null;
 
+
+    //check whethet the arom assessment already started:
+    public static bool isAromstarted = false;
+
     // Keeping track of time.
     static private double nanosecPerTick = 1.0 / Stopwatch.Frequency;
     static private Stopwatch stp_watch = new Stopwatch();

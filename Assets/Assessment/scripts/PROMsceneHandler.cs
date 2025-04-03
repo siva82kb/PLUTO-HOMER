@@ -77,17 +77,10 @@ public class PROMsceneHandler : MonoBehaviour
         // Disble the button to move to the next assessment.
         nextButton.SetActive(false);
         // Update the min and max values.
-        if (AppData.selectedMechanism == "HOC")
-        {
-            angLimit = PlutoComm.CALIBANGLE[PlutoComm.mechanism];
-        } else
-        {
-            angLimit = PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
-            UnityEngine.Debug.Log(promSlider);
-            promSlider.Setup(-angLimit, angLimit, AppData.assessData.oldRom.promMin, AppData.assessData.oldRom.promMax);
-            promSlider.minAng = 0;
-            promSlider.maxAng = 0;
-        }
+        angLimit = AppData.selectedMechanism == "HOC" ? PlutoComm.CALIBANGLE[PlutoComm.mechanism] : PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+        promSlider.Setup(-angLimit, angLimit, AppData.assessData.oldRom.promMin, AppData.assessData.oldRom.promMax);
+        promSlider.minAng = 0;
+        promSlider.maxAng = 0;
 
         // Update central text.
         cText.gameObject.SetActive(AppData.selectedMechanism == "HOC");
@@ -121,7 +114,6 @@ public class PROMsceneHandler : MonoBehaviour
 
     void Update()
     {
-        // Update joint angle text
         jointAngle.text = ((int)PlutoComm.angle).ToString();
         jointAngleHoc.text = ((int)PlutoComm.getHOCDisplay(PlutoComm.angle)).ToString();
 

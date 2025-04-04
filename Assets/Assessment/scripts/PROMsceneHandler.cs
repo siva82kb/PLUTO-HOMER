@@ -187,6 +187,7 @@ public class PROMsceneHandler : MonoBehaviour
 
         UpdateStatusText();
         panelControl.SelectpROM();
+        AppData.assessData.ResetAromValues();
         Debug.Log("Redo PROM: Reset to INIT state.");
     }
 

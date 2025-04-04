@@ -36,12 +36,13 @@ public class AROMsceneHandler : MonoBehaviour
 
     private AssessStates _state;
 
+    
     public DoubleSlider aromSlider;
     public DoubleSlider promSlider;
 
     public bool isSelected = false;
     private bool isRestarting = false;
-    private bool isButtonPressed = false;
+    public bool isButtonPressed = false;
 
     public assessmentSceneHandler panelControl;
 
@@ -119,6 +120,12 @@ public class AROMsceneHandler : MonoBehaviour
             runaAssessmentStateMachine();
             UpdateStatusText();
         }
+        else
+        {
+            _state = AssessStates.INIT;
+            isRestarting = false;
+            relaxText.color = Color.white;
+        }
       
     }
     void runaAssessmentStateMachine()
@@ -164,6 +171,7 @@ public class AROMsceneHandler : MonoBehaviour
 
             aromSlider.UpdateMinMaxvalues = false;
             RestartAssessment();
+            isButtonPressed = false;
             isRestarting = true;
             curreposition.SetActive(true);
             currepositionHoc.SetActive(AppData.selectedMechanism == "HOC");

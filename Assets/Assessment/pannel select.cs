@@ -1,5 +1,5 @@
 
-using NeuroRehabLibrary;
+using PlutoNeuroRehabLibrary;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -52,7 +52,7 @@ public class assessmentSceneHandler : MonoBehaviour
         // Select PROM first.
         SelectpROM();
         // Set mechanism name
-        mechName.text = PlutoComm.MECHANISMSTEXT[PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, AppData.selectedMechanism)];
+        mechName.text = PlutoComm.MECHANISMSTEXT[PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, AppData.selectedMechanism.name)];
     }
 
     void Update()
@@ -64,7 +64,7 @@ public class assessmentSceneHandler : MonoBehaviour
     public void SelectpROM()
     {
         promButton.Select();
-        if(AppData.selectedMechanism != "HOC")
+        if(AppData.selectedMechanism.IsMechanism("HOC"))
         {
            // Ins.text = "set mechanism to zero position and press  'K'  to set zero";
         }

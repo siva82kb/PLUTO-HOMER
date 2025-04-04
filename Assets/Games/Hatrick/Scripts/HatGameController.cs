@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
-using NeuroRehabLibrary;
+using PlutoNeuroRehabLibrary;
 using TMPro;
 using System;
 using Unity.Mathematics;
@@ -143,6 +143,7 @@ public class HatGameController : MonoBehaviour
     private int spawnCounter = 0;
     private System.Random random = new System.Random();
     private string prevScene = "choosegame";
+
     public bool IsPlaying
     {
         get { return isPlaying; }
@@ -167,8 +168,7 @@ public class HatGameController : MonoBehaviour
 
     void Start()
     { 
-        InitializeGame();
-       
+        InitializeGame();  
     }
 
     void FixedUpdate()
@@ -184,8 +184,8 @@ public class HatGameController : MonoBehaviour
         {
             HandleGameUpdate();
             playerPosition = GameObject.FindGameObjectWithTag("Player").transform.position.x;
-
         }
+
         if (isPressed)
         {
             if (!isPlaying && !isPaused)
@@ -205,8 +205,6 @@ public class HatGameController : MonoBehaviour
             }
         }
 
-
-
         // Check if the demo is running.
         if (isRunning == false) return;
 
@@ -215,9 +213,7 @@ public class HatGameController : MonoBehaviour
 
         // Run trial state machine
         RunTrialStateMachine();
-        
     }
-
 
     private void UI()
     {
@@ -231,8 +227,6 @@ public class HatGameController : MonoBehaviour
             aromRight.transform.position.z
         );
     }
-
-
 
     private void RunTrialStateMachine()
     {
@@ -343,7 +337,7 @@ public class HatGameController : MonoBehaviour
 
     private float SpawnTargetArea()
     {
-        AppData.newROM = new ROM(AppData.selectedMechanism);
+        AppData.newROM = new ROM(AppData.selectedMechanism.name);
         float aromMin = AppData.newROM.promMax;
         float aromMax = AppData.newROM.promMax;
 
@@ -357,7 +351,7 @@ public class HatGameController : MonoBehaviour
     }
     private float MapAROMToPROMPlaySize(float angle)
     {
-        AppData.newROM = new ROM(AppData.selectedMechanism);
+        AppData.newROM = new ROM(AppData.selectedMechanism.name);
         float promMin = AppData.newROM.promMax;
         float promMax = AppData.newROM.promMax;
         float promRange = promMax - promMin;
@@ -453,7 +447,6 @@ public class HatGameController : MonoBehaviour
 
     private void HandleGameUpdate()
     {
-
         if (Time.timeScale > 0 && isPlaying)
         {
             float currentTime = Time.unscaledTime;
@@ -467,7 +460,6 @@ public class HatGameController : MonoBehaviour
                 GameOver();
             }
         }
-
         UpdateText();
         gameData.moveTime = gameMoveTime;
     }
@@ -564,9 +556,6 @@ public class HatGameController : MonoBehaviour
         }
     }
 
-
-
-
     private void InitializeGame()
     {
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
@@ -596,9 +585,9 @@ public class HatGameController : MonoBehaviour
         string dateTime = DateTime.Now.ToString("Dyyyy-MM-ddTHH-mm-ss");
         sessionNum = "Session" + AppData.currentSessionNumber;
 
-        AppData._dataLogDir = Path.Combine(DataManager.directoryPathSession, date, sessionNum, $"{AppData.selectedMechanism}_{AppData.selectedGame}_{dateTime}");
-      
+        AppData._dataLogDir = Path.Combine(DataManager.directoryPathSession, date, sessionNum, $"{AppData.selectedMechanism}_{AppData.selectedGame}_{dateTime}"); 
     }
+
     private float ScreenPositionToAngle(float screenPosition)
     {
         float calibAngleRange = PlutoComm.CALIBANGLE[PlutoComm.mechanism];
@@ -609,6 +598,7 @@ public class HatGameController : MonoBehaviour
         );
         return angle;
     }
+
     private void UpdateText()
     {
         timeLeftText.text = $"Time Left: {(int)timeLeft}";
@@ -638,7 +628,7 @@ public class HatGameController : MonoBehaviour
         string assistModeParameters = "Null";
         string deviceSetupLocation = "CMC-Bioeng-dpt";
         string gameParameter = "YourGameParameter";
-        string mech = AppData.selectedMechanism;
+        string mech = AppData.selectedMechanism.name;
         SessionManager.Instance.SetDevice(device, currentGameSession);
         SessionManager.Instance.SetAssistMode(assistMode, assistModeParameters, currentGameSession);
         SessionManager.Instance.SetDeviceSetupLocation(deviceSetupLocation, currentGameSession);
@@ -670,7 +660,4 @@ public class HatGameController : MonoBehaviour
     {
         isPressed = true;
     }
-
-
-
 }

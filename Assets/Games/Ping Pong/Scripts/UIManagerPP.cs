@@ -3,7 +3,7 @@ using System.Collections;
 using UnityEngine.SceneManagement;
 using UnityEngine.SocialPlatforms;
 using UnityEditor.SceneManagement;
-using NeuroRehabLibrary;
+using PlutoNeuroRehabLibrary;
 using UnityEngine.Analytics;
 using UnityEngine.UI;
 
@@ -291,7 +291,7 @@ public class UIManagerPP : MonoBehaviour
         string assistModeParameters = "Null"; 
         string deviceSetupLocation = "CMC-Bioeng-dpt"; 
         string gameParameter = "YourGameParameter"; 
-        string mech = AppData.selectedMechanism;
+        string mech = AppData.selectedMechanism.name;
         SessionManager.Instance.SetDevice(device, currentGameSession);
         SessionManager.Instance.SetAssistMode(assistMode, assistModeParameters, currentGameSession);
         SessionManager.Instance.SetDeviceSetupLocation(deviceSetupLocation, currentGameSession);

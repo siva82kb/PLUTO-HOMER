@@ -302,7 +302,7 @@ public class FB_spawnTargets : MonoBehaviour
     }
     private float ScreenPositionToAngle(float screenPosition)
     {
-        AppData.newROM = new ROM(AppData.selectedMechanism);
+        AppData.newROM = new ROM(AppData.selectedMechanism.name);
 
 
         float newPROM_tmin = AppData.newROM.promMin;
@@ -317,7 +317,7 @@ public class FB_spawnTargets : MonoBehaviour
     public bool isInPROM(float angle)
     {
 
-        AppData.newROM = new ROM(AppData.selectedMechanism);
+        AppData.newROM = new ROM(AppData.selectedMechanism.name);
 
 
         float newPROM_tmin = AppData.newROM.promMin;
@@ -333,7 +333,7 @@ public class FB_spawnTargets : MonoBehaviour
     }
     public float RandomAngle()
     {
-        ROM promAng = new ROM(AppData.selectedMechanism);
+        ROM promAng = new ROM(AppData.selectedMechanism.name);
         float tmin = promAng.promMin;
         float tmax = promAng.promMax;
         float prevtargetAngle = targetAngle;
@@ -349,7 +349,7 @@ public class FB_spawnTargets : MonoBehaviour
     }
     public float Angle2Screen(float angle)
     {
-        ROM promAng = new ROM(AppData.selectedMechanism);
+        ROM promAng = new ROM(AppData.selectedMechanism.name);
         float tmin = promAng.promMin;
         float tmax = promAng.promMax;
 

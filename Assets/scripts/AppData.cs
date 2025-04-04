@@ -10,7 +10,7 @@ using System.Globalization;
 using System.Data;
 using System.Linq;
 using Unity.VisualScripting;
-using NeuroRehabLibrary;
+using PlutoNeuroRehabLibrary;
 using System.Text;
 using XCharts.Runtime;
 using System.Diagnostics;
@@ -40,7 +40,7 @@ public static class HomerTherapyConstants
 public static class AppData
 {
     // COM Port for the device
-    public static readonly string COMPort = "COM5";
+    public static readonly string COMPort = "COM4";
     //static public readonly float[] offsetAtNeutral = new float[] { 68, 68, 90, 0, 90, 90 };
 
     // Old and new PROM used by assessment scene
@@ -58,7 +58,6 @@ public static class AppData
 
     public static string _dataLogDir = null;
 
-
     // Keeping track of time.
     static private double nanosecPerTick = 1.0 / Stopwatch.Frequency;
     static private Stopwatch stp_watch = new Stopwatch();
@@ -70,13 +69,12 @@ public static class AppData
     // Options to drive 
     public static string trainingSide
     {
-        get
-        {
-            if (AppData.userData == null) return null;
-            return AppData.userData.rightHand ? "right" : "left";
-        }
+        get => AppData.userData?.rightHand == true ? "RIGHT" : "LEFT";
     }
-    public static string selectedMechanism;
+
+    // Selected Mechanism
+    public static PlutoMechanism selectedMechanism = null;
+    //public static string selectedMechanism;
     public static string selectedGame = null;
 
     // Handling the data
@@ -86,9 +84,6 @@ public static class AppData
 
     // Change true to run game from choosegamescene
     public static bool runIndividualGame = false;
-
-    // Assessment data. Used only by the assessment scene.
-    public static AssessmentData assessData = null;
 
     // User data
     public static PlutoUserData userData;
@@ -290,7 +285,7 @@ public class PlutoUserData
         }
         // Get the recent data of use for the selected mechanism.
         var lastUsageDate = dTableSession.AsEnumerable()
-            .Where(row => row.Field<string>("Mechanism") == AppData.selectedMechanism)
+            .Where(row => row.Field<string>("Mechanism") == AppData.selectedMechanism.name)
             .Select(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date)
             .Where(date => date < DateTime.Now.Date) // Exclude today
             .OrderByDescending(date => date)
@@ -307,7 +302,7 @@ public class PlutoUserData
         {
             var rows = dTableSession.AsEnumerable()
                 .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == lastUsageDate)
-                .Where(row => row.Field<string>("GameName") == _gameName && row.Field<string>("Mechanism") == AppData.selectedMechanism);
+                .Where(row => row.Field<string>("GameName") == _gameName && row.Field<string>("Mechanism") == AppData.selectedMechanism.name);
 
             float previousGameSpeed = rows.Any() ? rows.Average(row => Convert.ToSingle(row["GameSpeed"])) : 0f;
             float avgSuccessRate = rows.Any() ? rows.Average(row => Convert.ToSingle(row["SuccessRate"])) : 0f;
@@ -405,27 +400,37 @@ public static class Miscellaneous
     }
 }
 
-/// <summary>
-/// This class contains all the necessary information to run the assessment scene.
-/// </summary>
-public class AssessmentData
+public class PlutoMechanism
 {
-    public string mechanism { get; private set; }
+    public string name  { get; private set; }
+    public string side { get; private set; }
+    public string filePath { get; private set; } = DataManager.directoryAPROMData;
     public bool promCompleted { get; private set; }
     public bool aromCompleted { get; private set; }
     public ROM oldRom { get; private set; }
     public ROM newRom { get; private set; }
-    public string side { get; private set; }
 
-    public AssessmentData(string mech, string side)
+    public PlutoMechanism(string name, string side)
     {
-        mechanism = mech;
-        oldRom = new ROM(mech);
+        this.name = name?.ToUpper() ?? string.Empty;
+        this.side = side;
+        oldRom = new ROM(this.name);
         newRom = new ROM();
         promCompleted = false;
         aromCompleted = false;
         this.side = side;
     }
+
+    public bool IsMechanism(string mechName)
+    {
+        return string.Equals(name, mechName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    public bool IsSide(string sideName)
+    {
+        return string.Equals(side, sideName, StringComparison.OrdinalIgnoreCase);
+    }
+
     public void ResetPromValues()
     {
         newRom.promMin = 0;
@@ -439,6 +444,7 @@ public class AssessmentData
         newRom.aromMax = 0;
         aromCompleted = false;
     }
+
     public void SetNewPromValues(float pmin, float pmax)
     {
         newRom.promMin = pmin;
@@ -448,7 +454,6 @@ public class AssessmentData
             promCompleted = true;
 
         }
-
     }
 
     public void SetNewAromValues(float amin, float amax)
@@ -459,7 +464,6 @@ public class AssessmentData
         {
             aromCompleted = true;
         }
-
     }
 
     public void SaveAssessmentData()
@@ -469,9 +473,77 @@ public class AssessmentData
             // Save the new ROM values to the file.
             newRom.WriteToAssessmentFile();
         }
-
     }
 }
+
+/// <summary>
+/// This class contains all the necessary information to run the assessment scene.
+/// </summary>
+//public class AssessmentData
+//{
+//    public string mechanism { get; private set; }
+//    public bool promCompleted { get; private set; }
+//    public bool aromCompleted { get; private set; }
+//    public ROM oldRom { get; private set; }
+//    public ROM newRom { get; private set; }
+//    public string side { get; private set; }
+
+//    public AssessmentData(string mech, string side)
+//    {
+//        mechanism = mech;
+//        oldRom = new ROM(mech);
+//        newRom = new ROM();
+//        promCompleted = false;
+//        aromCompleted = false;
+//        this.side = side;
+//    }
+//    public void ResetPromValues()
+//    {
+//        newRom.promMin = 0;
+//        newRom.promMax = 0;
+//        promCompleted = false;
+//    }
+
+//    public void ResetAromValues()
+//    {
+//        newRom.aromMin = 0;
+//        newRom.aromMax = 0;
+//        aromCompleted = false;
+//    }
+
+//    public void SetNewPromValues(float pmin, float pmax)
+//    {
+//        newRom.promMin = pmin;
+//        newRom.promMax = pmax;
+//        if (pmin != 0 || pmax != 0)
+//        {
+//            promCompleted = true;
+
+//        }
+
+//    }
+
+//    public void SetNewAromValues(float amin, float amax)
+//    {
+//        newRom.aromMin = amin;
+//        newRom.aromMax = amax;
+//        if (amin != 0 || amax != 0)
+//        {
+//            aromCompleted = true;
+//        }
+
+//    }
+
+//    public void SaveAssessmentData()
+//    {
+//        if (promCompleted && aromCompleted)
+//        {
+//            // Save the new ROM values to the file.
+//            newRom.WriteToAssessmentFile();
+//        }
+
+//    }
+//}
 
 public class ROM
 {
@@ -1015,6 +1087,4 @@ public class AANDataLogger
             UnityEngine.Debug.Log("already exist");
         }
     }
-
-
 }

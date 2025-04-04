@@ -26,7 +26,7 @@ public class MechanismSceneHandler : MonoBehaviour
     public Button nextButton;
     public Button exit;
     private static bool changeScene = false;
-    private string selectedMechanism = null;
+    private string mechSelected = null;
     private string nextScene = "calibration";
     private string exitScene = "Summary";
 
@@ -137,15 +137,15 @@ public class MechanismSceneHandler : MonoBehaviour
 
     void CheckToggleStates()
     {
-        selectedMechanism = null;
+        mechSelected = null;
         foreach (Transform child in mehcanismSelectGroup.transform)
         {
             Toggle toggleComponent = child.GetComponent<Toggle>();
             if (toggleComponent != null && toggleComponent.isOn)
             {
-                selectedMechanism = child.name; ;
-                AppData.selectedMechanism = selectedMechanism;
-                AppLogger.LogInfo($"Selected mechanism '{AppData.selectedMechanism}'.");
+                mechSelected = child.name; ;
+                AppData.selectedMechanism = new PlutoMechanism(mechSelected, AppData.trainingSide);
+                AppLogger.LogInfo($"Selected mechanism '{AppData.selectedMechanism.name}'.");
                 break;
             }
         }
@@ -153,10 +153,10 @@ public class MechanismSceneHandler : MonoBehaviour
 
     private void OnPlutoButtonReleased()
     {
-        if (selectedMechanism != null)
+        if (mechSelected != null)
         {
             changeScene = true;
-            selectedMechanism = null;
+            mechSelected = null;
         }
         else
         {
@@ -187,10 +187,10 @@ public class MechanismSceneHandler : MonoBehaviour
 
     private void OnNextButtonClicked()
     {
-        if (selectedMechanism != null)
+        if (mechSelected != null)
         {
             LoadNextScene();
-            selectedMechanism = null;
+            mechSelected = null;
         }
     }
 

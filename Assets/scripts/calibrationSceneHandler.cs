@@ -27,11 +27,11 @@ public class calibrationSceneHandler : MonoBehaviour
         // Set mechanism to NOMECH.
         PlutoComm.sendHeartbeat();
         // Set mechanism to the selected mechanism.
-        PlutoComm.calibrate(AppData.selectedMechanism);
+        PlutoComm.calibrate(AppData.selectedMechanism.name);
         
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");
-        mechText.text = PlutoComm.MECHANISMSTEXT[PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, selectedMechanism)];
+        mechText.text = PlutoComm.MECHANISMSTEXT[PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, AppData.selectedMechanism.name)];
 
         // Attach callback.
         if (ConnectToRobot.isPLUTO)
@@ -55,7 +55,7 @@ public class calibrationSceneHandler : MonoBehaviour
 
     private void PerformCalibration()
     {
-        if (string.IsNullOrEmpty(selectedMechanism))
+        if (string.IsNullOrEmpty(AppData.selectedMechanism.name))
         {
             Debug.LogError("No mechanism selected for calibration!");
             return;
@@ -75,7 +75,7 @@ public class calibrationSceneHandler : MonoBehaviour
         yield return new WaitForSeconds(1.5f);
 
         // Send the calibration command.
-        PlutoComm.calibrate(AppData.selectedMechanism);
+        PlutoComm.calibrate(AppData.selectedMechanism.name);
         yield return new WaitForSeconds(0.5f);
 
         //ApplyTorqueToSep(PlutoComm.angle, separationAngle);
@@ -83,7 +83,7 @@ public class calibrationSceneHandler : MonoBehaviour
         yield return new WaitForSeconds(1.5f);
 
         // Check if the ROM is correct.
-        int mechInx = Array.IndexOf(PlutoComm.MECHANISMS, AppData.selectedMechanism);
+        int mechInx = Array.IndexOf(PlutoComm.MECHANISMS, AppData.selectedMechanism.name);
         float _angval = PlutoComm.angle + PlutoComm.MECHOFFSETVALUE[mechInx];
         isCalibrating = false;
         if (Math.Abs(_angval) < 0.9 * PlutoComm.CALIBANGLE[mechInx]
@@ -94,7 +94,7 @@ public class calibrationSceneHandler : MonoBehaviour
             PlutoComm.calibrate("NOMECH");
             textMessage.text = $"Try Again.";
             textMessage.color = Color.red;
-            AppLogger.LogError($"Calibration failed for {AppData.selectedMechanism}.");
+            AppLogger.LogError($"Calibration failed for {AppData.selectedMechanism.name}.");
             isCalibrating = false;
             doneCalibration = false;
             yield break;
@@ -102,7 +102,7 @@ public class calibrationSceneHandler : MonoBehaviour
         // All good.
         textMessage.text = "Calibration Done";
         textMessage.color = new Color32(62, 214, 111, 255);
-        AppLogger.LogError($"Calibration was successful for {AppData.selectedMechanism}.");
+        AppLogger.LogError($"Calibration was successful for {AppData.selectedMechanism.name}.");
 
         //HOC assessment UI  works based on closed position,
         if(PlutoComm.MECHANISMS[PlutoComm.mechanism] != "HOC") {
@@ -118,15 +118,15 @@ public class calibrationSceneHandler : MonoBehaviour
                 yield return new WaitForSeconds(0.1f);
             }
         }
-        if (PlutoComm.MECHANISMS[PlutoComm.mechanism] == "HOC") PlutoComm.calibrate(AppData.selectedMechanism);
+        if (PlutoComm.MECHANISMS[PlutoComm.mechanism] == "HOC") PlutoComm.calibrate(AppData.selectedMechanism.name);
 
         PlutoComm.setControlTarget(0.0f);
         PlutoComm.setControlType("NONE");
         yield return new WaitForSeconds(1.5f);
 
         // Set selected mechanism.
-        AppData.selectedMechanism = PlutoComm.MECHANISMS[PlutoComm.mechanism];
-        AppLogger.SetCurrentMechanism(AppData.selectedMechanism);
+        AppData.selectedMechanism = new PlutoMechanism(name: PlutoComm.MECHANISMS[PlutoComm.mechanism], side: AppData.trainingSide);
+        AppLogger.SetCurrentMechanism(AppData.selectedMechanism.name);
 
         // Update flags.
         isCalibrating = false;
@@ -144,14 +144,14 @@ public class calibrationSceneHandler : MonoBehaviour
 
     private void ApplyCounterClockwiseTorque()
     {
-        float torqueValue = -0.1f;
+        float torqueValue = -0.07f;
         PlutoComm.setControlType("TORQUE");
         PlutoComm.setControlTarget(torqueValue);
     }
 
     private void ApplyClockwiseTorque()
     {
-        float torqueValue = 0.1f;
+        float torqueValue = 0.07f;
         PlutoComm.setControlType("TORQUE");
         PlutoComm.setControlTarget(torqueValue);
     }

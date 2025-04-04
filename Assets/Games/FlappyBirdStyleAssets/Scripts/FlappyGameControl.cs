@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Michsky.UI.ModernUIPack;
-using NeuroRehabLibrary;
+using PlutoNeuroRehabLibrary;
 
 public class FlappyGameControl : MonoBehaviour
 {
@@ -27,7 +27,7 @@ public class FlappyGameControl : MonoBehaviour
     bool endValSet = false;
     private GameSession currentGameSession;
     private float gameMoveTime = 0f;
-    private float lastTimestamp = 0f;       // Last recorded time for time scale changes
+    private float lastTimestamp = 0f; // Last recorded time for time scale changes
     private string chooseGameScene = "choosegame";
     public BirdControl bc;
     float playSize = 0f;
@@ -43,6 +43,7 @@ public class FlappyGameControl : MonoBehaviour
         }
 
     }
+
     void Start()
     {
         playSize = Camera.main.orthographicSize * Camera.main.aspect;
@@ -231,7 +232,7 @@ public class FlappyGameControl : MonoBehaviour
     }
     public float Angle2Screen(float angle)
     {
-        ROM promAng = new ROM(AppData.selectedMechanism);
+        ROM promAng = new ROM(AppData.selectedMechanism.name);
         float tmin = promAng.promMin;
         float tmax = promAng.promMax;
 
@@ -241,7 +242,7 @@ public class FlappyGameControl : MonoBehaviour
     }
     public float Angle2Screen2(float angle)
     {
-        ROM promAng = new ROM(AppData.selectedMechanism);
+        ROM promAng = new ROM(AppData.selectedMechanism.name);
         float tmin = promAng.promMin;
         float tmax = promAng.promMax;
 
@@ -298,7 +299,7 @@ public class FlappyGameControl : MonoBehaviour
         string assistModeParameters = "Null";
         string deviceSetupLocation = "CMC-Bioeng-dpt";
         string gameParameter = "YourGameParameter";
-        string mech = AppData.selectedMechanism;
+        string mech = AppData.selectedMechanism.name;
         SessionManager.Instance.SetDevice(device, currentGameSession);
         SessionManager.Instance.SetAssistMode(assistMode, assistModeParameters, currentGameSession);
         SessionManager.Instance.SetDeviceSetupLocation(deviceSetupLocation, currentGameSession);

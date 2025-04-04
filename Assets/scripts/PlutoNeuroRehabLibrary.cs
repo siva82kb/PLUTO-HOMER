@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace NeuroRehabLibrary
+namespace PlutoNeuroRehabLibrary
 {
     public class SessionManager
     {
@@ -19,7 +19,12 @@ namespace NeuroRehabLibrary
         private readonly string _sessionFilePath;
         private bool _loginCalled; // Track if login has been called once
         private readonly string csvFilePath;
-
+        private readonly string[] sessionFileHeader = new string[] {
+            "SessionNumber", "DateTime", "Device", "Assessment", "StartTime", "StopTime",
+            "GameName", "TrialDataFileLocation", "DeviceSetupLocation", "AssistMode",
+            "AssistModeParameters", "GameParameter", "Mechanism", "MoveTime", "GameSpeed",
+            "SuccessRate", "DesiredSuccessRate", "TrialNumber", "TrialType"
+        };
         private SessionManager(string baseDirectory)
         {
             _sessionFilePath = Path.Combine(baseDirectory, "Sessions.csv");
@@ -33,8 +38,7 @@ namespace NeuroRehabLibrary
             {
                 using (var writer = new StreamWriter(csvFilePath, false, Encoding.UTF8))
                 {
-                    writer.WriteLine("SessionNumber,DateTime,Device,Assessment,StartTime,StopTime,GameName,TrialDataFileLocation," +
-                        "DeviceSetupLocation,AssistMode,AssistModeParameters,GameParameter,Mechanism,MoveTime,GameSpeed,SuccessRate");
+                    writer.WriteLine(String.Join(",", sessionFileHeader));
                 }
                 Debug.Log("Initialized SessionManager with session number: 0" );
             }
@@ -252,4 +256,10 @@ namespace NeuroRehabLibrary
             StopTime = DateTime.Now;
         }
     }
+
+    /// <summary>
+    /// Virutal Therapist class to plan and execute high-level therapy details. This will include
+    /// game parameters, trial-to-trial assistance, and therapy plan logging.
+    /// </summary>
+    
 }

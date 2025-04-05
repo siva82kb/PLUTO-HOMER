@@ -31,6 +31,7 @@ public class calibrationSceneHandler : MonoBehaviour
         
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");
+        Debug.Log("Mechanism: " + AppData.selectedMechanism.name);
         mechText.text = PlutoComm.MECHANISMSTEXT[PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, AppData.selectedMechanism.name)];
 
         // Attach callback.

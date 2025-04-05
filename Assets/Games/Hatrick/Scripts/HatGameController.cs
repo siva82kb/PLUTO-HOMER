@@ -127,7 +127,6 @@ public class HatGameController : MonoBehaviour
     private string date = null;
     private string sessionNum = null;
 
-
     private float targetPosition;
     private float playerPosition;
     public bool targetSpwan = false;
@@ -167,19 +166,55 @@ public class HatGameController : MonoBehaviour
     }
 
     void Start()
-    { 
-        InitializeGame();  
+    {
+        // Updat AppLogger
+        AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
+        AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene initialized.");
+        AppLogger.SetCurrentGame(AppData.selectedGame);
+
+        // What is this?
+        rig2D = GetComponent<Rigidbody2D>();
+        gameData.isGameLogging = false;
+
+        // Get handles for the time left and game score text objects.
+        timeLeftText = GameObject.FindGameObjectWithTag("TimeLeftText").GetComponent<Text>();
+        ScoreText = GameObject.FindGameObjectWithTag("ScoreText").GetComponent<Text>();
+
+        // Enable the start button and disable the pause and resume buttons.
+        StartButton.SetActive(true);
+        PauseButton.SetActive(false);
+        ResumeButton.SetActive(false);
+
+        // What is this?
+        if (cam == null)
+        {
+            cam = Camera.main;
+        }
+
+        // Now suure what the last timestamp is.
+        lastTimestamp = Time.unscaledTime;
+        
+        // Get the maximum width of the screen.
+        maxwidth = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width, Screen.height, 0)).x - 0.5f;
+        randomTargetIndex = random.Next(1, 11);
+        Debug.Log("Random Target:" + randomTargetIndex);
+        date = DateTime.Now.ToString("yyyy-MM-dd");
+        string dateTime = DateTime.Now.ToString("Dyyyy-MM-ddTHH-mm-ss");
+        sessionNum = "Session" + AppData.currentSessionNumber;
+
+        // Attach PLUTO event callbacks.
+        PlutoComm.OnButtonReleased += onPlutoButtonReleased;
+
+        // Not sure what this is for.
+        AppData._dataLogDir = Path.Combine(DataManager.directoryPathSession, date, sessionNum, $"{AppData.selectedMechanism.name}_{AppData.selectedGame}_{dateTime}");
+
+        // Draw the AROM PROM limits.
+        DrawAromPromLines();
     }
 
     void FixedUpdate()
     {
         PlutoComm.sendHeartbeat();
-        UI();
-        Debug.Log(PlutoComm.CONTROLTYPE[PlutoComm.controlType]);
-        //if (PlutoComm.CONTROLTYPE[PlutoComm.controlType] == "NONE" && !aromRangeSpawn) {
-        //    PlutoComm.setControlType("POSITIONAAN");
-        //    Debug.Log("AAN applied");
-        //}
         if (currentState == GameState.Playing)
         {
             HandleGameUpdate();
@@ -215,14 +250,15 @@ public class HatGameController : MonoBehaviour
         RunTrialStateMachine();
     }
 
-    private void UI()
+    private void DrawAromPromLines()
     {
-        aromLeft.transform.position = new Vector3(Angle2Screen(AppData.aRomValue[0]),
-           aromLeft.transform.position.y,
-           aromLeft.transform.position.z
+        aromLeft.transform.position = new Vector3(
+            Angle2Screen(AppData.selectedMechanism.currRom.aromMin),
+            aromLeft.transform.position.y,
+            aromLeft.transform.position.z
        );
         aromRight.transform.position = new Vector3(
-            Angle2Screen(AppData.aRomValue[1]),
+            Angle2Screen(AppData.selectedMechanism.currRom.aromMax),
             aromRight.transform.position.y,
             aromRight.transform.position.z
         );

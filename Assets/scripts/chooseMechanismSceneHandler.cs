@@ -137,18 +137,19 @@ public class MechanismSceneHandler : MonoBehaviour
 
     void CheckToggleStates()
     {
-        mechSelected = null;
         foreach (Transform child in mehcanismSelectGroup.transform)
         {
             Toggle toggleComponent = child.GetComponent<Toggle>();
             if (toggleComponent != null && toggleComponent.isOn)
             {
-                mechSelected = child.name; ;
+                mechSelected = child.name;
                 AppData.selectedMechanism = new PlutoMechanism(mechSelected, AppData.trainingSide);
-                AppLogger.LogInfo($"Selected mechanism '{AppData.selectedMechanism.name}'.");
-                break;
+                AppLogger.LogInfo($"Selected mechanism '{mechSelected}'.");
+                return;
             }
         }
+        mechSelected = null;
+        AppData.selectedMechanism = null;
     }
 
     private void OnPlutoButtonReleased()
@@ -160,14 +161,14 @@ public class MechanismSceneHandler : MonoBehaviour
         }
         else
         {
-            AppLogger.LogWarning("PLUTO Button pressed with selecting a mechanism.");
+            AppLogger.LogWarning("PLUTO Button pressed without selecting a mechanism.");
         }
     }
 
     void LoadNextScene()
     {
+        // Set the mechanism.
         AppLogger.LogInfo($"Switching scene to '{nextScene}'.");
-        //gameData.setNeutral = false;
         SceneManager.LoadScene(nextScene);
     }
 

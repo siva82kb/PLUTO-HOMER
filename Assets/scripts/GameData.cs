@@ -1,30 +1,30 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro.EditorUtilities;
 using UnityEngine;
 
 public abstract class BaseGame
 {
-    public string gameName { protected set; get; }
-    public string mechanism { protected set; get; }
-    public bool isGameLogging { protected set; get; }
+    public string name{ protected set; get; }
+    public PlutoMechanism mechanism { protected set; get; }
+    public bool isLogging { protected set; get; }
     public bool targetSpwan { protected set; get; } = false;
 
-    public int gameScore { protected set; get; }
-    public abstract string[] gameEvents { protected set; get; }
+    public int Score { protected set; get; }
+    public int trialNumber { protected set; get; } = 0;
+    public abstract string[] events{ protected set; get; }
     public int eventNumber { protected set; get; }
 
     public float targetPosition { protected set; get; }
     public float playerPosition { protected set; get; }
     public float gameSpeed { protected set; get; }
 
-    public ROM arom;
-    public ROM prom;
-
     public float successRate { protected set; get; }
     public bool setNeutral { protected set; get; } = false;
+    protected string dataLogDir = null;
     protected DataLogger dataLog;
 
-    public BaseGame(string mech)
+    public BaseGame(PlutoMechanism mech)
     {
         mechanism = mech;
     }
@@ -163,7 +163,7 @@ public abstract class BaseGame
 /// </summary>
 public class HatTrickGame : BaseGame
 {
-    public override string[] gameEvents
+    public override string[] events
     {
         protected set { }
         get
@@ -171,18 +171,15 @@ public class HatTrickGame : BaseGame
             return new string[] { "MOVING", "BALLCAUGHT", "BOMBCAUGHT", "BALLMISSED", "BOMBMISSED" };
         }
     }
-    public HatTrickGame(string mech) : base(mech)
+
+    public HatTrickGame(PlutoMechanism mech) : base(mech)
     {
-        gameName = "HatTrick";
+        name = "HatTrick";
         mechanism = mechanism;
-        arom = null;
-        prom = null;
+        trialNumber = 0;
         dataLog = null;
 
-        // Read AROM and PROM from file.
-        arom = new ROM(mech);
-        // Read previous game speed.
-
+        // Call the intialization function to get the game speed.
     }
 }
 

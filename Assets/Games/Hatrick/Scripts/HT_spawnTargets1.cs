@@ -13,8 +13,6 @@ public class HT_spawnTargets1 : MonoBehaviour
 {
     public static HT_spawnTargets1 instance;
 
-
-
     //runnnin game 
     public float trailDuration = 3.5f;
     public float stopClock;

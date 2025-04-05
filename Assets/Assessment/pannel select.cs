@@ -49,8 +49,10 @@ public class assessmentSceneHandler : MonoBehaviour
         }
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");
+        
         // Select PROM first.
         SelectpROM();
+
         // Set mechanism name
         mechName.text = PlutoComm.MECHANISMSTEXT[PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, AppData.selectedMechanism.name)];
     }
@@ -59,7 +61,6 @@ public class assessmentSceneHandler : MonoBehaviour
     {
         PlutoComm.sendHeartbeat();
     }
-
 
     public void SelectpROM()
     {
@@ -108,5 +109,4 @@ public class assessmentSceneHandler : MonoBehaviour
     {
         SceneManager.LoadScene(chooseGameScene);
     }
-
 }

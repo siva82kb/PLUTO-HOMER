@@ -12,7 +12,6 @@ using System.IO;
 
 public class PROMsceneHandler : MonoBehaviour
 {
-
     enum AssessStates
     {
         INIT,
@@ -45,7 +44,6 @@ public class PROMsceneHandler : MonoBehaviour
 
     public assessmentSceneHandler panelControl;
 
-
     private List<string[]> DirectionText = new List<string[]>
      {
          new string[] { "Flexion", "Extension" },
@@ -55,7 +53,6 @@ public class PROMsceneHandler : MonoBehaviour
          new string[] { "", "" },
          new string[] { "", "" }
      };
-
 
     void Start()
     {
@@ -76,6 +73,7 @@ public class PROMsceneHandler : MonoBehaviour
 
         // Disble the button to move to the next assessment.
         nextButton.SetActive(false);
+
         // Update the min and max values.
         angLimit = AppData.selectedMechanism.IsMechanism("HOC") ? PlutoComm.CALIBANGLE[PlutoComm.mechanism] : PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
         promSlider.Setup(-angLimit, angLimit, AppData.selectedMechanism.oldRom.promMin, AppData.selectedMechanism.oldRom.promMax);
@@ -193,7 +191,6 @@ public class PROMsceneHandler : MonoBehaviour
 
     public void OnPlutoButtonReleased()
     {
-        Debug.Log("Button pressed!");
         isButtonPressed = true;
     }
 
@@ -210,7 +207,6 @@ public class PROMsceneHandler : MonoBehaviour
     {
         Start();
     }
-
 
     public void OnSaveClick()
     {

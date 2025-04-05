@@ -954,7 +954,7 @@ GameObject:
   - component: {fileID: 411680517}
   - component: {fileID: 411680524}
   m_Layer: 5
-  m_Name: hatTrick
+  m_Name: HATTRICK
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3145,7 +3145,7 @@ GameObject:
   - component: {fileID: 1155057210}
   - component: {fileID: 1155057211}
   m_Layer: 5
-  m_Name: pingPong
+  m_Name: PINGPONG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4687,7 +4687,7 @@ GameObject:
   - component: {fileID: 1707995295}
   - component: {fileID: 1707995302}
   m_Layer: 5
-  m_Name: tukTuk
+  m_Name: TUKTUK
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

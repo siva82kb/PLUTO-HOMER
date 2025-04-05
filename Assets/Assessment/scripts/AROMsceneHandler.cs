@@ -60,6 +60,8 @@ public class AROMsceneHandler : MonoBehaviour
    
     void Start()
     {
+        // Attach callback for PLUTO button event.
+        PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
     }
 
     private void InitializeAssessment()
@@ -87,8 +89,7 @@ public class AROMsceneHandler : MonoBehaviour
         (_rinx, _linx) = AppData.trainingSide == "right" ? (1, 0) : (0, 1);
         rText.text = DirectionText[PlutoComm.mechanism - 1][_rinx];
         lText.text = DirectionText[PlutoComm.mechanism - 1][_linx];
-
-        PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
+        
         // Set initial state.
         _state = AssessStates.INIT;
 
@@ -106,15 +107,14 @@ public class AROMsceneHandler : MonoBehaviour
     {
         InitializeAssessment();
     }
+
     public void OnPlutoButtonReleased()
     {
-
         isButtonPressed = true;
-
     }
+
     void Update()
     {
-
         if (isSelected)
         {
             runaAssessmentStateMachine();
@@ -128,6 +128,7 @@ public class AROMsceneHandler : MonoBehaviour
         }
       
     }
+
     void runaAssessmentStateMachine()
     {
         switch (_state)
@@ -216,6 +217,7 @@ public class AROMsceneHandler : MonoBehaviour
         _tmin = aromSlider.minAng;
         _tmax = aromSlider.maxAng;
 
+        // Set the new AROM values in the selected mechanism.
         AppData.selectedMechanism.SetNewAromValues(_tmin,_tmax);
 
         AppData.selectedMechanism.SaveAssessmentData();
@@ -239,9 +241,16 @@ public class AROMsceneHandler : MonoBehaviour
         nextButton.SetActive(false);
         aromSlider.UpdateMinMaxvalues = false;
 
+        // Log full assessment detail in the log file.
+        string logMessage = $"Mechanism: {AppData.selectedMechanism.name} | Old PROM: [{AppData.selectedMechanism.oldRom.promMin:F2}, {AppData.selectedMechanism.oldRom.promMax:F2}]";
+        logMessage += $" | New PROM: [{AppData.selectedMechanism.newRom.promMin:F2}, {AppData.selectedMechanism.newRom.promMax:F2}]";
+        logMessage += $" | Old AROM: [{AppData.selectedMechanism.oldRom.aromMin:F2}, {AppData.selectedMechanism.oldRom.aromMax:F2}]";
+        logMessage += $" | New AROM: [{AppData.selectedMechanism.newRom.aromMin:F2}, {AppData.selectedMechanism.newRom.aromMax:F2}]";
+        AppLogger.LogInfo(logMessage);
+
+        // Switch scene if assessment is complete.
         if (AppData.selectedMechanism.promCompleted && AppData.selectedMechanism.aromCompleted) SceneManager.LoadScene(nextScene);
         else Debug.Log("Complete your PROM and AROM");
-
     }
 
     private string FormatRelaxText(float min, float max)
@@ -250,7 +259,6 @@ public class AROMsceneHandler : MonoBehaviour
             $"Prev AROM: {ConvertToCM(min).ToString("0.0")}cm : {ConvertToCM(max).ToString("0.0")}cm (Aperture: {ConvertToCM(max - min).ToString("0.0")}cm)" :
             $"Prev AROM: {(int)min} : {(int)max} ({(int)(max - min)}°)";
     }
-
 
     private float ConvertToCM(float value) => Mathf.Abs(Mathf.Deg2Rad * value * 6f);
    
@@ -263,11 +271,10 @@ public class AROMsceneHandler : MonoBehaviour
         else
         {
             JointAngle.text = "Aperture" + ConvertToCM(PlutoComm.angle).ToString("0.0") + "cm";
-
             JointAngleHoc.text = "Aperture" + ConvertToCM(PlutoComm.angle).ToString("0.0") + "cm";
         }
-
     }
+
     public void createFile()
     {
         string dir = Path.Combine(DataManager.directoryAPROMData, AppData.selectedMechanism + ".csv");

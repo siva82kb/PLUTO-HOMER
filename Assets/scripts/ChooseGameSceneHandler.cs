@@ -15,14 +15,13 @@ public class ChooseGameSceneHandler : MonoBehaviour
     public TMP_Text result;
 
     private bool toggleSelected = false;
-    private string selectedGame;
+    private string gameSelected;
     private string changeScene = "chooseMechanism";
-    //private static bool isButtonPressed = false;
     private readonly Dictionary<string, string> gameScenes = new Dictionary<string, string>
     {
-        { "pingPong", "pong_menu" },
-        { "tukTuk", "FlappyGame" },
-        { "hatTrick", "HatrickGame" }
+        { "PINGPONG", "pong_menu" },
+        { "TUKTUK", "FlappyGame" },
+        { "HATTRICK", "HatrickGame" }
     };
     private bool lisRunning = false;
     private bool targetReached = false;
@@ -53,13 +52,18 @@ public class ChooseGameSceneHandler : MonoBehaviour
         // Update App Logger
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");
-        AppLogger.SetCurrentGame("");
+        AppLogger.SetCurrentGame("NONE");
+        
+        // Reset selected game.
+        AppData.selectedGame = null;
 
         // Attach callback.
         AttachCallbacks();
 
         // Make sure No control is set
         PlutoComm.setControlType("NONE");
+
+        Debug.Log($"Curr ROM: {AppData.selectedMechanism.currRom.promMin:F2}, {AppData.selectedMechanism.currRom.promMax:F2}, {AppData.selectedMechanism.currRom.aromMax:F2}, {AppData.selectedMechanism.currRom.aromMax:F2}");
     }
 
     void Update()
@@ -68,14 +72,13 @@ public class ChooseGameSceneHandler : MonoBehaviour
         if (loadgame)
         {
             toggleSelected = false;
-            LoadSelectedGameScene(selectedGame);
+            LoadSelectedGameScene(gameSelected);
             loadgame = false;
         }
 
         // Magic key cobmination for doing the assessment.
         if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.R))
         {
-            //assessment();
             SceneManager.LoadScene("Assessment");
         }
     }
@@ -109,7 +112,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
             Toggle toggleComponent = child.GetComponent<Toggle>();
             if (toggleComponent != null && toggleComponent.isOn)
             {
-                selectedGame = toggleComponent.name;
+                gameSelected = toggleComponent.name;
                 toggleSelected = true;
                 break;
             }
@@ -133,19 +136,18 @@ public class ChooseGameSceneHandler : MonoBehaviour
     {
         if (gameScenes.TryGetValue(game, out string sceneName))
         {
-            AppLogger.LogInfo($"{game} selected.");
+            AppLogger.LogInfo($"'{game}' game selected.");
             // Instantitate the game object and load the appropriate scene.
-            switch(game)
+            AppData.selectedGame = game;
+            switch (game)
             {
-                case "pingPong":
-                    AppData.selectedGame = "pingPong";
+                case "PINGPONG":
                     break;
-                case "tukTuk":
-                    AppData.selectedGame = "tukTuk";
+                case "TUKTUK":
                     break;
-                case "hatTrick":
-                    AppData.selectedGame = "hatTrick";
-                    AppData.hatTrickGame = new HatTrickGame(AppData.selectedMechanism.name);
+                case "HATTRICK":
+                    Debug.Log("HATTRICK Game case.");
+                    AppData.hatTrickGame = new HatTrickGame(AppData.selectedMechanism);
                     break;
             }
             SceneManager.LoadScene(sceneName);

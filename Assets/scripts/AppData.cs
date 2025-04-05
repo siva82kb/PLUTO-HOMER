@@ -56,6 +56,7 @@ public static class AppData
     public static float promMin = 0f;
     public static float promMax = 0f;
 
+    // What is this used for?
     public static string _dataLogDir = null;
 
     // Keeping track of time.
@@ -409,6 +410,7 @@ public class PlutoMechanism
     public bool aromCompleted { get; private set; }
     public ROM oldRom { get; private set; }
     public ROM newRom { get; private set; }
+    public ROM currRom { get => newRom.isSet ? newRom : oldRom; }
 
     public PlutoMechanism(string name, string side)
     {
@@ -433,37 +435,31 @@ public class PlutoMechanism
 
     public void ResetPromValues()
     {
-        newRom.promMin = 0;
-        newRom.promMax = 0;
+        newRom.SetProm(0, 0);
         promCompleted = false;
     }
 
     public void ResetAromValues()
     {
-        newRom.aromMin = 0;
-        newRom.aromMax = 0;
+        newRom.SetArom(0, 0);
         aromCompleted = false;
     }
 
     public void SetNewPromValues(float pmin, float pmax)
     {
-        newRom.promMin = pmin;
-        newRom.promMax = pmax;
-        if (pmin != 0 || pmax != 0)
+        newRom.SetProm(pmin, pmax);
+        if (pmin != 0 || pmax != 0) promCompleted = true;
+        // Cehck if newRom's mechanism needs to be set.
+        if (newRom.mechanism == null)
         {
-            promCompleted = true;
-
+            newRom.SetMechanism(this.name);
         }
     }
 
     public void SetNewAromValues(float amin, float amax)
     {
-        newRom.aromMin = amin;
-        newRom.aromMax = amax;
-        if (amin != 0 || amax != 0)
-        {
-            aromCompleted = true;
-        }
+        newRom.SetArom(amin, amax);
+        if (amin != 0 || amax != 0) aromCompleted = true;
     }
 
     public void SaveAssessmentData()
@@ -549,16 +545,85 @@ public class ROM
 {
     // Class attributes to store data read from the file
     public string datetime;
-    public string side;
-    public float promMin;
-    public float promMax;
-    public float aromMin;
-    public float aromMax;
-    public string mech;
+    public float promMin { get; private set; }
+    public float promMax { get; private set; }
+    public float aromMin { get; private set; }
+    public float aromMax { get; private set; }
+    public string mechanism { get; private set; }
+    public bool isAromSet { get => aromMin != 0 || aromMax != 0; }
+    public bool isPromSet { get => promMin != 0 || promMax != 0; }
+    public bool isSet { get => isAromSet && isPromSet; }
     public string filePath { get; private set; } = DataManager.directoryAPROMData;
 
     // Constructor that reads the file and initializes values based on the mechanism
-    public ROM(string mechanismName)
+    public ROM(string mechanismName, bool readFromFile = true)
+    {
+        if (readFromFile) ReadFromFile(mechanismName);
+        else
+        {
+            // Handle case when no matching mechanism is found
+            datetime = null;
+            mechanism = mechanismName;
+            promMin = 0;
+            promMax = 0;
+            aromMin = 0;
+            aromMax = 0;
+        }
+    }
+
+    public ROM(float angmin, float angmax, float aromAngMin, float aromAngMax, string mech, bool tofile)
+    {
+        promMin = angmin;
+        promMax = angmax;
+        aromMin = aromAngMin;
+        aromMax = aromAngMax;
+        mechanism = mech;
+        datetime = DateTime.Now.ToString();
+        if (tofile)
+        {
+            WriteToAssessmentFile();
+        }
+    }
+
+    public ROM()
+    {
+        promMin = 0;
+        promMax = 0;
+        aromMin = 0;
+        aromMax = 0;
+        mechanism = null;
+        datetime = null;
+    }
+
+    public void SetMechanism(string mech)
+    {
+        this.mechanism = (this.mechanism == null) ? mech : this.mechanism;
+    }
+
+    public void SetProm(float min, float max)
+    {
+        promMin = min;
+        promMax = max;
+        datetime = DateTime.Now.ToString();
+    }
+
+    public void SetArom(float min, float max)
+    {
+        aromMin = min;
+        aromMax = max;
+        datetime = DateTime.Now.ToString();
+    }
+
+    public void WriteToAssessmentFile()
+    {
+        string _fname = Path.Combine(filePath, AppData.selectedMechanism.name + ".csv");
+        using (StreamWriter file = new StreamWriter(_fname, true))
+        {
+            file.WriteLine(datetime + ", " + promMin.ToString() + ", " + promMax.ToString() + ", " + aromMin.ToString() + ", " + aromMax.ToString() + "");
+        }
+    }
+
+    private void ReadFromFile(string mechanismName)
     {
         string lastLine = "";
         string[] values;
@@ -574,6 +639,7 @@ public class ROM
             {
                 // Assign values if mechanism matches
                 datetime = values[0].Trim();
+                mechanism = mechanismName;
                 promMin = float.Parse(values[1].Trim());
                 promMax = float.Parse(values[2].Trim());
                 aromMin = float.Parse(values[3].Trim());
@@ -583,6 +649,7 @@ public class ROM
             {
                 // Handle case when no matching mechanism is found
                 datetime = null;
+                mechanism = mechanismName;
                 promMin = 0;
                 promMax = 0;
                 aromMin = 0;
@@ -595,41 +662,10 @@ public class ROM
         }
     }
 
-    public ROM(float angmin, float angmax, float aromAngMin, float aromAngMax, string mch, bool tofile)
-    {
-        promMin = angmin;
-        promMax = angmax;
-        aromMin = aromAngMin;
-        aromMax = aromAngMax;
-        mech = mch;
-        datetime = null;
-        side = null;
-    }
-
-    public ROM()
-    {
-        promMin = 0;
-        promMax = 0;
-        aromMin = 0;
-        aromMax = 0;
-        mech = null;
-        datetime = DateTime.Now.ToString();
-    }
-
-    public void WriteToAssessmentFile()
-    {
-        string _fname = Path.Combine(filePath, AppData.selectedMechanism + ".csv");
-        //UnityEngine.Debug.Log(_fname);
-        using (StreamWriter file = new StreamWriter(_fname, true))
-        {
-            file.WriteLine(datetime + ", " + promMin.ToString() + ", " + promMax.ToString() + ", " + aromMin.ToString() + ", " + aromMax.ToString() + "");
-        }
-    }
-
-    public (float tmin, float tmax) GetMinMax()
-    {
-        return (promMin, promMax);
-    }
+    //public (float tmin, float tmax) GetPromMinMax()
+    //{
+    //    return (promMin, promMax);
+    //}
 }
 
 /// <summary>
@@ -805,6 +841,7 @@ public class DataLogger
 {
     public string currFileName { get; private set; }
     public StringBuilder fileData;
+
     public bool stillLogging
     {
         get { return (fileData != null); }

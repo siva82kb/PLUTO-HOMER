@@ -29,23 +29,16 @@ public class assessmentSceneHandler : MonoBehaviour
     public GameObject[] promSelected;
 
     private string mech;
-    private string mechScene = "chooseMechanism";
-    private string chooseGameScene = "choosegame";
+    private string mechScene = "CHMECH";
+    private string chooseGameScene = "CHGAME";
 
     void Start()
     {
         // Check if userData is null.
-        if (AppData.userData == null)
+        if (AppData.Instance.userData == null)
         {
-            AppLogger.LogError("User data is null. Initializing dummy stuff.");
             // Initialize.
-            AppData.initializeStuff();
-            // Neuro Library
-            string baseDirectory = DataManager.sessionPath;
-            Debug.Log(baseDirectory);
-            SessionManager.Initialize(DataManager.sessionPath);
-            SessionManager.Instance.Login();
-            AppData.selectedGame = PlutoComm.MECHANISMS[PlutoComm.mechanism];
+            AppData.Instance.Initialize("Assessment");
         }
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");
@@ -54,7 +47,7 @@ public class assessmentSceneHandler : MonoBehaviour
         SelectpROM();
 
         // Set mechanism name
-        mechName.text = PlutoComm.MECHANISMSTEXT[PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, AppData.selectedMechanism.name)];
+        mechName.text = PlutoComm.MECHANISMSTEXT[PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, AppData.Instance.selectedMechanism.name)];
     }
 
     void Update()
@@ -65,7 +58,7 @@ public class assessmentSceneHandler : MonoBehaviour
     public void SelectpROM()
     {
         promButton.Select();
-        if(AppData.selectedMechanism.IsMechanism("HOC"))
+        if(AppData.Instance.selectedMechanism.IsMechanism("HOC"))
         {
            // Ins.text = "set mechanism to zero position and press  'K'  to set zero";
         }

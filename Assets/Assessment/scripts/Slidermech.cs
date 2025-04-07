@@ -10,7 +10,7 @@ public class Slidermech : MonoBehaviour
     public GameObject SingleSlider;
     void Start()
     {
-        if(Array.IndexOf(PlutoComm.MECHANISMS, AppData.selectedMechanism) !=3)
+        if(Array.IndexOf(PlutoComm.MECHANISMS, AppData.Instance.selectedMechanism) !=3)
         {
             SingleSlider.SetActive(true);
         }

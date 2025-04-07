@@ -125,15 +125,15 @@ public class FB_spawnTargets : MonoBehaviour
         player = GameObject.FindGameObjectWithTag("Player");
         string date = DateTime.Now.ToString("yyyy-MM-dd");
         string dateTime = DateTime.Now.ToString("Dyyyy-MM-ddTHH-mm-ss");
-        string sessionNum = "Session" + AppData.currentSessionNumber;
+        string sessionNum = "Session" + AppData.Instance.currentSessionNumber;
 
-        AppData._dataLogDir = Path.Combine(DataManager.sessionPath, date, sessionNum, $"{AppData.selectedMechanism}_{AppData.selectedGame}_{dateTime}");
-
-
-
+        AppData.Instance._dataLogDir = Path.Combine(DataManager.sessionPath, date, sessionNum, $"{AppData.Instance.selectedMechanism}_{AppData.Instance.selectedGame}_{dateTime}");
 
         // Pluto AAN controller
-        aanCtrler = new HOMERPlutoAANController(AppData.aRomValue, AppData.pRomValue, 0.85f);
+        aanCtrler = new HOMERPlutoAANController(
+            new float[] { AppData.Instance.selectedMechanism.currRom.aromMin, AppData.Instance.selectedMechanism.currRom.aromMax },
+            new float[] { AppData.Instance.selectedMechanism.currRom.promMin, AppData.Instance.selectedMechanism.currRom.promMax },
+            0.85f);
         isRunning = true;
         dlogger = new AANDataLogger(aanCtrler);
         // Set Control mode.
@@ -300,13 +300,11 @@ public class FB_spawnTargets : MonoBehaviour
         return targetPos;
 
     }
+
     private float ScreenPositionToAngle(float screenPosition)
     {
-        AppData.newROM = new ROM(AppData.selectedMechanism.name);
-
-
-        float newPROM_tmin = AppData.newROM.promMin;
-        float newPROM_tmax = AppData.newROM.promMax;
+        float newPROM_tmin = AppData.Instance.selectedMechanism.currRom.promMin;
+        float newPROM_tmax = AppData.Instance.selectedMechanism.currRom.promMax;
         float angle = Mathf.Lerp(
             newPROM_tmin / 2,
             newPROM_tmax / 2,
@@ -314,14 +312,11 @@ public class FB_spawnTargets : MonoBehaviour
         );
         return angle;
     }
+
     public bool isInPROM(float angle)
     {
-
-        AppData.newROM = new ROM(AppData.selectedMechanism.name);
-
-
-        float newPROM_tmin = AppData.newROM.promMin;
-        float newPROM_tmax = AppData.newROM.promMax;
+        float newPROM_tmin = AppData.Instance.selectedMechanism.currRom.promMin;
+        float newPROM_tmax = AppData.Instance.selectedMechanism.currRom.promMax;
         if (angle < newPROM_tmin || angle > newPROM_tmax)
         {
             Debug.Log("prom target");
@@ -329,35 +324,26 @@ public class FB_spawnTargets : MonoBehaviour
         }
         else
             return false;
-
     }
+
     public float RandomAngle()
     {
-        ROM promAng = new ROM(AppData.selectedMechanism.name);
-        float tmin = promAng.promMin;
-        float tmax = promAng.promMax;
+        float tmin = AppData.Instance.selectedMechanism.currRom.promMin;
+        float tmax = AppData.Instance.selectedMechanism.currRom.promMax;
         float prevtargetAngle = targetAngle;
         float tempAngle = Random.Range(tmin, tmax);
         while (Mathf.Abs(tempAngle - prevtargetAngle) < Mathf.Abs(tmax - tmin) / 2.5f)
         {
             tempAngle = Random.Range(tmin, tmax);
         }
-
-
         return tempAngle;
-
     }
     public float Angle2Screen(float angle)
     {
-        ROM promAng = new ROM(AppData.selectedMechanism.name);
-        float tmin = promAng.promMin;
-        float tmax = promAng.promMax;
-
+        float tmin = AppData.Instance.selectedMechanism.currRom.promMin;
+        float tmax = AppData.Instance.selectedMechanism.currRom.promMax;
         return (-2f + (angle - tmin) * (playSize) / (tmax - tmin));
-
-
     }
-
 
     private void OnApplicationQuit()
     {

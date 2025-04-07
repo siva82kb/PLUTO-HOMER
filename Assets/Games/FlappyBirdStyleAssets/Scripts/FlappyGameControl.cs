@@ -55,7 +55,7 @@ public class FlappyGameControl : MonoBehaviour
         gameData.reps = 0;
         gameData.isGameLogging = true;
         //PlutoComm.calibrate(AppData.selectedMechanism);
-        if (!AppData.runIndividualGame)
+        if (!AppData.Instance.runIndividualGame)
         {
             StartNewGameSession();
         }
@@ -113,15 +113,13 @@ public class FlappyGameControl : MonoBehaviour
     {
         timerObject.specifiedValue = Mathf.Clamp(100 * (90 - gameduration) / 90f, 0, 100);
         gameData.moveTime = gameMoveTime;
-
-
         aromLeft.transform.position = new Vector3(aromRight.transform.position.x,
-           Angle2Screen(AppData.aRomValue[0]),
+           Angle2Screen(AppData.Instance.selectedMechanism.currRom.aromMin),
            aromLeft.transform.position.z
        );
         aromRight.transform.position = new Vector3(
           aromRight.transform.position.x,
-              Angle2Screen2(AppData.aRomValue[1]),
+              Angle2Screen2(AppData.Instance.selectedMechanism.currRom.aromMax),
             aromRight.transform.position.z
         );
 
@@ -232,7 +230,7 @@ public class FlappyGameControl : MonoBehaviour
     }
     public float Angle2Screen(float angle)
     {
-        ROM promAng = new ROM(AppData.selectedMechanism.name);
+        ROM promAng = new ROM(AppData.Instance.selectedMechanism.name);
         float tmin = promAng.promMin;
         float tmax = promAng.promMax;
 
@@ -242,7 +240,7 @@ public class FlappyGameControl : MonoBehaviour
     }
     public float Angle2Screen2(float angle)
     {
-        ROM promAng = new ROM(AppData.selectedMechanism.name);
+        ROM promAng = new ROM(AppData.Instance.selectedMechanism.name);
         float tmin = promAng.promMin;
         float tmax = promAng.promMax;
 
@@ -257,7 +255,7 @@ public class FlappyGameControl : MonoBehaviour
         lastTimestamp = Time.unscaledTime;
         start.SetActive(false);
         Time.timeScale = 1;
-        if (!AppData.runIndividualGame)
+        if (!AppData.Instance.runIndividualGame)
         {
             EndCurrentGameSession();
         }
@@ -274,7 +272,7 @@ public class FlappyGameControl : MonoBehaviour
     }
     public void exitButton()
     {
-        if (!AppData.runIndividualGame) {
+        if (!AppData.Instance.runIndividualGame) {
         EndCurrentGameSession();
         }
         SceneManager.LoadScene(chooseGameScene);
@@ -299,7 +297,7 @@ public class FlappyGameControl : MonoBehaviour
         string assistModeParameters = "Null";
         string deviceSetupLocation = "CMC-Bioeng-dpt";
         string gameParameter = "YourGameParameter";
-        string mech = AppData.selectedMechanism.name;
+        string mech = AppData.Instance.selectedMechanism.name;
         SessionManager.Instance.SetDevice(device, currentGameSession);
         SessionManager.Instance.SetAssistMode(assistMode, assistModeParameters, currentGameSession);
         SessionManager.Instance.SetDeviceSetupLocation(deviceSetupLocation, currentGameSession);
@@ -310,7 +308,7 @@ public class FlappyGameControl : MonoBehaviour
     {
         if (currentGameSession != null)
         {
-            string trialdata = AppData.trialDataFileLocation;
+            string trialdata = AppData.Instance.trialDataFileLocation;
             string movetime = gameData.moveTime.ToString("F0");
             SessionManager.Instance.gameSpeed(gameData.gameSpeedTT, currentGameSession);
             SessionManager.Instance.successRate(gameData.successRate, currentGameSession);

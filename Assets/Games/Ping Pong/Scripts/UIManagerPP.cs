@@ -48,7 +48,7 @@ public class UIManagerPP : MonoBehaviour
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
         finishObjects = GameObject.FindGameObjectsWithTag("ShowOnFinish");
         hideFinished();
-        if (!AppData.runIndividualGame) {
+        if (!AppData.Instance.runIndividualGame) {
             StartNewGameSession();
         }
         if (aromRange!= null)
@@ -132,8 +132,8 @@ public class UIManagerPP : MonoBehaviour
         {
             targetImage.gameObject.SetActive(false);
         }
-        aromLeft.transform.position = new Vector2(aromLeft.transform.position.x, playerMovementAreaAROM(AppData.aRomValue[0]));
-        aromRight.transform.position = new Vector2(aromLeft.transform.position.x, playerMovementAreaAROM(AppData.aRomValue[1]));
+        aromLeft.transform.position = new Vector2(aromLeft.transform.position.x, playerMovementAreaAROM(AppData.Instance.selectedMechanism.currRom.aromMin));
+        aromRight.transform.position = new Vector2(aromLeft.transform.position.x, playerMovementAreaAROM(AppData.Instance.selectedMechanism.currRom.aromMax));
         //Debug.Log($"ypos--{playerMovementAreaAROM(PlutoComm.angle)}+ angle-{PlutoComm.angle},{playerMovementAreaAROM(AppData.aRomValue[1])}");
         //if (PlutoComm.angle < AppData.pRomValue[1] && PlutoComm.angle > AppData.pRomValue[0]) Debug.Log($"position {PlutoComm.angle},{playerMovementAreaAROM(PlutoComm.angle)}");
     }
@@ -170,7 +170,7 @@ public class UIManagerPP : MonoBehaviour
         gameData.reps = 0;
         gameData.moveTime = gameMoveTime;
         showFinished();
-        if (!AppData.runIndividualGame)
+        if (!AppData.Instance.runIndividualGame)
         {
             EndCurrentGameSession();
         }
@@ -187,8 +187,8 @@ public class UIManagerPP : MonoBehaviour
     public static float playerMovementAreaAROM(float angle)
     {
         //ROM aromAng = new ROM(AppData.selectedMechanism);
-        float tmin = AppData.pRomValue[0];
-        float tmax = AppData.pRomValue[1];
+        float tmin = AppData.Instance.selectedMechanism.currRom.promMin;
+        float tmax = AppData.Instance.selectedMechanism.currRom.promMax;
         return Mathf.Clamp(-playSize + (angle - tmin) * (2 * playSize) / (tmax - tmin), bottomBound, topBound);
     }
 
@@ -207,7 +207,7 @@ public class UIManagerPP : MonoBehaviour
     }
     public void LoadScene(string sceneName)
     {
-        if (!AppData.runIndividualGame)
+        if (!AppData.Instance.runIndividualGame)
         {
             EndCurrentGameSession();
         }
@@ -219,7 +219,7 @@ public class UIManagerPP : MonoBehaviour
     {
         gameMoveTime = 0f;
         lastTimestamp = Time.unscaledTime;
-        if (!AppData.runIndividualGame)
+        if (!AppData.Instance.runIndividualGame)
         {
             EndCurrentGameSession();
         }
@@ -266,7 +266,7 @@ public class UIManagerPP : MonoBehaviour
         {
             PlutoComm.OnButtonReleased -= onPlutoButtonReleased;
         }
-        if (AppData.runIndividualGame)
+        if (AppData.Instance.runIndividualGame)
         {
             EndCurrentGameSession();
         }
@@ -291,7 +291,7 @@ public class UIManagerPP : MonoBehaviour
         string assistModeParameters = "Null"; 
         string deviceSetupLocation = "CMC-Bioeng-dpt"; 
         string gameParameter = "YourGameParameter"; 
-        string mech = AppData.selectedMechanism.name;
+        string mech = AppData.Instance.selectedMechanism.name;
         SessionManager.Instance.SetDevice(device, currentGameSession);
         SessionManager.Instance.SetAssistMode(assistMode, assistModeParameters, currentGameSession);
         SessionManager.Instance.SetDeviceSetupLocation(deviceSetupLocation, currentGameSession);
@@ -302,7 +302,7 @@ public class UIManagerPP : MonoBehaviour
     {
         if (currentGameSession != null)
         {
-            string trialdata = AppData.trialDataFileLocation;
+            string trialdata = AppData.Instance.trialDataFileLocation;
             string movetime = gameData.moveTime.ToString("F0");
             SessionManager.Instance.gameSpeed(gameData.gameSpeedPP, currentGameSession);
             SessionManager.Instance.successRate(gameData.successRate, currentGameSession);

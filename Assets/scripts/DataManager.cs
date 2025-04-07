@@ -25,7 +25,6 @@ public struct DaySummary
     public float MoveTime { get; set; }
 }
 
-
 public static class DataManager
 {
     public static readonly string basePath = Application.dataPath + "/data";
@@ -95,13 +94,25 @@ public static class DataManager
         }
         return dTable;
     }
+
+    // Get the last session number.
+    public static int GetPreviousSessionNumber()
+    {
+        if (!File.Exists(sessionFile)) return 0;
+        // Read the last line of the file
+        var lastLine = File.ReadLines(sessionFile).LastOrDefault();
+        if (lastLine == null || lastLine.StartsWith("SessionNumber")) return 0;
+        return int.TryParse(lastLine.Split(',')[0], out var sessionNumber) ? sessionNumber : 0;
+    }
 }
+
 public enum LogMessageType
 {
     INFO,
     WARNING,
     ERROR
 }
+
 
 public static class AppLogger
 {
@@ -113,6 +124,7 @@ public static class AppLogger
     public static string currentGame { get; private set; } = "";
 
     public static bool DEBUG = true;
+    public static string InBraces(string text) => $"[{text}]";
 
     public static bool isLogging
     {
@@ -192,8 +204,8 @@ public static class AppLogger
         {
             if (logWriter != null)
             {
-                string _user = SessionManager.Instance.userData != null ? SessionManager.Instance.userData.hospNumber : "";
-                string _msg = $"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} [{_user}] [{currentScene}] [{currentMechanism}] [{currentGame}] {message}";
+                string _user = AppData.Instance.userData != null ? AppData.Instance.userData.hospNumber : "";
+                string _msg = $"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} {InBraces(_user), -10} {InBraces(currentScene), -12} {InBraces(currentMechanism), -6} {InBraces(currentGame), -8} {message}";
                 logWriter.WriteLine(_msg);
                 logWriter.Flush();
                 if (DEBUG) Debug.Log(_msg);

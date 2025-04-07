@@ -36,7 +36,7 @@ public class GamelogHT : MonoBehaviour
     {
         dateTime = DateTime.Now.ToString("Dyyyy-MM-ddTHH-mm-ss");
         date = DateTime.Now.ToString("yyyy-MM-dd");
-        sessionNum = "Session" + AppData.currentSessionNumber;
+        sessionNum = "Session" + AppData.Instance.currentSessionNumber;
     }
 
     private void CreateLogFile()
@@ -44,9 +44,9 @@ public class GamelogHT : MonoBehaviour
         string dir = Path.Combine(DataManager.sessionPath, date, sessionNum);
         Directory.CreateDirectory(dir);
 
-        fileName = Path.Combine(dir, $"{AppData.selectedMechanism}_{AppData.selectedGame}_{dateTime}.csv");
-        AppData.trialDataFileLocation = fileName;
-        AppData.trialDataFileLocation1= Path.Combine(dir, $"{AppData.selectedMechanism}_{AppData.selectedGame}_{dateTime}");
+        fileName = Path.Combine(dir, $"{AppData.Instance.selectedMechanism.name}_{AppData.Instance.selectedGame}_{dateTime}.csv");
+        AppData.Instance.trialDataFileLocation = fileName;
+        AppData.Instance.trialDataFileLocation1 = Path.Combine(dir, $"{AppData.Instance.selectedMechanism.name}_{AppData.Instance.selectedGame}_{dateTime}");
         Debug.Log(fileName);
         File.Create(fileName).Dispose();
     }

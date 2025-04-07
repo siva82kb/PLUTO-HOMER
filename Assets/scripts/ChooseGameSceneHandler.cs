@@ -16,43 +16,35 @@ public class ChooseGameSceneHandler : MonoBehaviour
 
     private bool toggleSelected = false;
     private string gameSelected;
-    private string changeScene = "chooseMechanism";
+    private string changeScene = "CHMECH";
     private readonly Dictionary<string, string> gameScenes = new Dictionary<string, string>
     {
-        { "PINGPONG", "pong_menu" },
-        { "TUKTUK", "FlappyGame" },
-        { "HATTRICK", "HatrickGame" }
+        { "PONG", "PONGMENU" },
+        { "TUK", "TUKGAME" },
+        { "HAT", "HATGAME" }
     };
-    private bool lisRunning = false;
-    private bool targetReached = false;
-    private const float targetTolerance = 5.0f;
-    private bool isRunning = false;
-
-    private float targetAngle = 0;
     private bool loadgame = false;
-
 
     void Start()
     {
         // Initialize if needed
-        if (AppData.userData == null)
+        if (AppData.Instance.userData == null)
         {
             // Inialize the logger
-            AppLogger.StartLogging(SceneManager.GetActiveScene().name);
-            AppData.initializeStuff(doNotResetMech: false);
+            AppData.Instance.Initialize(SceneManager.GetActiveScene().name, doNotResetMech: false);
         }
 
         // If no mechanism is selected, got to the scene to choose mechanism.
-        if (AppData.selectedMechanism == null)
+        if (AppData.Instance.selectedMechanism == null)
         {
             // Check if mechnism is set in PLUTO?
             if (PlutoComm.CALIBRATION[PlutoComm.calibration] == "YESCALIB")
             {
-                AppData.selectedMechanism = new PlutoMechanism(name: PlutoComm.MECHANISMS[PlutoComm.mechanism], side: AppData.trainingSide);
-                AppLogger.SetCurrentMechanism(AppData.selectedMechanism.name);
+                AppData.Instance.selectedMechanism = new PlutoMechanism(name: PlutoComm.MECHANISMS[PlutoComm.mechanism], side: AppData.Instance.trainingSide);
+                AppLogger.SetCurrentMechanism(AppData.Instance.selectedMechanism.name);
             } else
             {
-                SceneManager.LoadScene("chooseMechanism");
+                SceneManager.LoadScene("CHMECH");
                 return;
             }
         }
@@ -63,7 +55,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
         AppLogger.SetCurrentGame("NONE");
         
         // Reset selected game.
-        AppData.selectedGame = null;
+        AppData.Instance.selectedGame = null;
 
         // Attach callback.
         AttachCallbacks();
@@ -71,7 +63,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
         // Make sure No control is set
         PlutoComm.setControlType("NONE");
 
-        Debug.Log($"Curr ROM: {AppData.selectedMechanism.currRom.promMin:F2}, {AppData.selectedMechanism.currRom.promMax:F2}, {AppData.selectedMechanism.currRom.aromMin:F2}, {AppData.selectedMechanism.currRom.aromMax:F2}");
+        Debug.Log($"Curr ROM: {AppData.Instance.selectedMechanism.currRom.promMin:F2}, {AppData.Instance.selectedMechanism.currRom.promMax:F2}, {AppData.Instance.selectedMechanism.currRom.aromMin:F2}, {AppData.Instance.selectedMechanism.currRom.aromMax:F2}");
     }
 
     void Update()
@@ -87,7 +79,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
         // Magic key cobmination for doing the assessment.
         if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.R))
         {
-            SceneManager.LoadScene("Assessment");
+            SceneManager.LoadScene("ASSESS");
         }
     }
 
@@ -146,18 +138,27 @@ public class ChooseGameSceneHandler : MonoBehaviour
         {
             AppLogger.LogInfo($"'{game}' game selected.");
             // Instantitate the game object and load the appropriate scene.
-            AppData.selectedGame = game;
+            AppData.Instance.selectedGame = game;
             switch (game)
             {
-                case "PINGPONG":
+                case "PONG":
                     break;
-                case "TUKTUK":
+                case "TUK":
                     break;
-                case "HATTRICK":
-                    Debug.Log("HATTRICK Game case.");
-                    AppData.hatTrickGame = HatTrickGame.Initialize(AppData.selectedMechanism);
+                case "HAT":
+                    HatTrickGame.Instance.Initialize(AppData.Instance.selectedMechanism);
                     break;
             }
+            // Log the ROM information.
+            AppLogger.LogInfo(
+                $"Old  PROM: [{AppData.Instance.selectedMechanism.oldRom.promMin:F2}, {AppData.Instance.selectedMechanism.oldRom.promMax:F2}]" +
+                $" | AROM: [{AppData.Instance.selectedMechanism.oldRom.aromMin:F2}, {AppData.Instance.selectedMechanism.oldRom.aromMax:F2}]");
+            AppLogger.LogInfo(
+                $"New  PROM: [{AppData.Instance.selectedMechanism.newRom.promMin:F2}, {AppData.Instance.selectedMechanism.newRom.promMax:F2}]" +
+                $" | AROM: [{AppData.Instance.selectedMechanism.newRom.aromMin:F2}, {AppData.Instance.selectedMechanism.newRom.aromMax:F2}]");
+            AppLogger.LogInfo(
+                $"Curr PROM: [{AppData.Instance.selectedMechanism.currRom.promMin:F2}, {AppData.Instance.selectedMechanism.currRom.promMax:F2}]" +
+                $" | AROM: [{AppData.Instance.selectedMechanism.currRom.aromMin:F2}, {AppData.Instance.selectedMechanism.currRom.aromMax:F2}]");
             SceneManager.LoadScene(sceneName);
         }
     }
@@ -178,5 +179,4 @@ public class ChooseGameSceneHandler : MonoBehaviour
             PlutoComm.OnButtonReleased -= OnPlutoButtonReleased;
         }
     }
-
 }

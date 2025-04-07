@@ -12,22 +12,22 @@ namespace PlutoNeuroRehabLibrary
         private static SessionManager _instance;
         public static SessionManager Instance { get; private set; }
 
-        // User data
-        public PlutoUserData userData;
+        //// User data
+        //public PlutoUserData userData;
 
-        // Game data
-        public HatTrickGame hatTrickGame;
+        //// Game data
+        //public HatTrickGame hatTrickGame;
 
-        // Selected Mechanism
-        public PlutoMechanism selectedMechanism = null;
-        // Selected Game
-        public string selectedGame = null;
+        //// Selected Mechanism
+        //public PlutoMechanism selectedMechanism = null;
+        //// Selected Game
+        //public string selectedGame = null;
 
         // Training side.
-        public string trainingSide
-        {
-            get => userData?.rightHand == true ? "RIGHT" : "LEFT";
-        }
+        //public string trainingSide
+        //{
+        //    get => userData?.rightHand == true ? "RIGHT" : "LEFT";
+        //}
 
         private int _currentSessionNumber;
         private bool _sessionStarted;
@@ -62,17 +62,17 @@ namespace PlutoNeuroRehabLibrary
             }
             else
             {
-                _currentSessionNumber = GetLastSessionNumber();
+                //_currentSessionNumber = GetPreviousSessionNumber();
             }
             _loginCalled = false;
 
             // Initialize user data.
-            userData = new PlutoUserData(DataManager.configFile, DataManager.sessionFile);
-            // Selected mechanism and game.
-            selectedMechanism = null;
-            selectedGame = null;
-            // Initialize game classes to null.
-            hatTrickGame = null;
+            //userData = new PlutoUserData(DataManager.configFile, DataManager.sessionFile);
+            //// Selected mechanism and game.
+            //selectedMechanism = null;
+            //selectedGame = null;
+            //// Initialize game classes to null.
+            //hatTrickGame = null;
 
         }
 
@@ -91,7 +91,7 @@ namespace PlutoNeuroRehabLibrary
             {
                 _currentSessionNumber = GetLastSessionNumber() + 1;
                 Debug.Log($"Session number incremented to: {_currentSessionNumber}");
-                AppData.currentSessionNumber = _currentSessionNumber;
+                AppData.Instance.currentSessionNumber = _currentSessionNumber;
                 _loginCalled = true;
             }
             _sessionStarted = false;

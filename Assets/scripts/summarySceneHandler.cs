@@ -65,7 +65,7 @@ public class summarySceneHandler : MonoBehaviour
     {
         Debug.Log("Is bar chart active: " + barchart.gameObject.activeSelf);
 
-        sessionDataHandler = new SessionDataHandler(DataManager.filePathSessionData);
+        sessionDataHandler = new SessionDataHandler(DataManager.sessionFile);
 
         sessionDataHandler.summaryCalculateMovTimePerDayWithLinq();
 

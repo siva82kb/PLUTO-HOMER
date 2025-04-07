@@ -27,21 +27,20 @@ public class MechanismSceneHandler : MonoBehaviour
     public Button exit;
     private static bool changeScene = false;
     private string mechSelected = null;
-    private string nextScene = "calibration";
-    private string exitScene = "Summary";
+    private string nextScene = "CALIB";
+    private string exitScene = "SUMM";
 
     void Start()
     {
         // Reset mechanisms.
         PlutoComm.sendHeartbeat();
         PlutoComm.calibrate("NOMECH");
-        AppData.selectedMechanism = null;
+        AppData.Instance.selectedMechanism = null;
 
         // Initialize if needed
-        if (AppData.userData == null)
+        if (AppData.Instance.userData == null)
         {
-            AppLogger.StartLogging(SceneManager.GetActiveScene().name);
-            AppData.initializeStuff();
+            AppData.Instance.Initialize(SceneManager.GetActiveScene().name);
         }
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");
@@ -87,7 +86,7 @@ public class MechanismSceneHandler : MonoBehaviour
         foreach (Transform child in mehcanismSelectGroup.transform)
         {
             Toggle toggleComponent = child.GetComponent<Toggle>();
-            bool isPrescribed = AppData.userData.mechMoveTimePrsc[toggleComponent.name] > 0;
+            bool isPrescribed = AppData.Instance.userData.mechMoveTimePrsc[toggleComponent.name] > 0;
 
             // Hide the component if it has no prescribed time.
             toggleComponent.interactable = isPrescribed;
@@ -102,7 +101,7 @@ public class MechanismSceneHandler : MonoBehaviour
                 if (timeLeftText != null)
                 {
                     // Set the text to your desired value
-                    timeLeftText.text = $"{AppData.userData.getTodayMoveTimeForMechanism(toggleComponent.name)} / {AppData.userData.mechMoveTimePrsc[toggleComponent.name]} min";
+                    timeLeftText.text = $"{AppData.Instance.userData.getTodayMoveTimeForMechanism(toggleComponent.name)} / {AppData.Instance.userData.mechMoveTimePrsc[toggleComponent.name]} min";
                 }
                 else
                 {
@@ -143,13 +142,13 @@ public class MechanismSceneHandler : MonoBehaviour
             if (toggleComponent != null && toggleComponent.isOn)
             {
                 mechSelected = child.name;
-                AppData.selectedMechanism = new PlutoMechanism(mechSelected, AppData.trainingSide);
+                AppData.Instance.selectedMechanism = new PlutoMechanism(mechSelected, AppData.Instance.trainingSide);
                 AppLogger.LogInfo($"Selected mechanism '{mechSelected}'.");
                 return;
             }
         }
         mechSelected = null;
-        AppData.selectedMechanism = null;
+        AppData.Instance.selectedMechanism = null;
     }
 
     private void OnPlutoButtonReleased()
@@ -158,10 +157,6 @@ public class MechanismSceneHandler : MonoBehaviour
         {
             changeScene = true;
             mechSelected = null;
-        }
-        else
-        {
-            AppLogger.LogWarning("PLUTO Button pressed without selecting a mechanism.");
         }
     }
 
@@ -174,7 +169,7 @@ public class MechanismSceneHandler : MonoBehaviour
 
     IEnumerator LoadSummaryScene()
     {
-        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("summaryScene");
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("SUMM");
         while (!asyncLoad.isDone)
         {
             yield return null;

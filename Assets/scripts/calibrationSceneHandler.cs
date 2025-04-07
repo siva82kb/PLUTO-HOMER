@@ -17,8 +17,8 @@ public class calibrationSceneHandler : MonoBehaviour
     private bool startCalibration = false;
     private bool isCalibrating = false;
     private bool doneCalibration = false;
-    private string prevScene = "chooseMechanism";
-    private string nextScene = "chooseGame";
+    private string prevScene = "CHMECH";
+    private string nextScene = "CHGAME";
 
     void Start()
     {
@@ -27,12 +27,12 @@ public class calibrationSceneHandler : MonoBehaviour
         // Set mechanism to NOMECH.
         PlutoComm.sendHeartbeat();
         // Set mechanism to the selected mechanism.
-        PlutoComm.calibrate(AppData.selectedMechanism.name);
+        PlutoComm.calibrate(AppData.Instance.selectedMechanism.name);
         
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");
-        Debug.Log("Mechanism: " + AppData.selectedMechanism.name);
-        mechText.text = PlutoComm.MECHANISMSTEXT[PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, AppData.selectedMechanism.name)];
+        Debug.Log("Mechanism: " + AppData.Instance.selectedMechanism.name);
+        mechText.text = PlutoComm.MECHANISMSTEXT[PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, AppData.Instance.selectedMechanism.name)];
 
         // Attach callback.
         if (ConnectToRobot.isPLUTO)
@@ -56,7 +56,7 @@ public class calibrationSceneHandler : MonoBehaviour
 
     private void PerformCalibration()
     {
-        if (string.IsNullOrEmpty(AppData.selectedMechanism.name))
+        if (string.IsNullOrEmpty(AppData.Instance.selectedMechanism.name))
         {
             Debug.LogError("No mechanism selected for calibration!");
             return;
@@ -76,7 +76,7 @@ public class calibrationSceneHandler : MonoBehaviour
         yield return new WaitForSeconds(1.5f);
 
         // Send the calibration command.
-        PlutoComm.calibrate(AppData.selectedMechanism.name);
+        PlutoComm.calibrate(AppData.Instance.selectedMechanism.name);
         yield return new WaitForSeconds(0.5f);
 
         //ApplyTorqueToSep(PlutoComm.angle, separationAngle);
@@ -84,7 +84,7 @@ public class calibrationSceneHandler : MonoBehaviour
         yield return new WaitForSeconds(1.5f);
 
         // Check if the ROM is correct.
-        int mechInx = Array.IndexOf(PlutoComm.MECHANISMS, AppData.selectedMechanism.name);
+        int mechInx = Array.IndexOf(PlutoComm.MECHANISMS, AppData.Instance.selectedMechanism.name);
         float _angval = PlutoComm.angle + PlutoComm.MECHOFFSETVALUE[mechInx];
         isCalibrating = false;
         if (Math.Abs(_angval) < 0.9 * PlutoComm.CALIBANGLE[mechInx]
@@ -95,7 +95,7 @@ public class calibrationSceneHandler : MonoBehaviour
             PlutoComm.calibrate("NOMECH");
             textMessage.text = $"Try Again.";
             textMessage.color = Color.red;
-            AppLogger.LogError($"Calibration failed for {AppData.selectedMechanism.name}.");
+            AppLogger.LogError($"Calibration failed for {AppData.Instance.selectedMechanism.name}.");
             isCalibrating = false;
             doneCalibration = false;
             yield break;
@@ -103,7 +103,7 @@ public class calibrationSceneHandler : MonoBehaviour
         // All good.
         textMessage.text = "Calibration Done";
         textMessage.color = new Color32(62, 214, 111, 255);
-        AppLogger.LogError($"Calibration was successful for {AppData.selectedMechanism.name}.");
+        AppLogger.LogError($"Calibration was successful for {AppData.Instance.selectedMechanism.name}.");
 
         //HOC assessment UI  works based on closed position,
         if(PlutoComm.MECHANISMS[PlutoComm.mechanism] != "HOC") {
@@ -119,15 +119,15 @@ public class calibrationSceneHandler : MonoBehaviour
                 yield return new WaitForSeconds(0.1f);
             }
         }
-        if (PlutoComm.MECHANISMS[PlutoComm.mechanism] == "HOC") PlutoComm.calibrate(AppData.selectedMechanism.name);
+        if (PlutoComm.MECHANISMS[PlutoComm.mechanism] == "HOC") PlutoComm.calibrate(AppData.Instance.selectedMechanism.name);
 
         PlutoComm.setControlTarget(0.0f);
         PlutoComm.setControlType("NONE");
         yield return new WaitForSeconds(1.5f);
 
         // Set selected mechanism.
-        AppData.selectedMechanism = new PlutoMechanism(name: PlutoComm.MECHANISMS[PlutoComm.mechanism], side: AppData.trainingSide);
-        AppLogger.SetCurrentMechanism(AppData.selectedMechanism.name);
+        AppData.Instance.selectedMechanism = new PlutoMechanism(name: PlutoComm.MECHANISMS[PlutoComm.mechanism], side: AppData.Instance.trainingSide);
+        AppLogger.SetCurrentMechanism(AppData.Instance.selectedMechanism.name);
 
         // Update flags.
         isCalibrating = false;

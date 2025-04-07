@@ -144,7 +144,7 @@ public class HT_spawnTargets1 : MonoBehaviour
         {
             dontAssistTrial = true;
         }
-        targetPos.x = Angle2Screen(targetAngle, AppData.selectedMechanism.currRom.promMin, AppData.selectedMechanism.currRom.promMax);
+        targetPos.x = Angle2Screen(targetAngle, AppData.Instance.selectedMechanism.currRom.promMin, AppData.Instance.selectedMechanism.currRom.promMax);
 
         prevAng = PlutoComm.angle;
         initialDirection = getDirection();
@@ -158,10 +158,8 @@ public class HT_spawnTargets1 : MonoBehaviour
 
     public bool isInPROM(float angle)
     {
-        //AppData.oldAROM = new ROM(AppData.selectedMechanism);
-
-        float tmin = AppData.aRomValue[0];
-        float tmax = AppData.aRomValue[1];
+        float tmin = AppData.Instance.selectedMechanism.currRom.aromMin;
+        float tmax = AppData.Instance.selectedMechanism.currRom.aromMax;
         if (angle < tmin || angle > tmax)
         {
             Debug.Log("prom target");
@@ -169,7 +167,6 @@ public class HT_spawnTargets1 : MonoBehaviour
         }
         else
             return false;
-
     }
 
     public void UpdateSuccessRate()
@@ -186,14 +183,10 @@ public class HT_spawnTargets1 : MonoBehaviour
                 }
                 else
                     successRate[i] = val;
-
             }
-
         }
         avgSuccessRate = (float)successRate.Sum() / (float)successRate.Length;
-        //Debug.Log(avgSuccessRate);
     }
-
 
     float getDirection()
     {
@@ -204,12 +197,9 @@ public class HT_spawnTargets1 : MonoBehaviour
     {
         float prevtargetAngle = targetAngle;
        // AppData.newPROM = new ROM(AppData.selectedMechanism);
-
-
-        float newPROM_tmin = AppData.pRomValue[0];
-        float newPROM_tmax = AppData.pRomValue[1];
+        float newPROM_tmin = AppData.Instance.selectedMechanism.currRom.promMin;
+        float newPROM_tmax = AppData.Instance.selectedMechanism.currRom.promMax;
         float tempAngle = Random.Range(newPROM_tmin, newPROM_tmax);
-
 
         while (Mathf.Abs(tempAngle - prevtargetAngle) < Mathf.Abs(newPROM_tmax - newPROM_tmin) / 2.5f)
         {

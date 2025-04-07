@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro.EditorUtilities;
@@ -163,9 +164,9 @@ public abstract class BaseGame
 /// </summary>
 public class HatTrickGame : BaseGame
 {
-    // Static Instance
-    private static HatTrickGame _instance;
-    public static HatTrickGame Instance => _instance;
+    // Singleton instance (thread-safe via Lazy<T>)
+    private static Lazy<HatTrickGame> _lazyInstance = new Lazy<HatTrickGame>(() => new HatTrickGame(null));
+    public static HatTrickGame Instance => _lazyInstance.Value;
 
     public override string[] events
     {
@@ -186,13 +187,18 @@ public class HatTrickGame : BaseGame
         // Call the intialization function to get the game speed.
     }
 
-    public static HatTrickGame Initialize(PlutoMechanism mech)
+    // Initialize (thread-safe)
+    public void Initialize(PlutoMechanism mech)
     {
-        if ((_instance == null) || _instance.mechanism != mech)
-        {
-            _instance = new HatTrickGame(mech);
-        }
-        return _instance;
+        if (mech == null)
+            throw new ArgumentNullException(nameof(mech));
+
+        // If already initialized with the same mechanism, do nothing
+        if (Instance.mechanism == mech)
+            return;
+
+        // Force reinitialization (works because Lazy is thread-safe)
+        _lazyInstance = new Lazy<HatTrickGame>(() => new HatTrickGame(mech));
     }
 }
 

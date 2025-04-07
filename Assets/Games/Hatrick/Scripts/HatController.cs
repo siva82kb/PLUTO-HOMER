@@ -40,7 +40,7 @@ public class HatController : MonoBehaviour
     void Update()
     {
 
-        targetX = HT_spawnTargets1.instance.Angle2Screen(PlutoComm.angle, AppData.selectedMechanism.currRom.promMin, AppData.selectedMechanism.currRom.promMax);
+        targetX = HT_spawnTargets1.instance.Angle2Screen(PlutoComm.angle, AppData.Instance.selectedMechanism.currRom.promMin, AppData.Instance.selectedMechanism.currRom.promMax);
         targetX = Mathf.Clamp(targetX, -maxwidth, maxwidth);
                                       
         //checkPlayerMovement();
@@ -124,6 +124,6 @@ public class HatController : MonoBehaviour
 
     public float Angle2Screen(float angle)
     {
-        return HT_spawnTargets1.instance.Angle2Screen(angle, AppData.selectedMechanism.currRom.promMin, AppData.selectedMechanism.currRom.promMax);
+        return HT_spawnTargets1.instance.Angle2Screen(angle, AppData.Instance.selectedMechanism.currRom.promMin, AppData.Instance.selectedMechanism.currRom.promMax);
     }
 }

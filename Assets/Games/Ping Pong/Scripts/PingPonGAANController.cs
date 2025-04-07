@@ -101,9 +101,9 @@ public class PingPonGAANController : MonoBehaviour
     {
         string date = DateTime.Now.ToString("yyyy-MM-dd");
         string dateTime = DateTime.Now.ToString("Dyyyy-MM-ddTHH-mm-ss");
-        string sessionNum = "Session" + AppData.currentSessionNumber;
+        string sessionNum = "Session" + AppData.Instance.currentSessionNumber;
 
-        AppData._dataLogDir = Path.Combine(DataManager.sessionPath, date, sessionNum, $"{AppData.selectedMechanism}_{AppData.selectedGame}_{dateTime}");
+        AppData.Instance._dataLogDir = Path.Combine(DataManager.sessionPath, date, sessionNum, $"{AppData.Instance.selectedMechanism.name}_{AppData.Instance.selectedGame}_{dateTime}");
 
         ps = Camera.main.orthographicSize * Camera.main.aspect;
 
@@ -115,7 +115,10 @@ public class PingPonGAANController : MonoBehaviour
 
 
         // Pluto AAN controller
-        aanCtrler = new HOMERPlutoAANController(AppData.aRomValue, AppData.pRomValue, 0.85f);
+        aanCtrler = new HOMERPlutoAANController(
+            new float[] { AppData.Instance.selectedMechanism.currRom.aromMin, AppData.Instance.selectedMechanism.currRom.aromMax }, 
+            new float[] { AppData.Instance.selectedMechanism.currRom.promMin, AppData.Instance.selectedMechanism.currRom.promMax }, 
+            0.85f);
         isRunning = true;
         dlogger = new AANDataLogger(aanCtrler);
         // Set Control mode.
@@ -347,8 +350,8 @@ public class PingPonGAANController : MonoBehaviour
     public float Angle2Screen(float angle)
     {
         //ROM aromAng = new ROM(AppData.selectedMechanism);
-        float tmin = AppData.aRomValue[0];
-        float tmax = AppData.aRomValue[1];
+        float tmin = AppData.Instance.selectedMechanism.currRom.aromMin;
+        float tmax = AppData.Instance.selectedMechanism.currRom.aromMax;
         return Mathf.Clamp(-playSize + (angle - tmin) * (2 * playSize) / (tmax - tmin), bottomBound, topBound);
 
     }

@@ -30,7 +30,7 @@ namespace TS.DoubleSlider
         [SerializeField] private RectTransform oldROMArea;
 
         [SerializeField] private RectTransform oldROMAreaHoc;
-        
+
 
 
         [Header("Configuration")]
@@ -104,50 +104,50 @@ namespace TS.DoubleSlider
             _fillRect = _fillArea.transform.GetChild(0).transform as RectTransform;
             _oldROMRect = oldROMArea.transform.GetChild(0).transform as RectTransform;
             _oldROMRectHoc = oldROMAreaHoc.transform.GetChild(0).transform as RectTransform;
-            if (Array.IndexOf(PlutoComm.MECHANISMS, AppData.selectedMechanism) == 4)
-          {
+            if (Array.IndexOf(PlutoComm.MECHANISMS, AppData.Instance.selectedMechanism.name) == 4)
+            {
 
-            _sliderMaxHoc.gameObject.SetActive(true);
-           _sliderMinHoc.gameObject.SetActive(true);
- 
-            _maxValue = 0f;
-             _minValue = -120f;
-             _minValueHoc = 0f;
-             _maxValueHoc = 120f;
-          
-           _currePostion.gameObject.SetActive(true);
-            _currePostionHoc.gameObject.SetActive(true);
-            _fillArea.gameObject.SetActive(true);
-            _fillAreahoc.gameObject.SetActive(true);
-         }
-         else{
+                _sliderMaxHoc.gameObject.SetActive(true);
+                _sliderMinHoc.gameObject.SetActive(true);
 
-            _currePostionHoc.gameObject.SetActive(false);
-            _sliderMaxHoc.gameObject.SetActive(false);
-           _sliderMinHoc.gameObject.SetActive(false);
-           _fillAreahoc.gameObject.SetActive(false);
+                _maxValue = 0f;
+                _minValue = -120f;
+                _minValueHoc = 0f;
+                _maxValueHoc = 120f;
 
-         }
-         if (warningText != null)
-      {
-        warningText.gameObject.SetActive(false);
-       }
+                _currePostion.gameObject.SetActive(true);
+                _currePostionHoc.gameObject.SetActive(true);
+                _fillArea.gameObject.SetActive(true);
+                _fillAreahoc.gameObject.SetActive(true);
+            }
+            else
+            {
+
+                _currePostionHoc.gameObject.SetActive(false);
+                _sliderMaxHoc.gameObject.SetActive(false);
+                _sliderMinHoc.gameObject.SetActive(false);
+                _fillAreahoc.gameObject.SetActive(false);
+
+            }
+            if (warningText != null)
+            {
+                warningText.gameObject.SetActive(false);
+            }
         }
 
         private void Start()
         {
-
-           
-            if (Array.IndexOf(PlutoComm.MECHANISMS, AppData.selectedMechanism) == 4)
-             {
-                  _currePostion.gameObject.SetActive(true);
-                  _currePostionHoc.gameObject.SetActive(true);
-                    Setup(_minValue, _maxValue, _initialMinValue, _initialMaxValue);
-             }
-             else{
-                   _currePostionHoc.gameObject.SetActive(false); 
-                   _currePostion.gameObject.SetActive(true);
-             }
+            if (Array.IndexOf(PlutoComm.MECHANISMS, AppData.Instance.selectedMechanism.name) == 4)
+            {
+                _currePostion.gameObject.SetActive(true);
+                _currePostionHoc.gameObject.SetActive(true);
+                Setup(_minValue, _maxValue, _initialMinValue, _initialMaxValue);
+            }
+            else
+            {
+                _currePostionHoc.gameObject.SetActive(false);
+                _currePostion.gameObject.SetActive(true);
+            }
         }
 
         private void Update()
@@ -158,16 +158,16 @@ namespace TS.DoubleSlider
             {
                 updateMinMaxVal();
             }
-            
- 
+
+
         }
 
         public void currentPositonUpdate()
-   {        
-         
+        {
+
             _currePostion.value = PlutoComm.angle;
-           _currePostionHoc.value = -PlutoComm.angle;
-            
+            _currePostionHoc.value = -PlutoComm.angle;
+
 
             float Currevalue = _currePostion.value;
 
@@ -176,52 +176,52 @@ namespace TS.DoubleSlider
         public void updateMinMaxVal()
         {
 
-             if (Array.IndexOf(PlutoComm.MECHANISMS, AppData.selectedMechanism) == 4)
-        {
-        // Get the current position value
-           float currentValue = -_currePostionHoc.value;
+            if (Array.IndexOf(PlutoComm.MECHANISMS, AppData.Instance.selectedMechanism.name) == 4)
+            {
+                // Get the current position value
+                float currentValue = -_currePostionHoc.value;
 
-        //minAng = Mathf.Clamp(minAng, -90f, 0f);
- 
+                //minAng = Mathf.Clamp(minAng, -90f, 0f);
 
-        // Set the minSlider at minAng and allow it to move towards maxAng
-           if (currentValue < minAng)
-        {
-           
-            minAng = Mathf.Clamp(currentValue, _minValue, 0f);
-            minAng = Mathf.Clamp(currentValue,_minValue,0f);
-            _sliderMin.setSliderVal(minAng);
 
-            _sliderMinHoc.setSliderVal(-minAng);
-        }
+                // Set the minSlider at minAng and allow it to move towards maxAng
+                if (currentValue < minAng)
+                {
 
-        // Allow the maxSlider to move within the range starting from minAng
-        if (currentValue > maxAng)
-        {
-            //maxAng = Mathf.Clamp(currentValue,  0f,-90f);
-            maxAng = Mathf.Clamp(currentValue, _minValue, 0f);
-            maxAng = Mathf.Clamp(currentValue, _minValue,0f);
-            _sliderMax.setSliderVal(0f);
+                    minAng = Mathf.Clamp(currentValue, _minValue, 0f);
+                    minAng = Mathf.Clamp(currentValue, _minValue, 0f);
+                    _sliderMin.setSliderVal(minAng);
 
-            _sliderMaxHoc.setSliderVal(-maxAng);
+                    _sliderMinHoc.setSliderVal(-minAng);
+                }
 
-            
-        }
+                // Allow the maxSlider to move within the range starting from minAng
+                if (currentValue > maxAng)
+                {
+                    //maxAng = Mathf.Clamp(currentValue,  0f,-90f);
+                    maxAng = Mathf.Clamp(currentValue, _minValue, 0f);
+                    maxAng = Mathf.Clamp(currentValue, _minValue, 0f);
+                    _sliderMax.setSliderVal(0f);
 
-        // Ensure that the current position starts at minAng and goes to maxAng
-        if (currentValue >= minAng && currentValue <= maxAng)
-        {
-            _sliderMin.setSliderVal(minAng);
-            _sliderMax.setSliderVal(maxAng);
+                    _sliderMaxHoc.setSliderVal(-maxAng);
 
-            _sliderMinHoc.setSliderVal(-minAng);
-            _sliderMaxHoc.setSliderVal(-maxAng);
 
-            //_sliderMinHoc.setSliderVal(minAng);
-            //_sliderMaxHoc.setSliderVal(maxAng);
-        }
-       }
-           
+                }
+
+                // Ensure that the current position starts at minAng and goes to maxAng
+                if (currentValue >= minAng && currentValue <= maxAng)
+                {
+                    _sliderMin.setSliderVal(minAng);
+                    _sliderMax.setSliderVal(maxAng);
+
+                    _sliderMinHoc.setSliderVal(-minAng);
+                    _sliderMaxHoc.setSliderVal(-maxAng);
+
+                    //_sliderMinHoc.setSliderVal(minAng);
+                    //_sliderMaxHoc.setSliderVal(maxAng);
+                }
+            }
+
             else
             {
                 if (_currePostion.value < minAng)
@@ -244,36 +244,37 @@ namespace TS.DoubleSlider
             _initialMinValue = initialMinValue;
             _initialMaxValue = initialMaxValue;
 
-        if (Array.IndexOf(PlutoComm.MECHANISMS, AppData.selectedMechanism) == 4)
-          {
-            _sliderMinHoc.Setup(-_initialMinValue, minValue, maxValue, MinValueChanged);
-            _sliderMaxHoc.Setup(-_initialMaxValue, minValue, maxValue, MaxValueChanged);
+            if (Array.IndexOf(PlutoComm.MECHANISMS, AppData.Instance.selectedMechanism.name) == 4)
+            {
+                _sliderMinHoc.Setup(-_initialMinValue, minValue, maxValue, MinValueChanged);
+                _sliderMaxHoc.Setup(-_initialMaxValue, minValue, maxValue, MaxValueChanged);
 
-            _sliderMin.Setup(_initialMinValue, -maxValue, -minValue, MinValueChanged);
-            _sliderMax.Setup(_initialMaxValue, -maxValue, -minValue, MaxValueChanged);
+                _sliderMin.Setup(_initialMinValue, -maxValue, -minValue, MinValueChanged);
+                _sliderMax.Setup(_initialMaxValue, -maxValue, -minValue, MaxValueChanged);
 
-            _currePostion.minValue = minValue;
-            _currePostion.maxValue = maxValue;
-            _currePostionHoc.minValue = minValue;
-            _currePostionHoc.maxValue = maxValue;
-                
-          }
-        else{
-            
-            _sliderMin.Setup(_initialMinValue, minValue, maxValue, MinValueChanged);
-            _sliderMax.Setup(_initialMaxValue, minValue, maxValue, MaxValueChanged);
+                _currePostion.minValue = minValue;
+                _currePostion.maxValue = maxValue;
+                _currePostionHoc.minValue = minValue;
+                _currePostionHoc.maxValue = maxValue;
+
+            }
+            else
+            {
+
+                _sliderMin.Setup(_initialMinValue, minValue, maxValue, MinValueChanged);
+                _sliderMax.Setup(_initialMaxValue, minValue, maxValue, MaxValueChanged);
 
 
-            MinValueChanged(_initialMinValue);
-            MaxValueChanged(_initialMaxValue);
+                MinValueChanged(_initialMinValue);
+                MaxValueChanged(_initialMaxValue);
 
-           
-            _currePostion.minValue = minValue;
-            _currePostion.maxValue = maxValue;
-            
 
-            OldROMRECT();
-        }
+                _currePostion.minValue = minValue;
+                _currePostion.maxValue = maxValue;
+
+
+                OldROMRECT();
+            }
         }
 
         public void startAssessment(float val)
@@ -285,13 +286,13 @@ namespace TS.DoubleSlider
 
             _sliderMin.Setup(_initialMinValue, _minValue, _maxValue, MinValueChanged);
             _sliderMax.Setup(_initialMaxValue, _minValue, _maxValue, MaxValueChanged);
-       
+
             MinValueChanged(val);
             MaxValueChanged(val);
 
             _currePostion.minValue = _minValue;
             _currePostion.maxValue = _maxValue;
-       
+
             _oldROMRect.localScale = new Vector3(1, 5f, 1);
 
 
@@ -300,9 +301,9 @@ namespace TS.DoubleSlider
         private void OldROMRECT()
         {
 
-            if (Array.IndexOf(PlutoComm.MECHANISMS, AppData.selectedMechanism) == 4)
+            if (Array.IndexOf(PlutoComm.MECHANISMS, AppData.Instance.selectedMechanism.name) == 4)
             {
-            
+
                 float offset = ((MinValue - _minValue) / (_maxValue - _minValue)) * _fillAreahoc.rect.width;
 
                 _oldROMRectHoc.offsetMin = new Vector2(offset, _fillRectHoc.offsetMin.y);
@@ -315,79 +316,91 @@ namespace TS.DoubleSlider
 
                 float offsetMax = (1 - ((-MinValue - _minValue) / (_maxValue - _minValue))) * _fillArea.rect.width;
                 _oldROMRect.offsetMax = new Vector2(-offsetMax, _fillRect.offsetMax.y);
-        }else{
-        
-            
-            float offset = ((MinValue - _minValue) / (_maxValue - _minValue)) * _fillArea.rect.width;
+            }
+            else
+            {
 
-            _oldROMRect.offsetMin = new Vector2(offset, _fillRectHoc.offsetMin.y);
-            offset = (1 - ((MaxValue - _minValue) / (_maxValue - _minValue))) * _fillArea.rect.width;
 
-            _oldROMRect.offsetMax = new Vector2(-offset, _fillRectHoc.offsetMax.y);
-        }
-            
+                float offset = ((MinValue - _minValue) / (_maxValue - _minValue)) * _fillArea.rect.width;
+
+                _oldROMRect.offsetMin = new Vector2(offset, _fillRectHoc.offsetMin.y);
+                offset = (1 - ((MaxValue - _minValue) / (_maxValue - _minValue))) * _fillArea.rect.width;
+
+                _oldROMRect.offsetMax = new Vector2(-offset, _fillRectHoc.offsetMax.y);
+            }
+
         }
 
         private void MinValueChanged(float value)
         {
 
-            if (Array.IndexOf(PlutoComm.MECHANISMS, AppData.selectedMechanism)     ==4)
+            if (Array.IndexOf(PlutoComm.MECHANISMS, AppData.Instance.selectedMechanism.name) == 4)
             {
-            
-            {
-                float offsetHoc = ((MinValue - _minValue) / (_maxValue - _minValue)) * _fillAreahoc.rect.width;
-                _fillRectHoc.offsetMin = new Vector2(offsetHoc, _fillRectHoc.offsetMin.y);
 
-                
+                {
+                    float offsetHoc = ((MinValue - _minValue) / (_maxValue - _minValue)) * _fillAreahoc.rect.width;
+                    _fillRectHoc.offsetMin = new Vector2(offsetHoc, _fillRectHoc.offsetMin.y);
+
+
+
+                    if ((MaxValue - value) < _minDistance)
+                    {
+                        _sliderMin.Value = MaxValue - _minDistance;
+                    }
+
+                    OnValueChanged.Invoke(MinValue, MaxValue);
+                    _sliderMin.transform.SetAsLastSibling();
+                }
+                {
+
+                    float offset = ((MinValue - _minValue) / (_maxValue - _minValue)) * _fillArea.rect.width;
+                    _fillRect.offsetMin = new Vector2(offset, _fillRect.offsetMin.y);
+
+                    if ((MaxValue - value) < _minDistance)
+                    {
+                        _sliderMin.Value = MaxValue - _minDistance;
+                    }
+
+                    OnValueChanged.Invoke(MinValue, -MaxValue);
+                    _sliderMin.transform.SetAsLastSibling();
+                }
+
+            }
+            else
+            {
+
+                float offset = ((MinValue - _minValue) / (_maxValue - _minValue)) * _fillArea.rect.width;
+                _fillRect.offsetMin = new Vector2(offset, _fillRect.offsetMin.y);
 
                 if ((MaxValue - value) < _minDistance)
                 {
                     _sliderMin.Value = MaxValue - _minDistance;
                 }
 
-            OnValueChanged.Invoke(MinValue, MaxValue);
-            _sliderMin.transform.SetAsLastSibling();
-            }
-            {
-
-             float offset = ((MinValue - _minValue) / (_maxValue - _minValue)) * _fillArea.rect.width;
-            _fillRect.offsetMin = new Vector2(offset, _fillRect.offsetMin.y);
-
-            if ((MaxValue - value) < _minDistance)
-            {
-                _sliderMin.Value = MaxValue - _minDistance;
-            }
-
-            OnValueChanged.Invoke(MinValue, -MaxValue);
-            _sliderMin.transform.SetAsLastSibling();
-            }
-
-        }
-            else
-            {
-
-            float offset = ((MinValue - _minValue) / (_maxValue - _minValue)) * _fillArea.rect.width;
-            _fillRect.offsetMin = new Vector2(offset, _fillRect.offsetMin.y);
-
-            if ((MaxValue - value) < _minDistance)
-            {
-                _sliderMin.Value = MaxValue - _minDistance;
-            }
-
-            OnValueChanged.Invoke(MinValue, MaxValue);
-            _sliderMin.transform.SetAsLastSibling();
+                OnValueChanged.Invoke(MinValue, MaxValue);
+                _sliderMin.transform.SetAsLastSibling();
             }
         }
 
         private void MaxValueChanged(float value)
         {
+            if (Array.IndexOf(PlutoComm.MECHANISMS, AppData.Instance.selectedMechanism.name) == 4)
+            {
+                {
 
-            if (Array.IndexOf(PlutoComm.MECHANISMS, AppData.selectedMechanism) ==4)
-            {
-            {
-             
-                float offsetHoc = (1 - ((MaxValue - _minValue) / (_maxValue - _minValue))) * _fillAreahoc.rect.width;
-                _fillRectHoc.offsetMax = new Vector2(-offsetHoc, _fillRectHoc.offsetMax.y);
+                    float offsetHoc = (1 - ((MaxValue - _minValue) / (_maxValue - _minValue))) * _fillAreahoc.rect.width;
+                    _fillRectHoc.offsetMax = new Vector2(-offsetHoc, _fillRectHoc.offsetMax.y);
+
+                    if ((value - MinValue) < _minDistance)
+                    {
+                        _sliderMax.Value = MinValue + _minDistance;
+                    }
+
+                    OnValueChanged.Invoke(MinValue, MaxValue);
+                    _sliderMax.transform.SetAsLastSibling();
+                }
+                float offset = (1 - ((MaxValue - _minValue) / (_maxValue - _minValue))) * _fillArea.rect.width;
+                _fillRect.offsetMax = new Vector2(-offset, _fillRect.offsetMax.y);
 
                 if ((value - MinValue) < _minDistance)
                 {
@@ -396,37 +409,27 @@ namespace TS.DoubleSlider
 
                 OnValueChanged.Invoke(MinValue, MaxValue);
                 _sliderMax.transform.SetAsLastSibling();
-             }
-              float offset = ( 1- ((MaxValue - _minValue) / (_maxValue - _minValue))) * _fillArea.rect.width;
-            _fillRect.offsetMax = new Vector2(-offset, _fillRect.offsetMax.y);
 
-            if ((value - MinValue) < _minDistance)
+            }
+            else
             {
-                _sliderMax.Value = MinValue + _minDistance;
+                float offset = (1 - ((MaxValue - _minValue) / (_maxValue - _minValue))) * _fillArea.rect.width;
+                _fillRect.offsetMax = new Vector2(-offset, _fillRect.offsetMax.y);
+
+                if ((value - MinValue) < _minDistance)
+                {
+                    _sliderMax.Value = MinValue + _minDistance;
+                }
+
+                OnValueChanged.Invoke(MinValue, MaxValue);
+                _sliderMax.transform.SetAsLastSibling();
+
             }
-
-            OnValueChanged.Invoke(MinValue, MaxValue);
-            _sliderMax.transform.SetAsLastSibling();
-             
-            }
-             else{
-            float offset = ( 1- ((MaxValue - _minValue) / (_maxValue - _minValue))) * _fillArea.rect.width;
-            _fillRect.offsetMax = new Vector2(-offset, _fillRect.offsetMax.y);
-
-            if ((value - MinValue) < _minDistance)
-            {
-                _sliderMax.Value = MinValue + _minDistance;
-            }
-
-            OnValueChanged.Invoke(MinValue, MaxValue);
-            _sliderMax.transform.SetAsLastSibling();
-
-             }
         }
 
-    
+
     }
 
-    
+
 }
 

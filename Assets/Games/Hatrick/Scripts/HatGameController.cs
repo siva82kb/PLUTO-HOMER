@@ -174,7 +174,7 @@ public class HatGameController : MonoBehaviour
         // Updat AppLogger
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene initialized.");
-        AppLogger.SetCurrentGame(AppData.selectedGame);
+        AppLogger.SetCurrentGame(AppData.Instance.selectedGame);
 
         // What is this?
         rig2D = GetComponent<Rigidbody2D>();
@@ -201,13 +201,13 @@ public class HatGameController : MonoBehaviour
         Debug.Log("Random Target:" + randomTargetIndex);
         date = DateTime.Now.ToString("yyyy-MM-dd");
         string dateTime = DateTime.Now.ToString("Dyyyy-MM-ddTHH-mm-ss");
-        sessionNum = "Session" + AppData.currentSessionNumber;
+        sessionNum = "Session" + AppData.Instance.currentSessionNumber;
 
         // Attach PLUTO event callbacks.
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
 
         // Not sure what this is for.
-        AppData._dataLogDir = Path.Combine(DataManager.sessionPath, date, sessionNum, $"{AppData.selectedMechanism.name}_{AppData.selectedGame}_{dateTime}");        
+        AppData.Instance._dataLogDir = Path.Combine(DataManager.sessionPath, date, sessionNum, $"{AppData.Instance.selectedMechanism.name}_{AppData.Instance.selectedGame}_{dateTime}");        
     }
 
     void FixedUpdate()
@@ -247,16 +247,16 @@ public class HatGameController : MonoBehaviour
     private void DrawAromPromLines()
     {
         aromLeft.transform.position = new Vector3(
-            HT_spawnTargets1.instance.Angle2Screen(AppData.selectedMechanism.currRom.aromMin,
-                                                   AppData.selectedMechanism.currRom.promMin,
-                                                   AppData.selectedMechanism.currRom.promMax),
+            HT_spawnTargets1.instance.Angle2Screen(AppData.Instance.selectedMechanism.currRom.aromMin,
+                                                   AppData.Instance.selectedMechanism.currRom.promMin,
+                                                   AppData.Instance.selectedMechanism.currRom.promMax),
             aromLeft.transform.position.y,
             aromLeft.transform.position.z
         );
         aromRight.transform.position = new Vector3(
-            HT_spawnTargets1.instance.Angle2Screen(AppData.selectedMechanism.currRom.aromMax,
-                                                   AppData.selectedMechanism.currRom.promMin,
-                                                   AppData.selectedMechanism.currRom.promMax),
+            HT_spawnTargets1.instance.Angle2Screen(AppData.Instance.selectedMechanism.currRom.aromMax,
+                                                   AppData.Instance.selectedMechanism.currRom.promMin,
+                                                   AppData.Instance.selectedMechanism.currRom.promMax),
             aromRight.transform.position.y,
             aromRight.transform.position.z
         );
@@ -366,9 +366,8 @@ public class HatGameController : MonoBehaviour
 
     private float SpawnTargetArea()
     {
-        AppData.newROM = new ROM(AppData.selectedMechanism.name);
-        float aromMin = AppData.newROM.promMax;
-        float aromMax = AppData.newROM.promMax;
+        float aromMin = AppData.Instance.selectedMechanism.currRom.promMin;
+        float aromMax = AppData.Instance.selectedMechanism.currRom.promMax;
 
         float xMin = MapAROMToPROMPlaySize(aromMin);
         float xMax = MapAROMToPROMPlaySize(aromMax);
@@ -381,13 +380,10 @@ public class HatGameController : MonoBehaviour
 
     private float MapAROMToPROMPlaySize(float angle)
     {
-        AppData.newROM = new ROM(AppData.selectedMechanism.name);
-        float promMin = AppData.newROM.promMax;
-        float promMax = AppData.newROM.promMax;
+        float promMin = AppData.Instance.selectedMechanism.currRom.promMin;
+        float promMax = AppData.Instance.selectedMechanism.currRom.promMax;
         float promRange = promMax - promMin;
         float normalizedAROM = (angle - promMin) / promRange;
-
-
         float scalingFactor = 0.8f;
         float adjustedRange = scalingFactor * 2 * playSize;
 
@@ -406,7 +402,10 @@ public class HatGameController : MonoBehaviour
         gameMoveTime = 0f;
 
         // Pluto AAN controller
-        aanCtrler = new HOMERPlutoAANController(AppData.aRomValue, AppData.pRomValue, 0.85f);
+        aanCtrler = new HOMERPlutoAANController(
+            new float[] { AppData.Instance.selectedMechanism.currRom.aromMin, AppData.Instance.selectedMechanism.currRom.aromMin },
+            new float[] { AppData.Instance.selectedMechanism.currRom.promMin, AppData.Instance.selectedMechanism.currRom.promMax },
+            0.85f);
         isRunning = true;
         dlogger = new AANDataLogger(aanCtrler);
         
@@ -420,7 +419,7 @@ public class HatGameController : MonoBehaviour
         // Start the state machine.
         SetTrialState(DiscreteMovementTrialState.REST);
 
-        if (!AppData.runIndividualGame)
+        if (!AppData.Instance.runIndividualGame)
         {
             StartNewGameSession();
         }
@@ -498,7 +497,7 @@ public class HatGameController : MonoBehaviour
         isPlaying = false;
         gameData.isGameLogging = false;
         PlutoComm.setControlType("NONE");
-        if (!AppData.runIndividualGame)
+        if (!AppData.Instance.runIndividualGame)
         {
             EndCurrentGameSession();
         }
@@ -611,9 +610,9 @@ public class HatGameController : MonoBehaviour
         Debug.Log("Random Target:" + randomTargetIndex);
         date = DateTime.Now.ToString("yyyy-MM-dd");
         string dateTime = DateTime.Now.ToString("Dyyyy-MM-ddTHH-mm-ss");
-        sessionNum = "Session" + AppData.currentSessionNumber;
+        sessionNum = "Session" + AppData.Instance.currentSessionNumber;
 
-        AppData._dataLogDir = Path.Combine(DataManager.sessionPath, date, sessionNum, $"{AppData.selectedMechanism}_{AppData.selectedGame}_{dateTime}"); 
+        AppData.Instance._dataLogDir = Path.Combine(DataManager.sessionPath, date, sessionNum, $"{AppData.Instance.selectedMechanism.name}_{AppData.Instance.selectedGame}_{dateTime}"); 
     }
 
     private float ScreenPositionToAngle(float screenPosition)
@@ -657,7 +656,7 @@ public class HatGameController : MonoBehaviour
         string assistModeParameters = "Null";
         string deviceSetupLocation = "CMC-Bioeng-dpt";
         string gameParameter = "YourGameParameter";
-        string mech = AppData.selectedMechanism.name;
+        string mech = AppData.Instance.selectedMechanism.name;
         SessionManager.Instance.SetDevice(device, currentGameSession);
         SessionManager.Instance.SetAssistMode(assistMode, assistModeParameters, currentGameSession);
         SessionManager.Instance.SetDeviceSetupLocation(deviceSetupLocation, currentGameSession);
@@ -669,7 +668,7 @@ public class HatGameController : MonoBehaviour
     {
         if (currentGameSession != null)
         {
-            SessionManager.Instance.SetTrialDataFileLocation(AppData.trialDataFileLocation, currentGameSession);
+            SessionManager.Instance.SetTrialDataFileLocation(AppData.Instance.trialDataFileLocation, currentGameSession);
             SessionManager.Instance.moveTime(gameData.moveTime.ToString("F0"), currentGameSession);
             SessionManager.Instance.gameSpeed(gameData.gameSpeedHT, currentGameSession);
             SessionManager.Instance.successRate(gameData.successRate, currentGameSession);
@@ -678,7 +677,7 @@ public class HatGameController : MonoBehaviour
     }
     public void exitGame()
     {
-        if (!AppData.runIndividualGame)
+        if (!AppData.Instance.runIndividualGame)
         {
             EndCurrentGameSession();
 

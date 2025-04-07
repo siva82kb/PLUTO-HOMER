@@ -67,45 +67,51 @@ public static class AppData
         get { return stp_watch.ElapsedTicks * nanosecPerTick; }
     }
 
-    // Options to drive 
-    public static string trainingSide
-    {
-        get => AppData.userData?.rightHand == true ? "RIGHT" : "LEFT";
-    }
+    //// Options to drive 
+    //public static string trainingSide
+    //{
+    //    get => AppData.userData?.rightHand == true ? "RIGHT" : "LEFT";
+    //}
 
-    // Selected Mechanism
-    public static PlutoMechanism selectedMechanism = null;
-    //public static string selectedMechanism;
-    public static string selectedGame = null;
+    //// Selected Mechanism
+    //public static PlutoMechanism selectedMechanism = null;
+    ////public static string selectedMechanism;
+    //public static string selectedGame = null;
 
     // Handling the data
-    public static int currentSessionNumber;
-    public static string trialDataFileLocation;
-    public static string trialDataFileLocation1;
+    //public static int currentSessionNumber;
+    //public static string trialDataFileLocation;
+    //public static string trialDataFileLocation1;
 
     // Change true to run game from choosegamescene
-    public static bool runIndividualGame = false;
+    //public static bool runIndividualGame = false;
 
-    // User data
-    public static PlutoUserData userData;
-
-    // Game data
-    public static HatTrickGame hatTrickGame;
-
-    public static void initializeStuff()
+    public static void initializeStuff(string scene, bool doNotResetMech = true)
     {
+        // Start logging.
+        AppLogger.StartLogging(scene);
+
+        // Create file structure.
         DataManager.createFileStructure();
+
+        // Connect and init robot.
         ConnectToRobot.Connect(AppData.COMPort);
         AppLogger.LogInfo($"Connected to PLUTO @ {AppData.COMPort}.");
         // Set control to NONE, calibrate and get version.
         PlutoComm.sendHeartbeat();
         PlutoComm.setControlType("NONE");
-        PlutoComm.calibrate("NOMECH");
+        // The following code is to ensure that this can be called from other scenes,
+        // without having to go through the calibration scene.
+        if (!doNotResetMech)
+        {
+            PlutoComm.calibrate("NOMECH");
+        }
         PlutoComm.getVersion();
-        // Initialize user data.
-        userData = new PlutoUserData(DataManager.filePathConfigData, DataManager.filePathSessionData);
-        // Initialize game classes to null.
-        hatTrickGame = null;
+
+        // Initialize the session manager.
+        SessionManager.Initialize(DataManager.sessionPath);
+        SessionManager.Instance.Login();
+        
         // Start sensorstream.
         PlutoComm.sendHeartbeat(); 
         PlutoComm.startSensorStream();
@@ -719,6 +725,7 @@ public static class gameData
     };
     public static bool isLogging { get; private set; }
     public static bool moving = true; // used to manipulate events in HAT TRICK
+
     static public void StartDataLog(string fname)
     {
         if (dataLog != null)
@@ -726,7 +733,7 @@ public static class gameData
             StopLogging();
         }
         // Start new logger
-        if (AppData.selectedGame == "pingPong")
+        if (AppData.selectedGame == "PINGPONG")
         {
             if (fname != "")
             {
@@ -741,7 +748,7 @@ public static class gameData
                 isLogging = false;
             }
         }
-        else if (AppData.selectedGame == "hatTrick")
+        else if (AppData.selectedGame == "HATTRICK")
         {
             if (fname != "")
             {
@@ -756,7 +763,7 @@ public static class gameData
                 isLogging = false;
             }
         }
-        else if (AppData.selectedGame == "tukTuk")
+        else if (AppData.selectedGame == "TUKTUK")
         {
             if (fname != "")
             {
@@ -772,6 +779,7 @@ public static class gameData
             }
         }
     }
+
     static public void StopLogging()
     {
         if (dataLog != null)
@@ -811,6 +819,8 @@ public static class gameData
     }
     static public void LogDataHT()
     {
+        UnityEngine.Debug.Log("Data Log: " + dataLog);
+        UnityEngine.Debug.Log("Data Log: " + dataLog);
         if (PlutoComm.SENSORNUMBER[PlutoComm.dataType] == 5)
         {
             string[] _data = new string[] {

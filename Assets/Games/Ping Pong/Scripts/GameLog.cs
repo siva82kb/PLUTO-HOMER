@@ -40,7 +40,7 @@ public class GameLog : MonoBehaviour
 
     private void CreateLogFile()
     {
-        string dir = Path.Combine(DataManager.directoryPathSession, date, sessionNum);
+        string dir = Path.Combine(DataManager.sessionPath, date, sessionNum);
         Directory.CreateDirectory(dir);
 
         fileName = Path.Combine(dir, $"{AppData.selectedMechanism}_{AppData.selectedGame}_{dateTime}.csv");

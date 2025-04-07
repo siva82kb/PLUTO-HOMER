@@ -41,10 +41,10 @@ public class welcomSceneHandler : MonoBehaviour
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");
         // Check if the directory exists
-        if (!Directory.Exists(DataManager.directoryPath))
+        if (!Directory.Exists(DataManager.basePath))
         {
             // If not, create the directory
-            Directory.CreateDirectory(DataManager.directoryPath);
+            Directory.CreateDirectory(DataManager.basePath);
         }
             if (!File.Exists(DataManager.filePathConfigData))
         {
@@ -55,9 +55,9 @@ public class welcomSceneHandler : MonoBehaviour
             // Initialize.
             AppData.initializeStuff();
             // Neuro Library
-            string baseDirectory = DataManager.directoryPathSession;
+            string baseDirectory = DataManager.sessionPath;
             Debug.Log(baseDirectory);
-            SessionManager.Initialize(DataManager.directoryPathSession);
+            SessionManager.Initialize(DataManager.sessionPath);
             SessionManager.Instance.Login();
             daySummaries = AppData.userData.CalculateMoveTimePerDay();
             // Update summary display

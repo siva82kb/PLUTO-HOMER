@@ -41,9 +41,9 @@ public class assessmentSceneHandler : MonoBehaviour
             // Initialize.
             AppData.initializeStuff();
             // Neuro Library
-            string baseDirectory = DataManager.directoryPathSession;
+            string baseDirectory = DataManager.sessionPath;
             Debug.Log(baseDirectory);
-            SessionManager.Initialize(DataManager.directoryPathSession);
+            SessionManager.Initialize(DataManager.sessionPath);
             SessionManager.Instance.Login();
             AppData.selectedGame = PlutoComm.MECHANISMS[PlutoComm.mechanism];
         }

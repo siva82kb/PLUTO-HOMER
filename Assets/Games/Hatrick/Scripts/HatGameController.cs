@@ -37,7 +37,7 @@ public class HatGameController : MonoBehaviour
     private float trialTime = 60f;
     private float timeLeft;
     public bool balldestroyed = true;
-    private bool isPressed = false;
+    private bool isPlutoButtonPressed = false;
     private bool isPaused = false;
     private int count;
     private float x;
@@ -53,12 +53,16 @@ public class HatGameController : MonoBehaviour
     string fileName;
     float time;
 
-
     private bool isPlaying = false;
     private float Player;
     private sbyte direction;
-    private enum GameState { NotStarted, Playing, Paused, GameOver }
-    private GameState currentState = GameState.NotStarted;
+    private enum GameState { 
+        NOTSTARTED,
+        PLAYING,
+        PAUSED,
+        GAMEOVER
+    }
+    private GameState currentState = GameState.NOTSTARTED;
 
     // Target Display Scaling
     private const float xmax = 12f;
@@ -80,12 +84,12 @@ public class HatGameController : MonoBehaviour
     // Enumerated variable for states
     private enum DiscreteMovementTrialState
     {
-        Rest,           // Resting state
-        SetTarget,      // Set the target
-        Moving,         // Moving to target.
-        Success,        // Successfull reach
-        Failure,        // Failed reach
-    }
+        REST,           // Resting state
+        SETTARGET,      // Set the target
+        MOVING,         // Moving to target.
+        SUCCESS,        // Successfull reach
+        FAILURE,        // Failed reach
+    };
     private DiscreteMovementTrialState _trialState;
     private static readonly IReadOnlyList<float> stateDurations = Array.AsReadOnly(new float[] {
         1.30f,          // Rest duration
@@ -186,10 +190,7 @@ public class HatGameController : MonoBehaviour
         ResumeButton.SetActive(false);
 
         // What is this?
-        if (cam == null)
-        {
-            cam = Camera.main;
-        }
+        cam = cam == null ? Camera.main : null;
 
         // Now suure what the last timestamp is.
         lastTimestamp = Time.unscaledTime;
@@ -206,38 +207,31 @@ public class HatGameController : MonoBehaviour
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
 
         // Not sure what this is for.
-        AppData._dataLogDir = Path.Combine(DataManager.directoryPathSession, date, sessionNum, $"{AppData.selectedMechanism.name}_{AppData.selectedGame}_{dateTime}");
-
-        // Draw the AROM PROM limits.
-        DrawAromPromLines();
+        AppData._dataLogDir = Path.Combine(DataManager.sessionPath, date, sessionNum, $"{AppData.selectedMechanism.name}_{AppData.selectedGame}_{dateTime}");        
     }
 
     void FixedUpdate()
     {
         PlutoComm.sendHeartbeat();
-        if (currentState == GameState.Playing)
+
+        // Draw AROM line only when its is not draw already.
+        if (HT_spawnTargets1.instance.PLAYSIZE != 0) DrawAromPromLines();
+
+        // Check if the game is not started or paused.
+        if (currentState == GameState.PLAYING)
         {
-            HandleGameUpdate();
+            RunGameStateMachines();
             playerPosition = GameObject.FindGameObjectWithTag("Player").transform.position.x;
         }
 
-        if (isPressed)
+        // Handle Pluto button press.
+        if (isPlutoButtonPressed)
         {
-            if (!isPlaying && !isPaused)
-            {
-                StartGame();
-                isPressed = false;
-            }
-            else if (isPlaying && !isPaused)
-            {
-                PauseGame();
-                isPressed = false;
-            }
-            else if (isPlaying && isPaused)
-            {
-                ResumeGame();
-                isPressed = false;
-            }
+            // Handle Button Press
+            if (!isPlaying && !isPaused) StartGame();
+            else if (isPlaying && !isPaused) PauseGame();
+            else if (isPlaying && isPaused) ResumeGame();
+            isPlutoButtonPressed = false;
         }
 
         // Check if the demo is running.
@@ -247,43 +241,48 @@ public class HatGameController : MonoBehaviour
         trialDuration += Time.deltaTime;
 
         // Run trial state machine
-        RunTrialStateMachine();
+        RunAANTrialStateMachine();
     }
 
     private void DrawAromPromLines()
     {
         aromLeft.transform.position = new Vector3(
-            Angle2Screen(AppData.selectedMechanism.currRom.aromMin),
+            HT_spawnTargets1.instance.Angle2Screen(AppData.selectedMechanism.currRom.aromMin,
+                                                   AppData.selectedMechanism.currRom.promMin,
+                                                   AppData.selectedMechanism.currRom.promMax),
             aromLeft.transform.position.y,
             aromLeft.transform.position.z
-       );
+        );
         aromRight.transform.position = new Vector3(
-            Angle2Screen(AppData.selectedMechanism.currRom.aromMax),
+            HT_spawnTargets1.instance.Angle2Screen(AppData.selectedMechanism.currRom.aromMax,
+                                                   AppData.selectedMechanism.currRom.promMin,
+                                                   AppData.selectedMechanism.currRom.promMax),
             aromRight.transform.position.y,
             aromRight.transform.position.z
         );
     }
 
-    private void RunTrialStateMachine()
+    private void RunAANTrialStateMachine()
     {
         float _deltime = trialDuration - stateStartTime;
         bool _statetimeout = _deltime >= stateDurations[(int)_trialState];
+        
         // Time when target is reached.
         bool _intgt = Math.Abs(_trialTarget - PlutoComm.angle) <= 5.0f;
-        //Debug.Log(_statetimeout);
+
         switch (_trialState)
         {
-            case DiscreteMovementTrialState.Rest:
-                if ((_statetimeout == false)&& !targetSpwan) return;
-                SetTrialState(DiscreteMovementTrialState.SetTarget);
+            case DiscreteMovementTrialState.REST:
+                if (!_statetimeout && !targetSpwan) return;
+                SetTrialState(DiscreteMovementTrialState.SETTARGET);
                 dlogger.WriteAanStateInforRow();
                 break;
-            case DiscreteMovementTrialState.SetTarget:
-                if (_statetimeout == false) return;
-                SetTrialState(DiscreteMovementTrialState.Moving);
+            case DiscreteMovementTrialState.SETTARGET:
+                if (!_statetimeout) return;
+                SetTrialState(DiscreteMovementTrialState.MOVING);
                 dlogger.WriteAanStateInforRow();
                 break;
-            case DiscreteMovementTrialState.Moving:
+            case DiscreteMovementTrialState.MOVING:
                 // Check of the target has been reached.
                 _tempIntraStateTimer += _intgt ? Time.deltaTime : -_tempIntraStateTimer;
                 // Target reached successfull.
@@ -293,13 +292,13 @@ public class HatGameController : MonoBehaviour
                 // Set AAN target if needed.
                 if (aanCtrler.stateChange) UpdatePlutoAANTarget();
                 // Change state if needed.
-                if (_tgtreached || targetSpwan) SetTrialState(DiscreteMovementTrialState.Success);
-                if (_statetimeout) SetTrialState(DiscreteMovementTrialState.Failure);
+                if (_tgtreached || targetSpwan) SetTrialState(DiscreteMovementTrialState.SUCCESS);
+                if (_statetimeout) SetTrialState(DiscreteMovementTrialState.FAILURE);
                 dlogger.WriteAanStateInforRow();
                 break;
-            case DiscreteMovementTrialState.Success:
-            case DiscreteMovementTrialState.Failure:
-                if (_statetimeout) SetTrialState(DiscreteMovementTrialState.Rest);
+            case DiscreteMovementTrialState.SUCCESS:
+            case DiscreteMovementTrialState.FAILURE:
+                if (_statetimeout) SetTrialState(DiscreteMovementTrialState.REST);
                 break;
         }
     }
@@ -325,7 +324,7 @@ public class HatGameController : MonoBehaviour
     {
         switch (newState)
         {
-            case DiscreteMovementTrialState.Rest:
+            case DiscreteMovementTrialState.REST:
                 // Reset trial in the AANController.
                 aanCtrler.ResetTrial();
                 dlogger.UpdateLogFiles(trialNo);
@@ -337,38 +336,32 @@ public class HatGameController : MonoBehaviour
                 {
                     trialNo += 1;
                     tempSpawn = false;
-
                 }
                 _tempIntraStateTimer = 0f;
                 targetSpwan = false;
                 break;
-            case DiscreteMovementTrialState.SetTarget:
+            case DiscreteMovementTrialState.SETTARGET:
                 // Random select target from the appropriate range.
               
                 _trialTarget = targetAngle;
                 PlutoComm.setControlBound(1f);
                 break;
-            case DiscreteMovementTrialState.Moving:
+            case DiscreteMovementTrialState.MOVING:
                 // Reset the intrastate timer.
                 _tempIntraStateTimer = 0f;
-               // aanCtrler.SetNewTrialDetails(PlutoComm.angle, _trialTarget, stateDurations[(int)DiscreteMovementTrialState.Moving]);
-               aanCtrler.SetNewTrialDetails(PlutoComm.angle, _trialTarget, ballFallingTime);
+                // aanCtrler.SetNewTrialDetails(PlutoComm.angle, _trialTarget, stateDurations[(int)DiscreteMovementTrialState.Moving]);\
+                aanCtrler.SetNewTrialDetails(PlutoComm.angle, _trialTarget, ballFallingTime);
 
                 break;
-            case DiscreteMovementTrialState.Success:
-            case DiscreteMovementTrialState.Failure:
+            case DiscreteMovementTrialState.SUCCESS:
+            case DiscreteMovementTrialState.FAILURE:
                 // Update adaptation row.
-                byte _successbyte = newState == DiscreteMovementTrialState.Success ? (byte)1 : (byte)0;
+                byte _successbyte = newState == DiscreteMovementTrialState.SUCCESS ? (byte)1 : (byte)0;
                 dlogger.WriteTrialRowInfo(_successbyte);
                 break;
         }
         _trialState = newState;
         stateStartTime = trialDuration;
-    }
-
-    public float Angle2Screen(float angle)
-    {
-        return HT_spawnTargets1.instance.Angle2Screen(angle);
     }
 
     private float SpawnTargetArea()
@@ -385,6 +378,7 @@ public class HatGameController : MonoBehaviour
         Debug.Log($"Spawned Target Area Position: {targetPosition} (AROM Min: {aromMin}, Max: {aromMax}, Mapped X Min: {xMin}, Mapped X Max: {xMax})");
         return targetPosition;
     }
+
     private float MapAROMToPROMPlaySize(float angle)
     {
         AppData.newROM = new ROM(AppData.selectedMechanism.name);
@@ -402,78 +396,75 @@ public class HatGameController : MonoBehaviour
 
     public void StartGame()
     {
-        if (currentState == GameState.NotStarted || currentState == GameState.Paused)
+        // Return if the not NOTSTARTED or PAUSED.
+        if (currentState != GameState.NOTSTARTED && currentState != GameState.PAUSED) return;
+
+        currentState = GameState.PLAYING;
+        isPlaying = true;
+        timeLeft = trialTime;
+        lastTimestamp = Time.unscaledTime;
+        gameMoveTime = 0f;
+
+        // Pluto AAN controller
+        aanCtrler = new HOMERPlutoAANController(AppData.aRomValue, AppData.pRomValue, 0.85f);
+        isRunning = true;
+        dlogger = new AANDataLogger(aanCtrler);
+        
+        // Set Control mode.
+        PlutoComm.setControlType("POSITIONAAN");
+        PlutoComm.setControlBound(currControlBound);
+        PlutoComm.setControlDir(0);
+        trialNo = 0;
+        
+        //successRate = 0;
+        // Start the state machine.
+        SetTrialState(DiscreteMovementTrialState.REST);
+
+        if (!AppData.runIndividualGame)
         {
-            currentState = GameState.Playing;
-            isPlaying = true;
-            timeLeft = trialTime;
-            lastTimestamp = Time.unscaledTime;
-            gameMoveTime = 0f;
-
-
-            // Pluto AAN controller
-            aanCtrler = new HOMERPlutoAANController(AppData.aRomValue, AppData.pRomValue, 0.85f);
-            isRunning = true;
-            dlogger = new AANDataLogger(aanCtrler);
-            // Set Control mode.
-            PlutoComm.setControlType("POSITIONAAN");
-            PlutoComm.setControlBound(currControlBound);
-            PlutoComm.setControlDir(0);
-            trialNo = 0;
-            //successRate = 0;
-            // Start the state machine.
-            SetTrialState(DiscreteMovementTrialState.Rest);
-
-            if (!AppData.runIndividualGame)
-            {
-                StartNewGameSession();
-            }
-
-            //StartNewGameSession();
-            gameData.isGameLogging = true;
-
-            StartButton.SetActive(false);
-            PauseButton.SetActive(true);
-            ResumeButton.SetActive(false);
-
-            AppLogger.LogInfo("Game Started.");
-            SpawnTarget();
+            StartNewGameSession();
         }
+
+        //StartNewGameSession();
+        gameData.isGameLogging = true;
+
+        StartButton.SetActive(false);
+        PauseButton.SetActive(true);
+        ResumeButton.SetActive(false);
+
+        AppLogger.LogInfo("Game Started.");
+        SpawnTarget();
     }
 
     public void PauseGame()
     {
-        if (currentState == GameState.Playing)
-        {
-            currentState = GameState.Paused;
-            isPlaying = false;
-            isPaused = true;
-            Time.timeScale = 0;
-            PauseButton.SetActive(false);
-            ResumeButton.SetActive(true);
-
-            AppLogger.LogInfo("Game Paused.");
-        }
+        // Return if the game is not in PLAYING state.
+        if (currentState != GameState.PLAYING) return;
+        // Game state is PLAYING.
+        currentState = GameState.PAUSED;
+        isPlaying = false;
+        isPaused = true;
+        Time.timeScale = 0;
+        PauseButton.SetActive(false);
+        ResumeButton.SetActive(true);
+        AppLogger.LogInfo("Game Paused.");
     }
 
     public void ResumeGame()
     {
-        if (currentState == GameState.Paused)
-        {
-            currentState = GameState.Playing;
-            isPlaying = true;
-
-            Time.timeScale = 1;
-            PauseButton.SetActive(true);
-            ResumeButton.SetActive(false);
-
-            AppLogger.LogInfo("Game Resumed.");
-        }
+        // Return is the game is not in PAUSED state.
+        if (currentState != GameState.PAUSED) return;
+        currentState = GameState.PLAYING;
+        isPlaying = true;
+        Time.timeScale = 1;
+        PauseButton.SetActive(true);
+        ResumeButton.SetActive(false);
+        AppLogger.LogInfo("Game Resumed.");
     }
 
     public void RestartGame()
     {
-        currentState = GameState.NotStarted;
+        currentState = GameState.NOTSTARTED;
         isPlaying = false;
         score = 0;
         HT_spawnTargets1.instance.count = 0;
@@ -481,7 +472,7 @@ public class HatGameController : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
-    private void HandleGameUpdate()
+    private void RunGameStateMachines()
     {
         if (Time.timeScale > 0 && isPlaying)
         {
@@ -502,7 +493,7 @@ public class HatGameController : MonoBehaviour
 
     private void GameOver()
     {
-        currentState = GameState.GameOver;
+        currentState = GameState.GAMEOVER;
 
         isPlaying = false;
         gameData.isGameLogging = false;
@@ -522,6 +513,7 @@ public class HatGameController : MonoBehaviour
         PlutoComm.setControlType("NONE");
         Debug.Log("Spawn Area Enabled: " + isEnabled);
     }
+
     public void SpawnTarget()
     {
         if (timeLeft > 0 && balldestroyed)
@@ -621,7 +613,7 @@ public class HatGameController : MonoBehaviour
         string dateTime = DateTime.Now.ToString("Dyyyy-MM-ddTHH-mm-ss");
         sessionNum = "Session" + AppData.currentSessionNumber;
 
-        AppData._dataLogDir = Path.Combine(DataManager.directoryPathSession, date, sessionNum, $"{AppData.selectedMechanism}_{AppData.selectedGame}_{dateTime}"); 
+        AppData._dataLogDir = Path.Combine(DataManager.sessionPath, date, sessionNum, $"{AppData.selectedMechanism}_{AppData.selectedGame}_{dateTime}"); 
     }
 
     private float ScreenPositionToAngle(float screenPosition)
@@ -652,11 +644,12 @@ public class HatGameController : MonoBehaviour
             GameName = "HAT-Trick",
             Assessment = 0
         };
-
+        Debug.Log("Game Session: " + currentGameSession);
         SessionManager.Instance.StartGameSession(currentGameSession);
         AppLogger.LogInfo($"Game session {currentGameSession.SessionNumber} started.");
         SetSessionDetails();
     }
+
     private void SetSessionDetails()
     {
         string device = "PLUTO";
@@ -694,6 +687,6 @@ public class HatGameController : MonoBehaviour
     }
     private void onPlutoButtonReleased()
     {
-        isPressed = true;
+        isPlutoButtonPressed = true;
     }
 }

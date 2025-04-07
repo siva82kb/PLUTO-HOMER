@@ -12,6 +12,7 @@ using System.Linq;
 using UnityEditor.VersionControl;
 using UnityEngine.SceneManagement;
 using Newtonsoft.Json.Bson;
+using PlutoNeuroRehabLibrary;
 
 
 /*
@@ -27,35 +28,40 @@ public struct DaySummary
 
 public static class DataManager
 {
-    public static readonly string directoryPath = Application.dataPath + "/data";
+    public static readonly string basePath = Application.dataPath + "/data";
     static string directoryPathConfig;
-    public static string directoryPathSession { get; private set; }
-    static string directoryPathRawData;
-    public static string directoryAROMData { get; private set; }
-    public static string directoryAPROMData { get; private set; }
+    public static string sessionPath { get; private set; }
+    public static string rawPath { get; private set; }
+    public static string romPath { get; private set; }
+    public static string logPath { get; private set; }
 
-    public static readonly string filePathConfigData = directoryPath + "/configdata.csv";
-    public static string filePathSessionData { get; private set; }
+    public static readonly string configFile = basePath + "/configdata.csv";
+    public static string sessionFile { get; private set; }
 
     public static void createFileStructure()
     {
-        directoryPathConfig = directoryPath + "/configuration";
-        directoryPathSession = directoryPath + "/sessions";
-        directoryPathRawData = directoryPath + "/rawdata";
-        directoryAPROMData = directoryPath + "/ROM";
-        filePathSessionData = directoryPathSession + "/sessions.csv";
+        directoryPathConfig = basePath + "/configuration";
+        sessionPath = basePath + "/sessions";
+        rawPath = basePath + "/rawdata";
+        romPath = basePath + "/rom";
+        logPath = basePath + "/applog";
+        sessionFile = sessionPath + "/sessions.csv";
         // Check if the directory exists
-        if (Directory.Exists(directoryPath) && (!Directory.Exists(directoryPathSession) ) && (!Directory.Exists(directoryPathRawData)))
+        if (Directory.Exists(basePath) && (!Directory.Exists(sessionPath) ) && (!Directory.Exists(rawPath)))
         {
-            Directory.CreateDirectory(directoryPathSession);
-            Directory.CreateDirectory(directoryPathRawData);
-            Debug.Log("Directory created at: " + directoryPath);
+            Directory.CreateDirectory(sessionPath);
+            Directory.CreateDirectory(rawPath);
+            Directory.CreateDirectory(romPath);
+            Directory.CreateDirectory(logPath);
+            Debug.Log("Directory created at: " + basePath);
         }
-        else if (!Directory.Exists(directoryPath))
+        else if (!Directory.Exists(basePath))
         {
-            Directory.CreateDirectory(directoryPath);
-            Directory.CreateDirectory(directoryPathSession);
-            Directory.CreateDirectory(directoryPathRawData);
+            Directory.CreateDirectory(basePath);
+            Directory.CreateDirectory(sessionPath);
+            Directory.CreateDirectory(rawPath);
+            Directory.CreateDirectory(romPath);
+            Directory.CreateDirectory(logPath);
         }
     }
 
@@ -123,12 +129,11 @@ public static class AppLogger
         {
             return;
         }
-        string logDirectory = Path.Combine(DataManager.directoryPath, "applog");
-        if (!Directory.Exists(logDirectory))
+        if (!Directory.Exists(DataManager.logPath))
         {
-            Directory.CreateDirectory(logDirectory);
+            Directory.CreateDirectory(DataManager.logPath);
         }
-        logFilePath = Path.Combine(logDirectory, $"log-{DateTime.Now:dd-MM-yyyy-HH-mm-ss}.log");
+        logFilePath = Path.Combine(DataManager.logPath, $"log-{DateTime.Now:dd-MM-yyyy-HH-mm-ss}.log");
         if (!File.Exists(logFilePath))
         {
             using (File.Create(logFilePath))
@@ -187,7 +192,7 @@ public static class AppLogger
         {
             if (logWriter != null)
             {
-                string _user = AppData.userData != null ? AppData.userData.hospNumber : "";
+                string _user = SessionManager.Instance.userData != null ? SessionManager.Instance.userData.hospNumber : "";
                 string _msg = $"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} [{_user}] [{currentScene}] [{currentMechanism}] [{currentGame}] {message}";
                 logWriter.WriteLine(_msg);
                 logWriter.Flush();

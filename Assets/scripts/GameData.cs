@@ -163,6 +163,10 @@ public abstract class BaseGame
 /// </summary>
 public class HatTrickGame : BaseGame
 {
+    // Static Instance
+    private static HatTrickGame _instance;
+    public static HatTrickGame Instance => _instance;
+
     public override string[] events
     {
         protected set { }
@@ -172,16 +176,27 @@ public class HatTrickGame : BaseGame
         }
     }
 
-    public HatTrickGame(PlutoMechanism mech) : base(mech)
+    private HatTrickGame(PlutoMechanism mech) : base(mech)
     {
         name = "HatTrick";
-        mechanism = mechanism;
+        mechanism = mech;
         trialNumber = 0;
         dataLog = null;
 
         // Call the intialization function to get the game speed.
     }
+
+    public static HatTrickGame Initialize(PlutoMechanism mech)
+    {
+        if ((_instance == null) || _instance.mechanism != mech)
+        {
+            _instance = new HatTrickGame(mech);
+        }
+        return _instance;
+    }
 }
+
+
 
 
 //public class BaseGameData

@@ -39,14 +39,22 @@ public class ChooseGameSceneHandler : MonoBehaviour
         {
             // Inialize the logger
             AppLogger.StartLogging(SceneManager.GetActiveScene().name);
-            AppData.initializeStuff();
+            AppData.initializeStuff(doNotResetMech: false);
         }
 
         // If no mechanism is selected, got to the scene to choose mechanism.
         if (AppData.selectedMechanism == null)
         {
-            SceneManager.LoadScene("chooseMechanism");
-            return;
+            // Check if mechnism is set in PLUTO?
+            if (PlutoComm.CALIBRATION[PlutoComm.calibration] == "YESCALIB")
+            {
+                AppData.selectedMechanism = new PlutoMechanism(name: PlutoComm.MECHANISMS[PlutoComm.mechanism], side: AppData.trainingSide);
+                AppLogger.SetCurrentMechanism(AppData.selectedMechanism.name);
+            } else
+            {
+                SceneManager.LoadScene("chooseMechanism");
+                return;
+            }
         }
 
         // Update App Logger
@@ -63,7 +71,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
         // Make sure No control is set
         PlutoComm.setControlType("NONE");
 
-        Debug.Log($"Curr ROM: {AppData.selectedMechanism.currRom.promMin:F2}, {AppData.selectedMechanism.currRom.promMax:F2}, {AppData.selectedMechanism.currRom.aromMax:F2}, {AppData.selectedMechanism.currRom.aromMax:F2}");
+        Debug.Log($"Curr ROM: {AppData.selectedMechanism.currRom.promMin:F2}, {AppData.selectedMechanism.currRom.promMax:F2}, {AppData.selectedMechanism.currRom.aromMin:F2}, {AppData.selectedMechanism.currRom.aromMax:F2}");
     }
 
     void Update()
@@ -147,7 +155,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
                     break;
                 case "HATTRICK":
                     Debug.Log("HATTRICK Game case.");
-                    AppData.hatTrickGame = new HatTrickGame(AppData.selectedMechanism);
+                    AppData.hatTrickGame = HatTrickGame.Initialize(AppData.selectedMechanism);
                     break;
             }
             SceneManager.LoadScene(sceneName);

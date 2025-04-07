@@ -13,13 +13,14 @@ public class HT_spawnTargets1 : MonoBehaviour
 {
     public static HT_spawnTargets1 instance;
 
+    // Class level constants
+    public float PLAYSIZE = 0;
     //runnnin game 
     public float trailDuration = 3.5f;
     public float stopClock;
     public bool reached;
     public bool onceReached;
     public float reduceOppositeTimer = 0;
-    public float playSize = 0;
     private string mech;
     private string hospitalnum;
     public static float[] aRom = { 0, 0 };
@@ -67,7 +68,7 @@ public class HT_spawnTargets1 : MonoBehaviour
         Application.targetFrameRate = 300;
         QualitySettings.vSyncCount = 0;
 
-
+        PLAYSIZE = Camera.main.orthographicSize * Camera.main.aspect;
     }
 
     // Start is called before the first frame update
@@ -75,21 +76,8 @@ public class HT_spawnTargets1 : MonoBehaviour
     {
         paramSet = false;
         successRate = new int[5] { 0, 0, 0, 0, 0 };
-        
-
         System.Random rnd = new System.Random();
-        //First4Targets = First4Targets.OrderBy(x => rnd.Next()).ToArray();
-
-
-
-        playSize = Camera.main.orthographicSize * Camera.main.aspect;
-
-
-
         setPrameters();
-
-
-
     }
 
     // Update is called once per frame
@@ -156,7 +144,7 @@ public class HT_spawnTargets1 : MonoBehaviour
         {
             dontAssistTrial = true;
         }
-        targetPos.x = Angle2Screen(targetAngle);
+        targetPos.x = Angle2Screen(targetAngle, AppData.selectedMechanism.currRom.promMin, AppData.selectedMechanism.currRom.promMax);
 
         prevAng = PlutoComm.angle;
         initialDirection = getDirection();
@@ -227,40 +215,22 @@ public class HT_spawnTargets1 : MonoBehaviour
         {
             tempAngle = Random.Range(newPROM_tmin, newPROM_tmax);
         }
-
-
         return tempAngle;
-
     }
-    public float Angle2Screen(float angle)
+
+    public float Angle2Screen(float angle, float promMin, float promMax)
     {
-        //AppData.newPROM = new ROM(AppData.selectedMechanism);
-
-
-        float newPROM_tmin = AppData.pRomValue[0];
-        float newPROM_tmax = AppData.pRomValue[1];
-        //Debug.Log(newPROM_tmin + "+" + newPROM_tmax);
-
-
-
-        // return (-playSize + (angle - newPROM_tmin) * (2 * playSize) / (newPROM_tmax - newPROM_tmin));
-        return Mathf.Lerp(-playSize, playSize, (angle - newPROM_tmin) / (newPROM_tmax - newPROM_tmin));
+        return Mathf.Lerp(-PLAYSIZE, PLAYSIZE, (angle - promMin) / (promMax- promMin));
     }
+
     public void setPrameters()
     {
-
         isFlaccidControlOn = false;
-        //checkIfFlaccid();
         initialTorque = 0;
         stopClock = trailDuration;
         onceReached = false;
-        //Debug.Log(targetAngle + "," + index);
-       
         paramSet = true;
     }
-
-
-   
 
     private void OnApplicationQuit()
     {

@@ -103,7 +103,7 @@ public class PingPonGAANController : MonoBehaviour
         string dateTime = DateTime.Now.ToString("Dyyyy-MM-ddTHH-mm-ss");
         string sessionNum = "Session" + AppData.currentSessionNumber;
 
-        AppData._dataLogDir = Path.Combine(DataManager.directoryPathSession, date, sessionNum, $"{AppData.selectedMechanism}_{AppData.selectedGame}_{dateTime}");
+        AppData._dataLogDir = Path.Combine(DataManager.sessionPath, date, sessionNum, $"{AppData.selectedMechanism}_{AppData.selectedGame}_{dateTime}");
 
         ps = Camera.main.orthographicSize * Camera.main.aspect;
 

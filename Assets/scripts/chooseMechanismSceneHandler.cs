@@ -35,7 +35,7 @@ public class MechanismSceneHandler : MonoBehaviour
         // Reset mechanisms.
         PlutoComm.sendHeartbeat();
         PlutoComm.calibrate("NOMECH");
-        AppData.Instance.selectedMechanism = null;
+        AppData.Instance.SetMechanism(null);
 
         // Initialize if needed
         if (AppData.Instance.userData == null)
@@ -142,13 +142,12 @@ public class MechanismSceneHandler : MonoBehaviour
             if (toggleComponent != null && toggleComponent.isOn)
             {
                 mechSelected = child.name;
-                AppData.Instance.selectedMechanism = new PlutoMechanism(mechSelected, AppData.Instance.trainingSide);
-                AppLogger.LogInfo($"Selected mechanism '{mechSelected}'.");
+                AppData.Instance.SetMechanism(mechSelected);
                 return;
             }
         }
         mechSelected = null;
-        AppData.Instance.selectedMechanism = null;
+        AppData.Instance.SetMechanism(mechSelected);
     }
 
     private void OnPlutoButtonReleased()

@@ -40,8 +40,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
             // Check if mechnism is set in PLUTO?
             if (PlutoComm.CALIBRATION[PlutoComm.calibration] == "YESCALIB")
             {
-                AppData.Instance.selectedMechanism = new PlutoMechanism(name: PlutoComm.MECHANISMS[PlutoComm.mechanism], side: AppData.Instance.trainingSide);
-                AppLogger.SetCurrentMechanism(AppData.Instance.selectedMechanism.name);
+                AppData.Instance.SetMechanism(PlutoComm.MECHANISMS[PlutoComm.mechanism]);
             } else
             {
                 SceneManager.LoadScene("CHMECH");
@@ -137,6 +136,16 @@ public class ChooseGameSceneHandler : MonoBehaviour
         if (gameScenes.TryGetValue(game, out string sceneName))
         {
             AppLogger.LogInfo($"'{game}' game selected.");
+            // Log the ROM information.
+            AppLogger.LogInfo(
+                $"Old  PROM: [{AppData.Instance.selectedMechanism.oldRom.promMin:F2}, {AppData.Instance.selectedMechanism.oldRom.promMax:F2}]" +
+                $" | AROM: [{AppData.Instance.selectedMechanism.oldRom.aromMin:F2}, {AppData.Instance.selectedMechanism.oldRom.aromMax:F2}]");
+            AppLogger.LogInfo(
+                $"New  PROM: [{AppData.Instance.selectedMechanism.newRom.promMin:F2}, {AppData.Instance.selectedMechanism.newRom.promMax:F2}]" +
+                $" | AROM: [{AppData.Instance.selectedMechanism.newRom.aromMin:F2}, {AppData.Instance.selectedMechanism.newRom.aromMax:F2}]");
+            AppLogger.LogInfo(
+                $"Curr PROM: [{AppData.Instance.selectedMechanism.currRom.promMin:F2}, {AppData.Instance.selectedMechanism.currRom.promMax:F2}]" +
+                $" | AROM: [{AppData.Instance.selectedMechanism.currRom.aromMin:F2}, {AppData.Instance.selectedMechanism.currRom.aromMax:F2}]");
             // Instantitate the game object and load the appropriate scene.
             AppData.Instance.selectedGame = game;
             switch (game)
@@ -149,16 +158,6 @@ public class ChooseGameSceneHandler : MonoBehaviour
                     HatTrickGame.Instance.Initialize(AppData.Instance.selectedMechanism);
                     break;
             }
-            // Log the ROM information.
-            AppLogger.LogInfo(
-                $"Old  PROM: [{AppData.Instance.selectedMechanism.oldRom.promMin:F2}, {AppData.Instance.selectedMechanism.oldRom.promMax:F2}]" +
-                $" | AROM: [{AppData.Instance.selectedMechanism.oldRom.aromMin:F2}, {AppData.Instance.selectedMechanism.oldRom.aromMax:F2}]");
-            AppLogger.LogInfo(
-                $"New  PROM: [{AppData.Instance.selectedMechanism.newRom.promMin:F2}, {AppData.Instance.selectedMechanism.newRom.promMax:F2}]" +
-                $" | AROM: [{AppData.Instance.selectedMechanism.newRom.aromMin:F2}, {AppData.Instance.selectedMechanism.newRom.aromMax:F2}]");
-            AppLogger.LogInfo(
-                $"Curr PROM: [{AppData.Instance.selectedMechanism.currRom.promMin:F2}, {AppData.Instance.selectedMechanism.currRom.promMax:F2}]" +
-                $" | AROM: [{AppData.Instance.selectedMechanism.currRom.aromMin:F2}, {AppData.Instance.selectedMechanism.currRom.aromMax:F2}]");
             SceneManager.LoadScene(sceneName);
         }
     }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using TMPro.EditorUtilities;
 using UnityEngine;
 
@@ -11,17 +12,21 @@ public abstract class BaseGame
     public bool isLogging { protected set; get; }
     public bool targetSpwan { protected set; get; } = false;
 
-    public int Score { protected set; get; }
-    public int trialNumber { protected set; get; } = 0;
+    public int score { protected set; get; }
+    // public int trialNumber { protected set; get; } = 0;
     public abstract string[] events{ protected set; get; }
     public int eventNumber { protected set; get; }
 
     public float targetPosition { protected set; get; }
     public float playerPosition { protected set; get; }
-    public float gameSpeed { protected set; get; }
+
+    // Game parameters
+    public string gameParamsFileName { get; protected set; } = null;
+    public float? gameSpeed { protected set; get; }
 
     public float successRate { protected set; get; }
-    public bool setNeutral { protected set; get; } = false;
+    public float desiredSuccessRate { protected set; get; }
+    // public bool setNeutral { protected set; get; } = false;
     protected string dataLogDir = null;
     protected DataLogger dataLog;
 
@@ -156,8 +161,20 @@ public abstract class BaseGame
     //        UnityEngine.Debug.Log("PlutoComm:" + PlutoComm.dataType);
     //    }
     //}
-}
 
+    public void CreateGameMechanismFile()
+    {
+        // Create a new file for the game mechanism
+        string fileName = Path.Combine(DataManager.gamePath,$"{name}_{mechanism}.csv");
+        if (!File.Exists(fileName))
+        {
+            using (StreamWriter sw = File.CreateText(fileName))
+            {
+                sw.WriteLine("Game,Mechanism,TrialNumber,Score,EventNumber,TargetPosition,PlayerPosition,GameSpeed,SuccessRate");
+            }
+        }
+    }
+}
 
 /// <summary>
 /// HatTrickGame inherits from BaseGameClass and defines its own game events.
@@ -167,6 +184,9 @@ public class HatTrickGame : BaseGame
     // Singleton instance (thread-safe via Lazy<T>)
     private static Lazy<HatTrickGame> _lazyInstance = new Lazy<HatTrickGame>(() => new HatTrickGame(null));
     public static HatTrickGame Instance => _lazyInstance.Value;
+    // public string[] HEADER { get; } = new string[] { "DateTime", "GameSpeed" };
+    // Default game parameters
+    public const float DEFAULTGAMESPEED = 0.5f;
 
     public override string[] events
     {
@@ -179,17 +199,35 @@ public class HatTrickGame : BaseGame
 
     private HatTrickGame(PlutoMechanism mech) : base(mech)
     {
-        name = "HatTrick";
+        // Initialize the game parameters
+        name = "HAT";
         mechanism = mech;
-        trialNumber = 0;
+        gameParamsFileName = Path.Combine(DataManager.gamePath,$"{name}_{mechanism}.csv");
+        // trialNumber = 0;
         dataLog = null;
 
+        // If null initialized, then return now.
+        if (mechanism == null) return;
+        
         // Call the intialization function to get the game speed.
+        if (mechanism.IsSpeedUpdated())
+        {
+            gameSpeed = ConvertToGameSpeed(mechanism.currSpeed);
+        }
+        else
+        {
+            AppLogger.LogError("Game speed is null. Setting to default.");
+            throw new ArgumentNullException();
+        }
+        
+        // Read game parameters.
+        ReadLastGameParameters();
     }
 
     // Initialize (thread-safe)
     public void Initialize(PlutoMechanism mech)
     {
+        Debug.Log("HatTrickGame.Initialize() called.");
         if (mech == null)
             throw new ArgumentNullException(nameof(mech));
 
@@ -199,6 +237,18 @@ public class HatTrickGame : BaseGame
 
         // Force reinitialization (works because Lazy is thread-safe)
         _lazyInstance = new Lazy<HatTrickGame>(() => new HatTrickGame(mech));
+    }
+
+    // Read and update game parameters from the game parameter file
+    public void ReadLastGameParameters()
+    {
+    }
+
+    // Function to convert the game speed
+    public float ConvertToGameSpeed(float mechSpeed)
+    {
+        // TODO
+        return 0.5f * mechSpeed;
     }
 }
 

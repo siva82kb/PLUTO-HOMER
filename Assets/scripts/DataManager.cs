@@ -13,6 +13,7 @@ using UnityEditor.VersionControl;
 using UnityEngine.SceneManagement;
 using Newtonsoft.Json.Bson;
 using PlutoNeuroRehabLibrary;
+using System.Text;
 
 
 /*
@@ -30,6 +31,10 @@ public static class DataManager
     public static readonly string basePath = Application.dataPath + "/data";
     static string directoryPathConfig;
     public static string sessionPath { get; private set; }
+    public static string gamePath { get; private set; }
+    public static string mechPath { get; private set; }
+    public static string aanAdaptPath { get; private set; }
+    public static string aanExecPath { get; private set; }
     public static string rawPath { get; private set; }
     public static string romPath { get; private set; }
     public static string logPath { get; private set; }
@@ -41,27 +46,23 @@ public static class DataManager
     {
         directoryPathConfig = basePath + "/configuration";
         sessionPath = basePath + "/sessions";
+        gamePath = basePath + "/gameparams";
+        mechPath = basePath + "/mechparams";
+        aanAdaptPath = basePath + "/aanadapt";
+        aanExecPath = basePath + "/aanexec";
         rawPath = basePath + "/rawdata";
         romPath = basePath + "/rom";
         logPath = basePath + "/applog";
         sessionFile = sessionPath + "/sessions.csv";
         // Check if the directory exists
-        if (Directory.Exists(basePath) && (!Directory.Exists(sessionPath) ) && (!Directory.Exists(rawPath)))
-        {
-            Directory.CreateDirectory(sessionPath);
-            Directory.CreateDirectory(rawPath);
-            Directory.CreateDirectory(romPath);
-            Directory.CreateDirectory(logPath);
-            Debug.Log("Directory created at: " + basePath);
-        }
-        else if (!Directory.Exists(basePath))
-        {
-            Directory.CreateDirectory(basePath);
-            Directory.CreateDirectory(sessionPath);
-            Directory.CreateDirectory(rawPath);
-            Directory.CreateDirectory(romPath);
-            Directory.CreateDirectory(logPath);
-        }
+        Directory.CreateDirectory(sessionPath);
+        Directory.CreateDirectory(gamePath);
+        Directory.CreateDirectory(mechPath);
+        Directory.CreateDirectory(aanAdaptPath);
+        Directory.CreateDirectory(aanExecPath);
+        Directory.CreateDirectory(rawPath);
+        Directory.CreateDirectory(romPath);
+        Directory.CreateDirectory(logPath);
     }
 
     public static DataTable loadCSV(string filePath)
@@ -74,7 +75,16 @@ public static class DataManager
         var lines = File.ReadAllLines(filePath);
         if (lines.Length == 0) return null;
 
-        // Read the header line to create columns
+        // Ignore all preheaders that start with ':'
+        int i = 0;
+        while (lines[i].StartsWith(":")) i++;
+        // Only preheader lines are present
+        if (i >= lines.Length) return null;
+        lines = lines.Skip(i).ToArray();
+        // Nothing to read
+        if (lines.Length == 0) return null;
+
+        // Read and parse the header line
         var headers = lines[0].Split(',');
         foreach (var header in headers)
         {
@@ -82,7 +92,7 @@ public static class DataManager
         }
 
         // Read the rest of the data lines
-        for (int i = 1; i < lines.Length; i++)
+        for (i = 1; i < lines.Length; i++)
         {
             var row = dTable.NewRow();
             var fields = lines[i].Split(',');
@@ -93,6 +103,23 @@ public static class DataManager
             dTable.Rows.Add(row);
         }
         return dTable;
+    }
+    
+    // Create session file
+    public static void CreateSessionFile(string device, string location, string[] header)
+    {
+        // Ensure the Sessions.csv file has headers if it doesn't exist
+        if (!File.Exists(DataManager.sessionFile))
+        {
+            using (var writer = new StreamWriter(DataManager.sessionFile, false, Encoding.UTF8))
+            {
+                // Write the preheader details
+                writer.WriteLine($":Device: {device}");
+                writer.WriteLine($":Location: {location}");
+                writer.WriteLine(String.Join(",", header));
+            }
+            AppLogger.LogWarning("Sessions.csv file not founds. Created one.");
+        }
     }
 
     // Get the last session number.
@@ -205,7 +232,7 @@ public static class AppLogger
             if (logWriter != null)
             {
                 string _user = AppData.Instance.userData != null ? AppData.Instance.userData.hospNumber : "";
-                string _msg = $"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} {InBraces(_user), -10} {InBraces(currentScene), -12} {InBraces(currentMechanism), -6} {InBraces(currentGame), -8} {message}";
+                string _msg = $"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} {InBraces(_user), -10} {InBraces(currentScene), -12} {InBraces(currentMechanism), -8} {InBraces(currentGame), -8} {message}";
                 logWriter.WriteLine(_msg);
                 logWriter.Flush();
                 if (DEBUG) Debug.Log(_msg);

@@ -50,6 +50,7 @@ public class GamelogHT : MonoBehaviour
         Debug.Log(fileName);
         File.Create(fileName).Dispose();
     }
+    
     void Update()
     {
         if (gameData.isGameLogging)

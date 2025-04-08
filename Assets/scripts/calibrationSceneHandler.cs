@@ -103,7 +103,7 @@ public class calibrationSceneHandler : MonoBehaviour
         // All good.
         textMessage.text = "Calibration Done";
         textMessage.color = new Color32(62, 214, 111, 255);
-        AppLogger.LogError($"Calibration was successful for {AppData.Instance.selectedMechanism.name}.");
+        AppLogger.LogError($"Calibration was successful for '{AppData.Instance.selectedMechanism.name}'.");
 
         //HOC assessment UI  works based on closed position,
         if(PlutoComm.MECHANISMS[PlutoComm.mechanism] != "HOC") {
@@ -126,8 +126,7 @@ public class calibrationSceneHandler : MonoBehaviour
         yield return new WaitForSeconds(1.5f);
 
         // Set selected mechanism.
-        AppData.Instance.selectedMechanism = new PlutoMechanism(name: PlutoComm.MECHANISMS[PlutoComm.mechanism], side: AppData.Instance.trainingSide);
-        AppLogger.SetCurrentMechanism(AppData.Instance.selectedMechanism.name);
+        AppData.Instance.SetMechanism(PlutoComm.MECHANISMS[PlutoComm.mechanism]);
 
         // Update flags.
         isCalibrating = false;
@@ -139,6 +138,20 @@ public class calibrationSceneHandler : MonoBehaviour
 
     void LoadNextScene()
     {
+        // Updat game speed for the chosen mechanism.
+        AppData.Instance.selectedMechanism.UpdateSpeed();
+        AppLogger.LogInfo($"Game speed set to {AppData.Instance.selectedMechanism.currSpeed} deg/sec.");
+
+        // Check make sure the current ROM is not null. If it is, then we need to 
+        // go do the assessment.
+        if (AppData.Instance.selectedMechanism.currRom == null)
+        {
+            AppLogger.LogInfo("Current ROM is null. Going to assessment scene.");
+            SceneManager.LoadScene("ASSESS");
+            return;
+        } 
+
+        // Load the next scene.
         AppLogger.LogInfo($"Switching scene to '{nextScene}'.");
         SceneManager.LoadScene(nextScene);
     }

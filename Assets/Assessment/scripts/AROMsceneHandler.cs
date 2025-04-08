@@ -71,9 +71,6 @@ public class AROMsceneHandler : MonoBehaviour
 
         aromSlider.UpdateMinMaxvalues = false;
         nextButton.SetActive(false);
-        
-        //create rom file if not exists
-        createFile();
 
         angLimit = AppData.Instance.selectedMechanism.IsMechanism("HOC") ? PlutoComm.CALIBANGLE[PlutoComm.mechanism] : PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
         aromSlider.Setup(-angLimit, angLimit, AppData.Instance.selectedMechanism.oldRom.aromMin, AppData.Instance.selectedMechanism.oldRom.aromMax);
@@ -144,7 +141,7 @@ public class AROMsceneHandler : MonoBehaviour
                 if (isRestarting)
                 {
                     relaxText.color = Color.red;
-                    relaxText.text = " AROM Should not Exceed PROM \n " +
+                    relaxText.text = "AROM Should not Exceed PROM \n " +
                                      "Please REDO PROM AGAIN";
                 }
                 else relaxText.text = FormatRelaxText(AppData.Instance.selectedMechanism.oldRom.aromMin, AppData.Instance.selectedMechanism.oldRom.aromMax);
@@ -189,7 +186,6 @@ public class AROMsceneHandler : MonoBehaviour
 
     public void OnRedoaromButtonClick()
     {
-
         InitializeAssessment();
         Debug.Log("Assessment Restarted");
         aromSlider.UpdateMinMaxvalues = false;
@@ -214,12 +210,8 @@ public class AROMsceneHandler : MonoBehaviour
 
     public void onSavePressed()
     {
-        _tmin = aromSlider.minAng;
-        _tmax = aromSlider.maxAng;
-
         // Set the new AROM values in the selected mechanism.
-        AppData.Instance.selectedMechanism.SetNewAromValues(_tmin,_tmax);
-
+        AppData.Instance.selectedMechanism.SetNewAromValues(aromSlider.minAng, aromSlider.maxAng);
         AppData.Instance.selectedMechanism.SaveAssessmentData();
 
         if (AppData.Instance.selectedMechanism.IsMechanism("HOC"))
@@ -275,21 +267,4 @@ public class AROMsceneHandler : MonoBehaviour
             JointAngleHoc.text = "Aperture" + ConvertToCM(PlutoComm.angle).ToString("0.0") + "cm";
         }
     }
-
-    public void createFile()
-    {
-        string dir = Path.Combine(DataManager.romPath, AppData.Instance.selectedMechanism + ".csv");
-        if (!Directory.Exists(DataManager.romPath))
-        {
-            Directory.CreateDirectory(DataManager.romPath);
-        }
-        if (!File.Exists(dir))
-        {
-            using (var writer = new StreamWriter(dir, false, Encoding.UTF8))
-            {
-                writer.WriteLine("datetime,promMin,promMax,aromMin,aromMax");
-            }
-        }
-    }
-
 }

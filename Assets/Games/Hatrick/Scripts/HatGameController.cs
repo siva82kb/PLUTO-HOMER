@@ -173,7 +173,7 @@ public class HatGameController : MonoBehaviour
     {
         // Updat AppLogger
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
-        AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene initialized.");
+        AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene initialized.");
         AppLogger.SetCurrentGame(AppData.Instance.selectedGame);
 
         // What is this?
@@ -202,6 +202,8 @@ public class HatGameController : MonoBehaviour
         date = DateTime.Now.ToString("yyyy-MM-dd");
         string dateTime = DateTime.Now.ToString("Dyyyy-MM-ddTHH-mm-ss");
         sessionNum = "Session" + AppData.Instance.currentSessionNumber;
+
+        // Prepare for start.
 
         // Attach PLUTO event callbacks.
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;

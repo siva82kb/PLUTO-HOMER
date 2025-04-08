@@ -18,7 +18,7 @@ using System.Linq;
 using Unity.VisualScripting;
 using PlutoNeuroRehabLibrary;
 using System.Text;
-using XCharts.Runtime;
+// using XCharts.Runtime;
 using System.Diagnostics;
 using UnityEngine;
 using System.Diagnostics.Contracts;
@@ -155,9 +155,11 @@ public class PlutoUserData
         }
 
         // Is right training side
-        UnityEngine.Debug.Log(dTableConfig.Rows[0]["TrainingSide"].ToString());
-        this.rightHand = dTableConfig.Rows[0]["TrainingSide"].ToString() == "right";
+        //UnityEngine.Debug.Log(dTableConfig.Rows[0]["TrainingSide"].ToString());
+        this.rightHand = dTableConfig.Rows[0]["TrainingSide"].ToString().ToUpper() == "RIGHT";
     }
+
+    public string GetDeviceLocation() => dTableConfig.Rows[dTableConfig.Rows.Count - 1].Field<string>("Location");
 
     private Dictionary<string, float> createMoveTimeDictionary()
     {
@@ -269,7 +271,7 @@ public class PlutoUserData
     private void parseTherapyConfigData()
     {
         DataRow lastRow = dTableConfig.Rows[dTableConfig.Rows.Count - 1];
-        hospNumber = lastRow.Field<string>("hospno");
+        hospNumber = lastRow.Field<string>("HospitalNumber");
         rightHand = lastRow.Field<string>("TrainingSide") == "right";
         //AppData.trainingSide = ; // lastRow.Field<string>("TrainingSide");
         startDate = DateTime.ParseExact(lastRow.Field<string>("startdate"), "dd-MM-yyyy", CultureInfo.InvariantCulture);
@@ -333,14 +335,27 @@ public static class Others
 
 public class PlutoMechanism
 {
+    public static readonly Dictionary<string, float> DefaultMechanismSpeeds = new Dictionary<string, float>
+    {
+        { "WFE", 10.0f },
+        { "WURD", 10.0f },
+        { "FPS", 10.0f },
+        { "HOC", 10.0f },
+        { "FME1", 10.0f },
+        { "FME2", 10.0f },
+    };
+    public static string MECHPATH { get; private set; } = DataManager.mechPath;
     public string name { get; private set; }
     public string side { get; private set; }
-    public string filePath { get; private set; } = DataManager.romPath;
     public bool promCompleted { get; private set; }
     public bool aromCompleted { get; private set; }
     public ROM oldRom { get; private set; }
     public ROM newRom { get; private set; }
-    public ROM currRom { get => newRom.isSet ? newRom : oldRom; }
+    public ROM currRom { get => newRom.isSet ? newRom : (oldRom.isSet ? oldRom : null); }
+    public float currSpeed { get; private set; } = -1f;
+    // Trial details for the mechanism.
+    public int trialNumberDay { get; private set; }
+    public int trialNumberSession { get; private set; }
 
     public PlutoMechanism(string name, string side)
     {
@@ -351,17 +366,15 @@ public class PlutoMechanism
         promCompleted = false;
         aromCompleted = false;
         this.side = side;
+        currSpeed = -1f;
+        UpdateTrialNumbers();
     }
 
-    public bool IsMechanism(string mechName)
-    {
-        return string.Equals(name, mechName, StringComparison.OrdinalIgnoreCase);
-    }
+    public bool IsMechanism(string mechName) => string.Equals(name, mechName, StringComparison.OrdinalIgnoreCase);
 
-    public bool IsSide(string sideName)
-    {
-        return string.Equals(side, sideName, StringComparison.OrdinalIgnoreCase);
-    }
+    public bool IsSide(string sideName) => string.Equals(side, sideName, StringComparison.OrdinalIgnoreCase);
+
+    public bool IsSpeedUpdated() => currSpeed < 0;
 
     public void ResetPromValues()
     {
@@ -398,6 +411,91 @@ public class PlutoMechanism
         {
             // Save the new ROM values to the file.
             newRom.WriteToAssessmentFile();
+        }
+    }
+
+    public void UpdateSpeed()
+    {
+        // Read the mechanism file.
+        string fileName = $"{MECHPATH}/{name}.csv";
+        bool _updateFile = false;
+        // Create file if needed.
+        if (!File.Exists(fileName))
+        {
+            using (var writer = new StreamWriter(fileName, false, Encoding.UTF8))
+            {
+                writer.WriteLine("DateTime,Speed");
+            }
+        }
+        // Read the file and get the most recent speed value.
+        DataTable speedData = DataManager.loadCSV(fileName);
+        // Check the number of rows.
+
+        // If the last line is empty, set default value for the speed.
+        if (speedData.Rows.Count ==0)
+        {
+            currSpeed = DefaultMechanismSpeeds[name];
+            _updateFile = true;
+        }
+        else
+        {
+            // Get datetime from the last row.
+            DateTime lastDate = DateTime.ParseExact(
+                speedData.Rows[speedData.Rows.Count - 1].Field<string>("DateTime"),
+                "dd-MM-yyyy HH:mm:ss",
+                CultureInfo.InvariantCulture
+            );
+            if (lastDate.Date == DateTime.Now.Date)
+            {
+                // Set the speed to that of the last row.
+                currSpeed = float.Parse(speedData.Rows[speedData.Rows.Count - 1].Field<string>("Speed"));
+            }
+            else
+            {
+                // TODO
+                // Call the update function to compute the new game speed.
+                // For now this is set to default, but this will need to changed.
+                // If the last date is not today, set default value for the speed.
+                currSpeed = DefaultMechanismSpeeds[name];
+                _updateFile = true;
+            }
+        }
+        // Update file?
+        if (_updateFile)
+        {
+            // Write the new speed to the file.
+            using (StreamWriter file = new StreamWriter(fileName, true))
+            {
+                file.WriteLine(string.Join(",", new string[] { DateTime.Now.ToString(), currSpeed.ToString() }));
+            }
+        }
+    }
+
+    /*
+     * Function to update the trial numbers for the day and session for the mechanism for today.
+     */
+    public void UpdateTrialNumbers()
+    {
+        // Get the last row for the today, for the selected mechanism.
+        var lastRow = AppData.Instance.userData.dTableSession.AsEnumerable()?
+            .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == DateTime.Now.Date)
+            .Where(row => row.Field<string>("Mechanism") == this.name)
+            .OrderByDescending(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture))
+            .FirstOrDefault();
+        // Check if the last row is null.
+        if (lastRow == null)
+        {
+            // Set the trial numbers to 1.
+            trialNumberDay = 0;
+            trialNumberSession = 0;
+            return;
+        }
+        else
+        {
+            // Last row is not null.
+            // Get the trial numbers from the last row.
+            trialNumberDay = Convert.ToInt32(lastRow.Field<string>("TrialNumberDay"));
+            trialNumberSession = Convert.ToInt32(lastRow.Field<string>("TrialNumberSession"));
         }
     }
 }
@@ -473,6 +571,11 @@ public class PlutoMechanism
 
 public class ROM
 {
+    // Static path where data is to be read from or saved.
+    public static string FILEPATH { get; private set; } = DataManager.romPath;
+    public static string[] FILEHEADER = new string[] {
+        "DateTime", "PromMin", "PromMax", "AromMin", "AromMax"
+    };
     // Class attributes to store data read from the file
     public string datetime;
     public float promMin { get; private set; }
@@ -483,7 +586,6 @@ public class ROM
     public bool isAromSet { get => aromMin != 0 || aromMax != 0; }
     public bool isPromSet { get => promMin != 0 || promMax != 0; }
     public bool isSet { get => isAromSet && isPromSet; }
-    public string filePath { get; private set; } = DataManager.romPath;
 
     // Constructor that reads the file and initializes values based on the mechanism
     public ROM(string mechanismName, bool readFromFile = true)
@@ -509,10 +611,7 @@ public class ROM
         aromMax = aromAngMax;
         mechanism = mech;
         datetime = DateTime.Now.ToString();
-        if (tofile)
-        {
-            WriteToAssessmentFile();
-        }
+        if (tofile) WriteToAssessmentFile();
     }
 
     public ROM()
@@ -525,10 +624,7 @@ public class ROM
         datetime = null;
     }
 
-    public void SetMechanism(string mech)
-    {
-        this.mechanism = (this.mechanism == null) ? mech : this.mechanism;
-    }
+    public void SetMechanism(string mech) => mechanism = (mechanism == null) ? mech : mechanism;
 
     public void SetProm(float min, float max)
     {
@@ -546,56 +642,46 @@ public class ROM
 
     public void WriteToAssessmentFile()
     {
-        string _fname = Path.Combine(filePath, AppData.Instance.selectedMechanism.name + ".csv");
+        string _fname = Path.Combine(FILEPATH, AppData.Instance.selectedMechanism.name + ".csv");
         using (StreamWriter file = new StreamWriter(_fname, true))
         {
-            file.WriteLine(datetime + ", " + promMin.ToString() + ", " + promMax.ToString() + ", " + aromMin.ToString() + ", " + aromMax.ToString() + "");
+            file.WriteLine(string.Join(",", new string[] { datetime, promMin.ToString(), promMax.ToString(), aromMin.ToString(), aromMax.ToString() }));
         }
     }
 
     private void ReadFromFile(string mechanismName)
     {
-        string lastLine = "";
-        string[] values;
-        string fileName = $"{filePath}/{mechanismName}.csv";
-        try
+        string fileName = $"{FILEPATH}/{mechanismName}.csv";
+        // Create the file if it doesn't exist
+        if (!File.Exists(fileName))
         {
-            using (StreamReader file = new StreamReader(fileName))
+            using (var writer = new StreamWriter(fileName, false, Encoding.UTF8))
             {
-                while (!file.EndOfStream) lastLine = file.ReadLine();
-            }
-            values = lastLine.Split(',');
-            if (values[0].Trim() != null)
-            {
-                // Assign values if mechanism matches
-                datetime = values[0].Trim();
-                mechanism = mechanismName;
-                promMin = float.Parse(values[1].Trim());
-                promMax = float.Parse(values[2].Trim());
-                aromMin = float.Parse(values[3].Trim());
-                aromMax = float.Parse(values[4].Trim());
-            }
-            else
-            {
-                // Handle case when no matching mechanism is found
-                datetime = null;
-                mechanism = mechanismName;
-                promMin = 0;
-                promMax = 0;
-                aromMin = 0;
-                aromMax = 0;
+                writer.WriteLine(string.Join(",", FILEHEADER));
             }
         }
-        catch (Exception ex)
+        // Read file.
+        DataTable romData = DataManager.loadCSV(fileName);
+        // Check the number of rows.
+        if (romData.Rows.Count == 0)
         {
-            Console.WriteLine("Error reading the file: " + ex.Message);
+            // Set default values for the mechanism.
+            datetime = null;
+            mechanism = mechanismName;
+            promMin = 0;
+            promMax = 0;
+            aromMin = 0;
+            aromMax = 0;
+            return;
         }
+        // Assign ROM from the last row.
+        datetime = romData.Rows[romData.Rows.Count - 1].Field<string>("DateTime");
+        mechanism = mechanismName;
+        promMin = float.Parse(romData.Rows[romData.Rows.Count - 1].Field<string>("PromMin"));
+        promMax = float.Parse(romData.Rows[romData.Rows.Count - 1].Field<string>("PromMax"));
+        aromMin = float.Parse(romData.Rows[romData.Rows.Count - 1].Field<string>("AromMin"));
+        aromMax = float.Parse(romData.Rows[romData.Rows.Count - 1].Field<string>("AromMax"));
     }
-
-    //public (float tmin, float tmax) GetPromMinMax()
-    //{
-    //    return (promMin, promMax);
-    //}
 }
 
 /// <summary>

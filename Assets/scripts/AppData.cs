@@ -12,7 +12,6 @@ using System.Linq;
 using Unity.VisualScripting;
 using PlutoNeuroRehabLibrary;
 using System.Text;
-using XCharts.Runtime;
 using System.Diagnostics;
 using UnityEngine;
 using System.Diagnostics.Contracts;
@@ -39,15 +38,15 @@ public partial class AppData
 
     // Sessions file definitions.
     public string[] sessionFileHeader = new string[] {
-        "SessionNumber", "DateTime", "Device", "Assessment", "StartTime", "StopTime",
-        "GameName", "TrialDataFileLocation", "DeviceSetupLocation", "AssistMode",
-        "AssistModeParameters", "GameParameter", "Mechanism", "MoveTime", "GameSpeed",
-        "SuccessRate", "DesiredSuccessRate", "TrialNumber", "TrialType"
+        "SessionNumber", "DateTime",
+        "TrialNumberDay", "TrialNumberSession", "TrialType", "TrialStartTime", "TrialStopTime", "TrialDataFileLocation",
+        "GameName", "GameParameter", "GameSpeed",  
+        "AssistMode", "AssistModeParameters",
+        "DesiredSuccessRate", "SuccessRate", "MoveTime"
     };
 
     // Change true to run game from choosegamescene
     public bool runIndividualGame = false;
-
 
     /*
      * APP CONTROL FLOW VARIABLES.
@@ -74,7 +73,7 @@ public partial class AppData
      */
     public PlutoUserData userData;
     public HatTrickGame hatTrickGame;
-    public PlutoMechanism selectedMechanism = null;
+    public PlutoMechanism selectedMechanism { get; private set; }
     public string selectedGame = null;
     
     /*
@@ -90,7 +89,6 @@ public partial class AppData
     public int currentSessionNumber { get; set; }
     public DateTime startTime { get; private set; }
     public DateTime? stopTime { get; private set; }
-    public bool assessment { get; private set; }
     public string trialDataFileLocation { get; set; }
     public string deviceSetupLocation { get; set; }
     public string assistMode { get; set; }
@@ -101,8 +99,11 @@ public partial class AppData
     public float gameSpeed { get; set; }
     public float successRate { get; set; }
     public float desiredSuccessRate { get; set; }
-    public int trialNumber { get; set; }
+    public int trialNumberDay { get; set; }
+    public int trialNumberSession { get; set; }
     public string trialType { get; set; }
+    public DateTime trialStartTime { get; set; }
+    public DateTime? trialStopTime { get; set; }
 
     public void SetStopTime() => stopTime = DateTime.Now;
 
@@ -151,15 +152,7 @@ public partial class AppData
         selectedGame = null;
 
         // Get current session number.
-        // Ensure the Sessions.csv file has headers if it doesn't exist
-        if (!File.Exists(DataManager.sessionFile))
-        {
-            using (var writer = new StreamWriter(DataManager.sessionFile, false, Encoding.UTF8))
-            {
-                writer.WriteLine(String.Join(",", sessionFileHeader));
-            }
-            AppLogger.LogWarning("Session.csv file now founds. Created one.");
-        }
+        DataManager.CreateSessionFile("PLUTO", userData.GetDeviceLocation(), sessionFileHeader);
         currentSessionNumber = DataManager.GetPreviousSessionNumber() + 1;
         AppLogger.LogWarning($"Session number set to {currentSessionNumber}.");
     }
@@ -184,7 +177,28 @@ public partial class AppData
         AppLogger.LogInfo($"PLUTO SensorStream started.");
     }
 
+    public void SetMechanism(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            selectedMechanism = null;
+            trialNumberDay = -1;
+            trialNumberSession = -1;
+            AppLogger.LogInfo($"Selected mechanism set to null.");
+            return;
+        }
+        // Set the mechanism name.
+        selectedMechanism = new PlutoMechanism(name: name, side: trainingSide);
+        // Set the day and session trial numbers.
+        trialNumberDay = selectedMechanism.trialNumberDay;
+        trialNumberSession = selectedMechanism.trialNumberSession;
+        AppLogger.LogInfo($"Selected mechanism '{selectedMechanism.name}'.");
+        AppLogger.SetCurrentMechanism(selectedMechanism.name);
+        AppLogger.LogInfo($"Trial numbers for '{selectedMechanism.name}' updated. Day: {trialNumberDay}, Session: {trialNumberSession}.");
+    }
+
     public string trainingSide => userData?.rightHand == true ? "RIGHT" : "LEFT";
+    
     // Check training size.
     public bool IsTrainingSide(string side) => string.Equals(trainingSide, side, StringComparison.OrdinalIgnoreCase);
 }

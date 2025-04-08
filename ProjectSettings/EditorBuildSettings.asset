@@ -42,7 +42,7 @@ EditorBuildSettings:
     path: Assets/Scenes/PONGGAME.unity
     guid: 843303f4dc513b749a4a0dd9991dbe92
   - enabled: 1
-    path: Assets/Games/Hatrick/_Scenes/HATGAME.unity
+    path: Assets/Games/Hatrick/_Scenes/HAT.unity
     guid: 74449f2fed57eb24dbd6d02c5ed4b309
   - enabled: 1
     path: Assets/Scenes/SUMM.unity

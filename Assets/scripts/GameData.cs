@@ -227,7 +227,6 @@ public class HatTrickGame : BaseGame
     // Initialize (thread-safe)
     public void Initialize(PlutoMechanism mech)
     {
-        Debug.Log("HatTrickGame.Initialize() called.");
         if (mech == null)
             throw new ArgumentNullException(nameof(mech));
 

@@ -141,10 +141,10 @@ public class PlutoUserData
         {
             dTableConfig = DataManager.loadCSV(configData);
         }
-        if (File.Exists(sessionData))
-        {
-            dTableSession = DataManager.loadCSV(sessionData);
-        }
+        // Create session file if it does not exist.
+        if (!File.Exists(sessionData)) DataManager.CreateSessionFile("PLUTO", GetDeviceLocation());
+        // Read the session file
+        dTableSession = DataManager.loadCSV(sessionData);
         mechMoveTimeCurr = createMoveTimeDictionary();
 
         // Read the therapy configuration data.
@@ -158,6 +158,17 @@ public class PlutoUserData
         //UnityEngine.Debug.Log(dTableConfig.Rows[0]["TrainingSide"].ToString());
         this.rightHand = dTableConfig.Rows[0]["TrainingSide"].ToString().ToUpper() == "RIGHT";
     }
+
+    
+    // // Get the last session number.
+    // public static int GetPreviousSessionNumber()
+    // {
+    //     if (!File.Exists(sessionFile)) return 0;
+    //     // Read the last line of the file
+    //     var lastLine = File.ReadLines(sessionFile).LastOrDefault();
+    //     if (lastLine == null || lastLine.StartsWith("SessionNumber")) return 0;
+    //     return int.TryParse(lastLine.Split(',')[0], out var sessionNumber) ? sessionNumber : 0;
+    // }
 
     public string GetDeviceLocation() => dTableConfig.Rows[dTableConfig.Rows.Count - 1].Field<string>("Location");
 
@@ -344,7 +355,7 @@ public class PlutoMechanism
         { "FME1", 10.0f },
         { "FME2", 10.0f },
     };
-    public static string MECHPATH { get; private set; } = DataManager.mechPath;
+    // public static string MECHPATH { get; private set; } = DataManager.mechPath;
     public string name { get; private set; }
     public string side { get; private set; }
     public bool promCompleted { get; private set; }
@@ -375,6 +386,9 @@ public class PlutoMechanism
     public bool IsSide(string sideName) => string.Equals(side, sideName, StringComparison.OrdinalIgnoreCase);
 
     public bool IsSpeedUpdated() => currSpeed < 0;
+
+    public float[] CurrentArom => currRom == null? null : new float[] { currRom.aromMin, currRom.aromMax };
+    public float[] CurrentProm => currRom == null? null : new float[] { currRom.promMin, currRom.promMax };
 
     public void ResetPromValues()
     {
@@ -417,7 +431,7 @@ public class PlutoMechanism
     public void UpdateSpeed()
     {
         // Read the mechanism file.
-        string fileName = $"{MECHPATH}/{name}.csv";
+        string fileName = DataManager.GetMechFileName(this.name);
         bool _updateFile = false;
         // Create file if needed.
         if (!File.Exists(fileName))
@@ -571,8 +585,6 @@ public class PlutoMechanism
 
 public class ROM
 {
-    // Static path where data is to be read from or saved.
-    public static string FILEPATH { get; private set; } = DataManager.romPath;
     public static string[] FILEHEADER = new string[] {
         "DateTime", "PromMin", "PromMax", "AromMin", "AromMax"
     };
@@ -642,8 +654,8 @@ public class ROM
 
     public void WriteToAssessmentFile()
     {
-        string _fname = Path.Combine(FILEPATH, AppData.Instance.selectedMechanism.name + ".csv");
-        using (StreamWriter file = new StreamWriter(_fname, true))
+        string fileName = DataManager.GetRomFileName(mechanism);;
+        using (StreamWriter file = new StreamWriter(fileName, true))
         {
             file.WriteLine(string.Join(",", new string[] { datetime, promMin.ToString(), promMax.ToString(), aromMin.ToString(), aromMax.ToString() }));
         }
@@ -651,7 +663,7 @@ public class ROM
 
     private void ReadFromFile(string mechanismName)
     {
-        string fileName = $"{FILEPATH}/{mechanismName}.csv";
+        string fileName = DataManager.GetRomFileName(mechanismName);
         // Create the file if it doesn't exist
         if (!File.Exists(fileName))
         {
@@ -681,6 +693,33 @@ public class ROM
         promMax = float.Parse(romData.Rows[romData.Rows.Count - 1].Field<string>("PromMax"));
         aromMin = float.Parse(romData.Rows[romData.Rows.Count - 1].Field<string>("AromMin"));
         aromMax = float.Parse(romData.Rows[romData.Rows.Count - 1].Field<string>("AromMax"));
+    }
+}
+
+/*
+ * AAN Controller for HOMER
+ */
+public class AANController : HOMERPlutoAANController
+{   
+    public const float BOUNDARY = 0.9f;
+    // Other variables for logging
+    private int sessNo;
+    private int trialNoDay;
+    private int trialNoSess;
+    // Logging realted variables.
+    private string  adaptFileName = null;
+    private StreamWriter execFileWriter = null;
+
+    private AANController(int sessNo, PlutoMechanism mechanism, ) : base(aRomValue, pRomValue, BOUNDARY)
+    {
+        // If AROM or PROM is null, then this is a null initialization.
+        if (aRomValue == null || pRomValue == null) return;
+    }
+
+    public void StartNewTrial(float actual, float target, float maxDur)
+    {
+        SetNewTrialDetails(actual, target, maxDur);
+        //
     }
 }
 

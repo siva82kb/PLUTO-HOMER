@@ -36,15 +36,6 @@ public partial class AppData
     private Stopwatch stp_watch = new Stopwatch();
     public double CurrentTime => stp_watch.ElapsedTicks * nanosecPerTick;
 
-    // Sessions file definitions.
-    public string[] sessionFileHeader = new string[] {
-        "SessionNumber", "DateTime",
-        "TrialNumberDay", "TrialNumberSession", "TrialType", "TrialStartTime", "TrialStopTime", "TrialDataFileLocation",
-        "GameName", "GameParameter", "GameSpeed",  
-        "AssistMode", "AssistModeParameters",
-        "DesiredSuccessRate", "SuccessRate", "MoveTime"
-    };
-
     // Change true to run game from choosegamescene
     public bool runIndividualGame = false;
 
@@ -107,6 +98,12 @@ public partial class AppData
 
     public void SetStopTime() => stopTime = DateTime.Now;
 
+    /*
+     * AAN Data
+     */
+    public AANController aanController = null;
+
+    //public static string aanDataFileLocation = null;
     //// Options to drive 
     //public static string trainingSide
     //{
@@ -133,7 +130,7 @@ public partial class AppData
         startTime = DateTime.Now;
 
         // Create file structure.
-        DataManager.createFileStructure();
+        DataManager.CreateFileStructure();
 
         // Start logging.
         AppLogger.StartLogging(scene);
@@ -152,8 +149,8 @@ public partial class AppData
         selectedGame = null;
 
         // Get current session number.
-        DataManager.CreateSessionFile("PLUTO", userData.GetDeviceLocation(), sessionFileHeader);
-        currentSessionNumber = DataManager.GetPreviousSessionNumber() + 1;
+        currentSessionNumber = userData.dTableSession.Rows.Count > 0 ? 
+            Convert.ToInt32(userData.dTableSession.Rows[userData.dTableSession.Rows.Count - 1]["SessionNumber"]) + 1 : 1;
         AppLogger.LogWarning($"Session number set to {currentSessionNumber}.");
     }
 
@@ -182,6 +179,7 @@ public partial class AppData
         if (string.IsNullOrEmpty(name))
         {
             selectedMechanism = null;
+            aanController = null;
             trialNumberDay = -1;
             trialNumberSession = -1;
             AppLogger.LogInfo($"Selected mechanism set to null.");

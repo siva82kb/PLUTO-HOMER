@@ -42,7 +42,24 @@ public static class DataManager
     public static readonly string configFile = basePath + "/configdata.csv";
     public static string sessionFile { get; private set; }
 
-    public static void createFileStructure()
+    // Sessions file definitions.
+    public static string[] SESSIONFILEHEADER = new string[] {
+        "SessionNumber", "DateTime",
+        "TrialNumberDay", "TrialNumberSession", "TrialType", "TrialStartTime", "TrialStopTime", "TrialDataFileLocation",
+        "GameName", "GameParameter", "GameSpeed",  
+        "AssistMode", "AssistModeParameters",
+        "DesiredSuccessRate", "SuccessRate", "MoveTime"
+    };
+
+    // Functions to generate file names.
+    public static string GetAanAdaptFileName(string mechanism) => Path.Combine(aanAdaptPath, $"{mechanism}-adaptaan.csv");
+    public static string GetAanExecFileName(string mechanism) => Path.Combine(aanExecPath, $"{mechanism}-execaan.csv");
+    public static string GetGameFileName(string game) => Path.Combine(gamePath, $"{game}-gameparams.csv");
+    public static string GetMechFileName(string mechanism) => Path.Combine(mechPath, $"{mechanism}-mechparams.csv");
+    public static string GetRawFileName(string game, string mechanism, string datetime) => Path.Combine(rawPath, $"{datetime}-{game}-{mechanism}-raw.csv");
+    public static string GetRomFileName(string mechanism) => Path.Combine(romPath, $"{mechanism}-rom.csv");
+
+    public static void CreateFileStructure()
     {
         directoryPathConfig = basePath + "/configuration";
         sessionPath = basePath + "/sessions";
@@ -106,11 +123,12 @@ public static class DataManager
     }
     
     // Create session file
-    public static void CreateSessionFile(string device, string location, string[] header)
+    public static void CreateSessionFile(string device, string location, string[] header = null)
     {
         // Ensure the Sessions.csv file has headers if it doesn't exist
         if (!File.Exists(DataManager.sessionFile))
         {
+            header??= SESSIONFILEHEADER;
             using (var writer = new StreamWriter(DataManager.sessionFile, false, Encoding.UTF8))
             {
                 // Write the preheader details
@@ -120,16 +138,6 @@ public static class DataManager
             }
             AppLogger.LogWarning("Sessions.csv file not founds. Created one.");
         }
-    }
-
-    // Get the last session number.
-    public static int GetPreviousSessionNumber()
-    {
-        if (!File.Exists(sessionFile)) return 0;
-        // Read the last line of the file
-        var lastLine = File.ReadLines(sessionFile).LastOrDefault();
-        if (lastLine == null || lastLine.StartsWith("SessionNumber")) return 0;
-        return int.TryParse(lastLine.Split(',')[0], out var sessionNumber) ? sessionNumber : 0;
     }
 }
 

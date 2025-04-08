@@ -27,6 +27,7 @@ public partial class AppData
     {
         trialStartTime = DateTime.Now;
         trialStopTime = null;
-        
+        trialNumberDay += 1;
+        trialNumberSession += 1;
     }
 }

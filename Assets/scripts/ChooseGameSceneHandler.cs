@@ -20,8 +20,8 @@ public class ChooseGameSceneHandler : MonoBehaviour
     private readonly Dictionary<string, string> gameScenes = new Dictionary<string, string>
     {
         { "PONG", "PONGMENU" },
-        { "TUK", "TUKGAME" },
-        { "HAT", "HATGAME" }
+        { "TUK", "TUK" },
+        { "HAT", "HAT" }
     };
     private bool loadgame = false;
 

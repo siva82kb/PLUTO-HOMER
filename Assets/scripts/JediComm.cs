@@ -99,7 +99,6 @@ public static class JediComm
                 // Read full packet.
                 if (readFullSerialPacket())
                 {
-                    //Debug.Log((DateTime.Now - plTime).TotalMilliseconds);
                     plTime = DateTime.Now;
                     ConnectToRobot.isPLUTO = true;
                     PlutoComm.parseByteArray(rawBytes, plCount, plTime);
@@ -168,7 +167,7 @@ public static class JediComm
 
         // Add the message bytes to the payload
         outPayload.AddRange(outBytes);
-
+         
         // Calculate checksum (sum of all bytes modulo 256)
         byte checksum = (byte)(outPayload.Sum(b => b) % 256);
 

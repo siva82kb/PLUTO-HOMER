@@ -1,5 +1,6 @@
 
 using Newtonsoft.Json.Linq;
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -19,10 +20,8 @@ public class summarySceneHandler : MonoBehaviour
     
     public void Start()
     {
-       
         title = "summary";
         initializeChart();
-    
     }
 
     void Update()
@@ -40,7 +39,7 @@ public class summarySceneHandler : MonoBehaviour
     {
         title = button.gameObject.name.ToUpper();
         Debug.Log("button name:" + title);
-        int n = PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, title);
+        int n = Array.IndexOf(PlutoComm.MECHANISMS, title);
         title = PlutoComm.MECHANISMSTEXT[n];
         sessionDataHandler.CalculateMovTimeForMechanism(button.gameObject.name.ToUpper());
         UpdateChartData();
@@ -51,6 +50,8 @@ public class summarySceneHandler : MonoBehaviour
     {
         _actionQueue.Enqueue(() =>
         {
+            PlutoComm.stopSensorStream();
+
             ConnectToRobot.disconnect();
             Application.Quit();
         #if UNITY_EDITOR
@@ -59,14 +60,12 @@ public class summarySceneHandler : MonoBehaviour
         });
     }
 
-
-
     //To initialize the barchart with whole data of moveTime per day
     public void initializeChart()
     {
         Debug.Log("Is bar chart active: " + barchart.gameObject.activeSelf);
 
-        sessionDataHandler = new SessionDataHandler(DataManager.filePathSessionData);
+        sessionDataHandler = new SessionDataHandler(DataManager.sessionFile);
 
         sessionDataHandler.summaryCalculateMovTimePerDayWithLinq();
 
@@ -114,7 +113,7 @@ public class summarySceneHandler : MonoBehaviour
         }
 
         // Clear any previous data from the chart
-        int n = PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, title);
+        int n = Array.IndexOf(PlutoComm.MECHANISMS, title);
 
         barchart.RemoveData();
         barchart.EnsureChartComponent<Title>().text = title;
@@ -138,7 +137,6 @@ public class summarySceneHandler : MonoBehaviour
         }
         
         barchart.RefreshAllComponent();
-        
     }
    
 }

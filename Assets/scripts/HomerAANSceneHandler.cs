@@ -107,7 +107,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
     private HOMERPlutoAANController aanCtrler;
 
     // Target Display Scaling
-    private const float xmax = 12f;
+    private float xmax = 12f;
 
     // Logging related variables
     // Variable to indicate if logging is to be started from the start of the next trial,

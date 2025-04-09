@@ -15,14 +15,17 @@ using static UnityEditor.LightingExplorerTableColumn;
 using static UnityEngine.GraphicsBuffer;
 using Unity.VisualScripting;
 using UnityEditor.PackageManager;
+using System.Runtime.CompilerServices;
 
 public class Pluto_SceneHandler : MonoBehaviour
 {
     public TextMeshProUGUI textDataDisplay;
+
     // Calibration
     public UnityEngine.UI.Toggle tglCalibSelect;
     public Dropdown ddCalibMech;
     public TextMeshProUGUI textCalibMessage;
+
     // Control
     public UnityEngine.UI.Toggle tglControlSelect;
     public Dropdown ddControlSelect;
@@ -32,6 +35,10 @@ public class Pluto_SceneHandler : MonoBehaviour
     public UnityEngine.UI.Slider sldrCtrlBound;
     public TMP_InputField inputDuration;
     public UnityEngine.UI.Button btnNextRandomTarget;
+
+    // AAN Scene Button
+    public UnityEngine.UI.Button btnAANDemo;
+
     // Data logging
     public UnityEngine.UI.Toggle tglDataLog;
 
@@ -60,6 +67,9 @@ public class Pluto_SceneHandler : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        // Ensure the application continues running even when in the background
+        Application.runInBackground = true;
+
         // Initialize UI
         InitializeUI();
         // Attach callbacks
@@ -78,6 +88,9 @@ public class Pluto_SceneHandler : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        // Pluto heartbeat
+        PlutoComm.sendHeartbeat();
+
         // Check if there is an changing target being sent to the robot.
         if (_changingTarget)
         {
@@ -90,15 +103,23 @@ public class Pluto_SceneHandler : MonoBehaviour
             // Set the control target.
             PlutoComm.setControlTarget(controlTarget);
         }
+
         // Udpate UI
         UpdateUI();
+
+        // Load demo scene?
+        // Check for left arrow key
+        if (Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            SceneManager.LoadScene("aan_demo");
+        }
     }
 
     public void AttachControlCallbacks()
     {
         // Toggle button
         tglCalibSelect.onValueChanged.AddListener(delegate { OnCalibrationChange(); });
-        tglControlSelect.onValueChanged.AddListener (delegate { OnControlChange(); });
+        tglControlSelect.onValueChanged.AddListener(delegate { OnControlChange(); });
         tglDataLog.onValueChanged.AddListener(delegate { OnDataLogChange(); });
 
         // Dropdown value change.
@@ -111,10 +132,23 @@ public class Pluto_SceneHandler : MonoBehaviour
         // Button click.
         btnNextRandomTarget.onClick.AddListener(delegate { OnNextRandomTarget(); });
 
+        // AAN Demo Button click.
+        btnAANDemo.onClick.AddListener(delegate { OnAANDemoSceneLoad(); });
+
         // Listen to PLUTO's event
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
         PlutoComm.OnControlModeChange += onPlutoControlModeChange;
+        PlutoComm.OnMechanismChange += PlutoComm_OnMechanismChange;
         PlutoComm.OnNewPlutoData += onNewPlutoData;
+    }
+
+    private void OnAANDemoSceneLoad()
+    {
+        SceneManager.LoadScene("AAN");
+    }
+
+    private void PlutoComm_OnMechanismChange()
+    {
     }
 
     private void onPlutoControlModeChange()
@@ -141,14 +175,27 @@ public class Pluto_SceneHandler : MonoBehaviour
             $"{PlutoComm.button}",
             $"{PlutoComm.angle}",
             $"{PlutoComm.torque}",
+            $"{PlutoComm.desired}",
             $"{PlutoComm.control}",
             $"{PlutoComm.controlBound}",
+            $"{PlutoComm.controlDir}",
             $"{PlutoComm.target}",
             $"{PlutoComm.err}",
             $"{PlutoComm.errDiff}",
             $"{PlutoComm.errSum}"
         };
         logFile.WriteLine(String.Join(", ", rowcomps));
+    }
+
+    private void onAPRomChanged()
+    {
+        //aRomValues[0] = PlutoComm.aRomL;
+        //aRomValues[1] = PlutoComm.aRomH;
+        //pRomValues[0] = PlutoComm.aRomL;
+        //pRomValues[1] = PlutoComm.aRomL;
+        //_changeAPRomSldrLimits = true;
+        //// Start streaming
+        //PlutoComm.setDiagnosticMode();
     }
 
     private void OnControlTargetChange()
@@ -159,7 +206,7 @@ public class Pluto_SceneHandler : MonoBehaviour
         {
             controlTarget = sldrTarget.value;
         }
-        else if (_ctrlType == "POSITION")
+        else if ((_ctrlType == "POSITION") || (_ctrlType == "POSITIONAAN"))
         {
             if (_mech == "HOC")
             {
@@ -172,34 +219,52 @@ public class Pluto_SceneHandler : MonoBehaviour
         }
         PlutoComm.setControlTarget(controlTarget);
     }
+
     private void OnControlBoundChange()
     {
         string _mech = PlutoComm.MECHANISMS[PlutoComm.mechanism];
         string _ctrlType = PlutoComm.CONTROLTYPE[PlutoComm.controlType];
-        if (_ctrlType == "POSITION")
+        if ((_ctrlType == "POSITION") || (_ctrlType == "POSITIONAAN"))
         {
-            controlBound= sldrCtrlBound.value;
+            controlBound = sldrCtrlBound.value;
             PlutoComm.setControlBound(controlBound);
         }
     }
 
     private void OnNextRandomTarget()
     {
-        // Set initial and final target values.
-        // Initial angle is the current robot angle.
-        _initialTarget = PlutoComm.angle;
-        // Final angle is a random value chosen between 0 and the maximum angle for the current mechanism.
-        _finalTarget = UnityEngine.Random.Range(0, PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
-        // Set the target duration.
-        tgtDuration = float.Parse(inputDuration.text);
-        // Set the current time.
-        _currentTime = Time.time;
-        // Compute current target value.
-        var _tgt = computeCurrentTarget();
-        // Set the current target value.
-        controlTarget = _tgt.currTgtValue;
-        // Set the changing target flag.
-        _changingTarget = _tgt.isTgtChanging;
+        // Handle things differently for POSITION and POSITIONAAN control types.
+        if (PlutoComm.CONTROLTYPE[PlutoComm.controlType] == "POSITION")
+        {
+            // Set initial and final target values.
+            // Initial angle is the current robot angle.
+            _initialTarget = PlutoComm.angle;
+            // Final angle is a random value chosen between 0 and the maximum angle for the current mechanism.
+            _finalTarget = UnityEngine.Random.Range(-PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism],
+                                                    PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism]);
+            // Set the target duration.
+            tgtDuration = float.Parse(inputDuration.text);
+            // Set the current time.
+            _currentTime = Time.time;
+            // Compute current target value.
+            var _tgt = computeCurrentTarget();
+            // Set the current target value.
+            controlTarget = _tgt.currTgtValue;
+            // Set the changing target flag.
+            _changingTarget = _tgt.isTgtChanging;
+        }
+        else if (PlutoComm.CONTROLTYPE[PlutoComm.controlType] == "POSITIONAAN")
+        {
+            // Choose a random target within the PROM range.
+            _finalTarget = 0.0f; // UnityEngine.Random.Range(PlutoComm.pRomL, PlutoComm.pRomH);
+            // Set the target on the device.
+            PlutoComm.setAANTarget(
+                PlutoComm.angle,
+                UnityEngine.Random.Range(-1.0f, 0.0f),
+                UnityEngine.Random.Range(-60, 60),
+                UnityEngine.Random.Range(2.0f, 4.0f)
+            );
+        }
     }
 
     private (float currTgtValue, bool isTgtChanging) computeCurrentTarget()
@@ -215,7 +280,7 @@ public class Pluto_SceneHandler : MonoBehaviour
 
     private void OnControlModeChange()
     {
-        // Send control mode to PLUTO
+        // Set control mode to PLUTO.
         PlutoComm.setControlType(PlutoComm.CONTROLTYPE[ddControlSelect.value]);
     }
 
@@ -244,7 +309,7 @@ public class Pluto_SceneHandler : MonoBehaviour
         if (logFileName == null)
         {
             // We are not logging to a file. Start logging.
-            logFileName = _dataLogDir + $"logfile_{DateTime.Today:yyyy-MM-dd}.csv";
+            logFileName = _dataLogDir + $"logfile_{DateTime.Today:yyyy-MM-dd-HH-mm-ss}.csv";
             logFile = createLogFile(logFileName);
         }
         else
@@ -262,7 +327,7 @@ public class Pluto_SceneHandler : MonoBehaviour
         _sw.WriteLine($"CompileDate = {PlutoComm.compileDate}");
         _sw.WriteLine($"Actuated = {PlutoComm.actuated}");
         _sw.WriteLine($"Start Datetime = {DateTime.Now:yyyy/MM/dd HH-mm-ss.ffffff}");
-        _sw.WriteLine("time, packetno, status, datatype, errorstatus, controltype, calibration, mechanism, button, angle, torque, control, controlbound, target, error, errordiff, errorsum");
+        _sw.WriteLine("time, packetno, status, datatype, errorstatus, controltype, calibration, mechanism, button, angle, torque, control, controlbound, controldir, target, desired, error, errordiff, errorsum");
         return _sw;
     }
 
@@ -275,6 +340,7 @@ public class Pluto_SceneHandler : MonoBehaviour
             logFile.Dispose();
         }
     }
+
     private void onPlutoButtonReleased()
     {
         // Check if we are in Calibration Mode.
@@ -291,7 +357,7 @@ public class Pluto_SceneHandler : MonoBehaviour
         // Set calibration state.
         isCalibrating = true;
         // Set mechanism and start calinration.
-        PlutoComm.calibrate(PlutoComm.MECHANISMS[ddCalibMech.value]);
+        //PlutoComm.calibrate(PlutoComm.MECHANISMS[ddCalibMech.value]);
     }
 
     private void InitializeUI()
@@ -299,7 +365,8 @@ public class Pluto_SceneHandler : MonoBehaviour
         // Fill dropdown list
         ddCalibMech.ClearOptions();
         ddCalibMech.AddOptions(PlutoComm.MECHANISMSTEXT.ToList());
-        ddControlSelect.AddOptions(PlutoComm.CONTROLTYPETEXT.ToList());
+        List<string> _ctrlList = PlutoComm.CONTROLTYPETEXT.ToList();
+        ddControlSelect.AddOptions(_ctrlList.Take(_ctrlList.Count - 1).ToList());
         // Clear panel selections.
         tglCalibSelect.enabled = true;
         tglCalibSelect.isOn = false;
@@ -325,8 +392,16 @@ public class Pluto_SceneHandler : MonoBehaviour
         else
         {
             textCalibMessage.SetText("");
+            // Update mechnisam dropdown to the current mechanism.
+            ddCalibMech.value = PlutoComm.mechanism - 1;
         }
 
+        // Updat Control Panel.
+        UpdateControlPanel();
+    }
+
+    private void UpdateControlPanel()
+    {
         // Check if control is in progress, and update UI accordingly.
         tglControlSelect.enabled = PlutoComm.MECHANISMS[PlutoComm.mechanism] != "NOMECH" && !isCalibrating;
         textTarget.SetText("Target: ");
@@ -335,68 +410,73 @@ public class Pluto_SceneHandler : MonoBehaviour
         string _mech = PlutoComm.MECHANISMS[PlutoComm.mechanism];
         string _ctrlType = PlutoComm.CONTROLTYPE[PlutoComm.controlType];
         sldrTarget.enabled = (isControl && ((_ctrlType == "TORQUE") || (_ctrlType == "POSITION")) && !_changingTarget);
-        sldrCtrlBound.enabled = isControl && ((_ctrlType == "POSITION"));
-        inputDuration.enabled = isControl && ((_ctrlType == "POSITION"));
-        btnNextRandomTarget.enabled = isControl && ((_ctrlType == "POSITION"));
-        if (isControl)
+        sldrCtrlBound.enabled = isControl && (_ctrlType == "POSITION");
+        inputDuration.enabled = isControl && (_ctrlType == "POSITION");
+        btnNextRandomTarget.enabled = isControl && (_ctrlType == "POSITION");
+
+        // Leave if control is not enabled.
+        if (isControl == false) return;
+        // Else, continue.
+        // Change slider limits if needed.
+        if (_changeSliderLimits)
         {
-            // Change slider limits if needed.
-            if (_changeSliderLimits)
+            // Change slider limits.
+            ChangeControlSliderLimits(_ctrlType, _mech);
+        }
+        else
+        {
+            if ((_ctrlType == "POSITION") || (_ctrlType == "POSITIONAAN"))
             {
-                // Torque controller
-                if (_ctrlType == "TORQUE")
-                {
-                    //sldrTarget.enabled = true;
-                    sldrTarget.minValue = (float)-PlutoComm.MAXTORQUE;
-                    sldrTarget.maxValue = (float)PlutoComm.MAXTORQUE;
-                    sldrTarget.value = 0f;
-                    sldrCtrlBound.enabled = false;
-                    // Disable duration input field and next target button.
-                    inputDuration.enabled = false;
-                    btnNextRandomTarget.enabled = false;
-                }
-                else if (_ctrlType == "POSITION")
-                {
-                    // Set the appropriate range for the slider.
-                    if (_mech == "WFE" || _mech == "WURD" || _mech == "FPS")
-                    {
-                        sldrTarget.minValue = 0;
-                        sldrTarget.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism];
-                        sldrTarget.value = PlutoComm.angle;
-                    }
-                    else
-                    {
-                        sldrTarget.minValue = PlutoComm.getHOCDisplay(0);
-                        sldrTarget.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
-                        sldrTarget.value = PlutoComm.getHOCDisplay(PlutoComm.angle);
-                    }
-                    // Control Bound slider.
-                    sldrCtrlBound.minValue = 0;
-                    sldrCtrlBound.maxValue = 1;
-                    sldrCtrlBound.value = 0.0f;
-                }
-                _changeSliderLimits = false;
+                sldrTarget.value = controlTarget;
+            }
+        }
+        // Udpate target value.
+        string _unit = (_ctrlType == "TORQUE") ? "Nm" : "deg";
+        textTarget.SetText($"Target: {controlTarget,7:F2} {_unit}");
+        textCtrlBound.SetText($"Control Bound: {controlBound,7:F2}");
+    }
+
+    private void ChangeControlSliderLimits(string controlType, string mechanism)
+    {
+        // Torque controller
+        if (controlType == "TORQUE")
+        {
+            //sldrTarget.enabled = true;
+            sldrTarget.minValue = (float)-PlutoComm.MAXTORQUE;
+            sldrTarget.maxValue = (float)PlutoComm.MAXTORQUE;
+            sldrTarget.value = 0f;
+            sldrCtrlBound.enabled = false;
+            // Disable duration input field and next target button.
+            inputDuration.enabled = false;
+            btnNextRandomTarget.enabled = false;
+        }
+        else if ((controlType == "POSITION") || (controlType == "POSITIONAAN"))
+        {
+            // Set the appropriate range for the slider.
+            if (mechanism == "WFE" || mechanism == "WURD" || mechanism == "FPS")
+            {
+                sldrTarget.minValue = -PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+                sldrTarget.maxValue = PlutoComm.CALIBANGLE[PlutoComm.mechanism] - PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+                sldrTarget.value = PlutoComm.angle;
             }
             else
             {
-                if ( _ctrlType == "POSITION")
-                {
-                    sldrTarget.value = controlTarget;
-                }
+                sldrTarget.minValue = PlutoComm.getHOCDisplay(0);
+                sldrTarget.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
+                sldrTarget.value = PlutoComm.getHOCDisplay(PlutoComm.angle);
             }
-
-            // Udpate target value.
-            string _unit = (_ctrlType == "TORQUE") ? "Nm" : "deg";
-            textTarget.SetText($"Target: {controlTarget,7:F2} {_unit}");
-            textCtrlBound.SetText($"Control Bound: {controlBound,7:F2}");
+            // Control Bound slider.
+            sldrCtrlBound.minValue = 0;
+            sldrCtrlBound.maxValue = 1;
+            sldrCtrlBound.value = 0.0f;
         }
+        _changeSliderLimits = false;
     }
 
     private void UpdateDataDispay()
     {
         // Update the data display.
-        string _dispstr = "";
-        _dispstr += $"\nTime          : {PlutoComm.currentTime.ToString()}";
+        string _dispstr = $"Time          : {PlutoComm.currentTime.ToString()}";
         _dispstr += $"\nDev ID        : {PlutoComm.deviceId}";
         _dispstr += $"\nF/W Version   : {PlutoComm.version}";
         _dispstr += $"\nCompile Date  : {PlutoComm.compileDate}";
@@ -405,10 +485,10 @@ public class Pluto_SceneHandler : MonoBehaviour
         _dispstr += $"\nDev Run Time  : {PlutoComm.runTime:F2}";
         _dispstr += $"\nFrame Rate    : {PlutoComm.frameRate:F2}";
         _dispstr += $"\nStatus        : {PlutoComm.OUTDATATYPE[PlutoComm.dataType]}";
-        _dispstr += $"\nControl Type  : {PlutoComm.CONTROLTYPE[PlutoComm.controlType]}";
-        _dispstr += $"\nCalibration   : {PlutoComm.CALIBRATION[PlutoComm.calibration]}";
-        _dispstr += $"\nError         : {PlutoComm.errorStatus}";
         _dispstr += $"\nMechanism     : {PlutoComm.MECHANISMS[PlutoComm.mechanism]}";
+        _dispstr += $"\nCalibration   : {PlutoComm.CALIBRATION[PlutoComm.calibration]}";
+        _dispstr += $"\nError         : {PlutoComm.errorString}";
+        _dispstr += $"\nControl Type  : {PlutoComm.CONTROLTYPE[PlutoComm.controlType]}";
         _dispstr += $"\nActuated      : {PlutoComm.actuated}";
         _dispstr += $"\nButton State  : {PlutoComm.button}";
         _dispstr += "\n";
@@ -419,8 +499,9 @@ public class Pluto_SceneHandler : MonoBehaviour
         }
         _dispstr += $"\nTorque        : {0f,6:F2} Nm";
         _dispstr += $"\nControl       : {PlutoComm.control,6:F2}";
-        _dispstr += $"\nControl Bound : {PlutoComm.controlBound,6:F2}"; 
+        _dispstr += $"\nCtrl Bnd (Dir): {PlutoComm.controlBound,6:F2} ({PlutoComm.controlDir})";
         _dispstr += $"\nTarget        : {PlutoComm.target,6:F2}";
+        _dispstr += $"\nDesired       : {PlutoComm.desired,6:F2}";
         if (PlutoComm.OUTDATATYPE[PlutoComm.dataType] == "DIAGNOSTICS")
         {
             _dispstr += $"\nError         : {PlutoComm.err,6:F2}";
@@ -430,7 +511,6 @@ public class Pluto_SceneHandler : MonoBehaviour
         textDataDisplay.SetText(_dispstr);
     }
 
-
     /*
      * Calibration State Machine Functions
      */
@@ -438,16 +518,21 @@ public class Pluto_SceneHandler : MonoBehaviour
     {
         int _mechInx = ddCalibMech.value + 1;
         // Run the calibration state machine.
+        Debug.Log($"{calibState} " + $"{PlutoComm.CALIBRATION[PlutoComm.calibration]} Mech Index: {_mechInx} ({PlutoComm.MECHANISMS[_mechInx]})");
         switch (calibState)
         {
             case CalibrationState.WAIT_FOR_ZERO_SET:
-                calibState = CalibrationState.ZERO_SET;
-                // Get the current mechanism for calibration.
-                PlutoComm.calibrate(PlutoComm.MECHANISMS[_mechInx]);
+                if (PlutoComm.CALIBRATION[PlutoComm.calibration] == "NOCALIB")
+                {
+                    calibState = CalibrationState.ZERO_SET;
+                    // Get the current mechanism for calibration.
+                    PlutoComm.calibrate(PlutoComm.MECHANISMS[_mechInx]);
+                }
                 break;
             case CalibrationState.ZERO_SET:
-                if (Math.Abs(PlutoComm.angle) >= 0.9 * PlutoComm.CALIBANGLE[_mechInx] 
-                    && Math.Abs(PlutoComm.angle) <= 1.1 * PlutoComm.CALIBANGLE[_mechInx])
+                float _angval = PlutoComm.angle + PlutoComm.MECHOFFSETVALUE[_mechInx];
+                if (Math.Abs(_angval) >= 0.9 * PlutoComm.CALIBANGLE[_mechInx]
+                    && Math.Abs(_angval) <= 1.1 * PlutoComm.CALIBANGLE[_mechInx])
                 {
                     calibState = CalibrationState.ROM_SET;
                 }
@@ -471,7 +556,7 @@ public class Pluto_SceneHandler : MonoBehaviour
         switch (calibState)
         {
             case CalibrationState.WAIT_FOR_ZERO_SET:
-                textCalibMessage.SetText($"Bring '{_mech}' to zero position, and press PLUTO button to set zero.");
+                textCalibMessage.SetText($"Bring '{_mech}' to zero position, and press PLUTO button TWICE to set zero.");
                 break;
             case CalibrationState.ZERO_SET:
                 textCalibMessage.SetText($"[{PlutoComm.angle,7:F2}] Zero set. Move to the other extreme position and press PLUTO button to set zero.");
@@ -486,6 +571,12 @@ public class Pluto_SceneHandler : MonoBehaviour
                 tglCalibSelect.isOn = false;
                 break;
         }
+    }
+
+    void OnSceneUnloaded(Scene scene)
+    {
+        Debug.Log("Unloading Diagnostics scene.");
+        ConnectToRobot.disconnect();
     }
 
     private void OnApplicationQuit()

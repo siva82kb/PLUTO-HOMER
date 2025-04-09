@@ -1,10 +1,8 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO.Ports;
 using System.Linq;
 using System.Threading;
-using UnityEditor.PackageManager;
 using UnityEngine;
 
 /*
@@ -19,7 +17,6 @@ public static class JediComm
     static public bool pause;
     static public SerialPort serPort { get; private set; }
     static private Thread reader;
-    static byte[] packet;
     static private int plCount = 0;
     static public double HOCScale = 3.97 * Math.PI / 180;
     static private byte[] rawBytes = new byte[256];

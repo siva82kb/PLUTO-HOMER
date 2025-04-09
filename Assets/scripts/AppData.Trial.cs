@@ -1,20 +1,6 @@
 
 using System;
-using System.IO;
-using System.Collections;
-using System.Collections.Generic;
-using System.Data;
-using UnityEditor.PackageManager;
 
-using System.Globalization;
-using System.Data;
-using System.Linq;
-using Unity.VisualScripting;
-using PlutoNeuroRehabLibrary;
-using System.Text;
-using System.Diagnostics;
-using UnityEngine;
-using System.Diagnostics.Contracts;
 
 /*
  * HOMER PLUTO Application Data Class.

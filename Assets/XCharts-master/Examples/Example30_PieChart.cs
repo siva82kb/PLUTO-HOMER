@@ -1,6 +1,5 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using XCharts.Runtime;
 
 namespace XCharts.Example

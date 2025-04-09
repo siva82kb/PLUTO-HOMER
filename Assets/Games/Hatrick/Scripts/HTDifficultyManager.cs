@@ -1,17 +1,12 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class HTDifficultyManager : MonoBehaviour
 {
     public int HTGameLevel;
 
     GameObject rgbdPlayer;
-    GameObject rgbdTarget;
-    int paddleSize;
     public static float ballSpeed = 0.5f;
     public static Vector3 Scale;
-    float enemSpeed = 0.5f;
     public bool paramSet = false;
     // Start is called before the first frame update
     void Start()

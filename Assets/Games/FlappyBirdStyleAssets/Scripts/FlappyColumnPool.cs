@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class FlappyColumnPool : MonoBehaviour
 {
@@ -20,14 +18,10 @@ public class FlappyColumnPool : MonoBehaviour
     public float columnMin = -5.3f;
     public float ColumnMax = 1.3f;
     public Vector2 objectPoolPosition = new Vector2(-15, -25);
-    private float timeSinceLastSpawn = 3;
     public float spawnRate = 4;
     private float spawnXposition = 16;
     private int CurrentColumn = 0;
     private GameObject[] top;
-    private GameObject[] bottom;
-
-
     public int difficultyLevel = 10;
     bool setup;
 

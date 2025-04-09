@@ -1,12 +1,8 @@
-using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using System;
 using UnityEngine.SceneManagement;
-using System.Collections.Generic;
 using System.Collections;
-using System.Collections.Concurrent;
 
 public class MechanismSceneHandler : MonoBehaviour
 {
@@ -28,7 +24,6 @@ public class MechanismSceneHandler : MonoBehaviour
     private static bool changeScene = false;
     private string mechSelected = null;
     private string nextScene = "CALIB";
-    private string exitScene = "SUMM";
 
     void Start()
     {

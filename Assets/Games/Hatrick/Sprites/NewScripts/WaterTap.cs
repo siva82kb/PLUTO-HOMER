@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class WaterTap : MonoBehaviour
@@ -7,7 +5,6 @@ public class WaterTap : MonoBehaviour
     // Start is called before the first frame update
     public GameObject water;
     public float spawnTime;
-    float timeTOSpawn = 0.1f;
     public float timeToSpawnWater;
     [SerializeField] private GameObject waterFill;
     float trailTime;

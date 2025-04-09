@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(LineRenderer))]
@@ -13,8 +11,6 @@ public class BaallTrajectoryPlotter : MonoBehaviour
     private LineRenderer lineRenderer;
     private Ray2D ray;
     private RaycastHit2D hit;
-    private Vector3 direction;
-
     public float targetPosition = 0;
     public Vector2 ballVelocity;
 

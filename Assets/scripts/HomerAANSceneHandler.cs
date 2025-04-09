@@ -1,24 +1,9 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 using TMPro;
 using System.IO;
-using System.IO.Ports;
-using System.Threading;
 using System;
-using System.Linq;
-using UnityEngine.UIElements;
-using UnityEditorInternal;
-using static UnityEditor.LightingExplorerTableColumn;
-using static UnityEngine.GraphicsBuffer;
-using Unity.VisualScripting;
-using UnityEditor.PackageManager;
-using System.Runtime.CompilerServices;
-using XCharts;
-using XCharts.Runtime;
-using UnityEditor.Compilation;
 
 public class Homer_AAN_SceneHandler : MonoBehaviour
 {
@@ -53,11 +38,6 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
 
     // Control variables
     private bool isRunning = false;
-    private const float tgtDuration = 3.0f;
-    private float _currentTime = 0;
-    private float _initialTarget = 0;
-    private float _finalTarget = 0;
-    //private bool _changingTarget = false; 
 
     // Discrete movements related variables
     private uint trialNo = 0;
@@ -86,19 +66,10 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
     private float stateStartTime =   0f;
     private float _tempIntraStateTimer = 0f;
 
-    // AAN Trajectory parameters. Set each trial.
-    private float _assistPosition;
-    private float _assistVelocity;
-    private float _tgtInitial;
-    private float _tgtFinal;
-    private float _timeInitial;
-    private float _timeDuration;
-
     // Control bound adaptation variables
     private float prevControlBound = 0.16f;
     // Magical minimum value where the mechanisms mostly move without too much instability.
     private float currControlBound = 0.16f;
-    private const float cbChangeDuration = 2.0f;
     private sbyte currControlDir = 0;
     private float _currCBforDisplay;
     //private int successRate;
@@ -420,24 +391,6 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         CreateRawAndAanLogFile();
     }
 
-    private void CreateRawLogFile()
-    {
-        // Set the file name.
-        logRawFileName = $"rawlogfile_{trialNo:D3}.csv";
-        logRawFile = new StreamWriter(_dataLogDir + fileNamePrefix + "\\" + logRawFileName, false);
-        // Write the header row.
-        logRawFile.WriteLine($"DeviceID = {PlutoComm.deviceId}");
-        logRawFile.WriteLine($"FirmwareVersion = {PlutoComm.version}");
-        logRawFile.WriteLine($"CompileDate = {PlutoComm.compileDate}");
-        logRawFile.WriteLine($"Actuated = {PlutoComm.actuated}");
-        logRawFile.WriteLine($"Start Datetime = {DateTime.Now:yyyy/MM/dd HH-mm-ss.ffffff}");
-        string[] headernames = { "time", "packetno", "status", "datatype", "errorstatus", "controltype", "calibration",
-            "mechanism", "button", "angle", "torque", "control", "controlbound", "controldir", "target", "desired",
-            "error", "errordiff", "errorsum"
-        };
-        logRawFile.WriteLine(String.Join(", ", headernames));
-    }
-
     private void CreateRawAndAanLogFile()
     {
         string _writetime = $"{DateTime.Now:yyyy/MM/dd HH-mm-ss.ffffff}";
@@ -684,12 +637,6 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         {
             Directory.CreateDirectory(directoryPath);
         }
-    }
-
-    void OnSceneUnloaded(Scene scene)
-    {
-        Debug.Log("Unloading AAN scene.");
-        ConnectToRobot.disconnect();
     }
 
     private void OnApplicationQuit()

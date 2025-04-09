@@ -1,17 +1,11 @@
 using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
-using UnityEngine;
-using Debug = UnityEngine.Debug;
 
 public class SessionDataHandler
 {
-    DateTime startDate;
     public int daysPassed;
     private DataTable sessionTable;
     private string filePath;
@@ -112,18 +106,4 @@ public class SessionDataHandler
           
         }
     }
-
-
-    // grt days in short form['mon','tue',...]
-    private string GetAbbreviatedDayName(DayOfWeek dayOfWeek)
-    {
-
-        string[] abbreviatedDayNames = CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedDayNames;
-
-        return abbreviatedDayNames[(int)dayOfWeek];
-    }
-  
-
-   
-    
 }

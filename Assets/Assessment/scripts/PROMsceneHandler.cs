@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.SceneManagement;
 using TMPro;
 using TS.DoubleSlider;
-using System.IO;
 
 
 public class PROMsceneHandler : MonoBehaviour
@@ -93,6 +87,7 @@ public class PROMsceneHandler : MonoBehaviour
 
         // Set the state to INIT.
         _state = AssessStates.INIT;
+        
         // Attach callback for PLUTO button release.
         PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
 

@@ -1,13 +1,8 @@
 ﻿using System.Linq;
-using System.Collections;
-using System.Collections.Generic;
 
 using UnityEngine;
 using UnityEngine.UI;
-using System;
 using Random = UnityEngine.Random;
-using UnityEngine.SceneManagement;
-using System.IO;
 
 public class HT_spawnTargets1 : MonoBehaviour
 {
@@ -21,15 +16,10 @@ public class HT_spawnTargets1 : MonoBehaviour
     public bool reached;
     public bool onceReached;
     public float reduceOppositeTimer = 0;
-    private string mech;
-    private string hospitalnum;
     public static float[] aRom = { 0, 0 };
     public static float[] pRom = { 0, 0 };
     float prevAng;
-    bool angChange;
     public static float targetAngle;
-    //GameObject target;
-    float toqAmp;
     public int count = 0;
     GameObject target;
     GameObject player;
@@ -41,7 +31,6 @@ public class HT_spawnTargets1 : MonoBehaviour
     public float initialTorque;
     public float prevTorq;
     public int win;
-    int index;
 
     // 
     int[] successRate;

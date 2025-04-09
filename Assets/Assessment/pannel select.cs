@@ -1,10 +1,3 @@
-
-using PlutoNeuroRehabLibrary;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -27,8 +20,6 @@ public class assessmentSceneHandler : MonoBehaviour
     public TMP_Text Ins;
     public GameObject[] aromSelected; 
     public GameObject[] promSelected;
-
-    private string mech;
     private string mechScene = "CHMECH";
     private string chooseGameScene = "CHGAME";
 

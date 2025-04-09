@@ -1,21 +1,11 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 using System.IO;
-using System.IO.Ports;
-using System.Threading;
 using System;
 using System.Linq;
-using UnityEngine.UIElements;
-using UnityEditorInternal;
-using static UnityEditor.LightingExplorerTableColumn;
-using static UnityEngine.GraphicsBuffer;
-using Unity.VisualScripting;
-using UnityEditor.PackageManager;
-using System.Runtime.CompilerServices;
 
 public class Pluto_SceneHandler : MonoBehaviour
 {
@@ -57,9 +47,6 @@ public class Pluto_SceneHandler : MonoBehaviour
     private float _initialTarget = 0;
     private float _finalTarget = 0;
     private bool _changingTarget = false;
-
-    // Logging related variables
-    private bool isLogging = false;
     private string logFileName = null;
     private StreamWriter logFile = null;
     private string _dataLogDir = "Assets\\data\\diagnostics\\";
@@ -185,17 +172,6 @@ public class Pluto_SceneHandler : MonoBehaviour
             $"{PlutoComm.errSum}"
         };
         logFile.WriteLine(String.Join(", ", rowcomps));
-    }
-
-    private void onAPRomChanged()
-    {
-        //aRomValues[0] = PlutoComm.aRomL;
-        //aRomValues[1] = PlutoComm.aRomH;
-        //pRomValues[0] = PlutoComm.aRomL;
-        //pRomValues[1] = PlutoComm.aRomL;
-        //_changeAPRomSldrLimits = true;
-        //// Start streaming
-        //PlutoComm.setDiagnosticMode();
     }
 
     private void OnControlTargetChange()
@@ -350,14 +326,6 @@ public class Pluto_SceneHandler : MonoBehaviour
         }
         // Run the calibration state machine
         calibStateMachineOnButtonRelease();
-    }
-
-    private void OnCalibrate()
-    {
-        // Set calibration state.
-        isCalibrating = true;
-        // Set mechanism and start calinration.
-        //PlutoComm.calibrate(PlutoComm.MECHANISMS[ddCalibMech.value]);
     }
 
     private void InitializeUI()
@@ -571,12 +539,6 @@ public class Pluto_SceneHandler : MonoBehaviour
                 tglCalibSelect.isOn = false;
                 break;
         }
-    }
-
-    void OnSceneUnloaded(Scene scene)
-    {
-        Debug.Log("Unloading Diagnostics scene.");
-        ConnectToRobot.disconnect();
     }
 
     private void OnApplicationQuit()

@@ -1,6 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
-using UnityEngine.SocialPlatforms;
 using System;
 
 public class BoundController : MonoBehaviour
@@ -48,17 +46,5 @@ public class BoundController : MonoBehaviour
         AudioSource audio = GetComponent<AudioSource>();
         audio.clip = audioClips[clipNumber];
         audio.Play();
-    }
-    void ChangeColor(Color newColor)
-    {
-        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
-        if (spriteRenderer != null)
-        {
-            spriteRenderer.color = newColor;
-        }
-        else
-        {
-            Debug.LogWarning("SpriteRenderer not found on the ball GameObject.");
-        }
     }
 }

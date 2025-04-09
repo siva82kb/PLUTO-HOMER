@@ -1,11 +1,8 @@
-using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using System.Collections.Generic;
-using System.Collections;
 using TMPro;
-using UnityEditor.U2D.Aseprite;
 
 public class ChooseGameSceneHandler : MonoBehaviour
 {
@@ -27,9 +24,11 @@ public class ChooseGameSceneHandler : MonoBehaviour
 
     void Start()
     {
+        Debug.Log("start");
         // Initialize if needed
         if (AppData.Instance.userData == null)
         {
+            Debug.Log("User data is null");
             // Inialize the logger
             AppData.Instance.Initialize(SceneManager.GetActiveScene().name, doNotResetMech: false);
         }
@@ -76,6 +75,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
         }
 
         // Magic key cobmination for doing the assessment.
+        Debug.Log("adsgadsg");
         if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.R))
         {
             SceneManager.LoadScene("ASSESS");

@@ -1,10 +1,6 @@
 ﻿using UnityEngine;
-using System.Collections;
 using UnityEngine.SceneManagement;
-using UnityEngine.SocialPlatforms;
-using UnityEditor.SceneManagement;
 using PlutoNeuroRehabLibrary;
-using UnityEngine.Analytics;
 using UnityEngine.UI;
 
 
@@ -29,7 +25,6 @@ public class UIManagerPP : MonoBehaviour
     private int randomTargetIndex;
     private int ps;
     private int es;
-    private int spawnCounter = 0;
     private System.Random random = new System.Random();
     private GameSession currentGameSession;
 

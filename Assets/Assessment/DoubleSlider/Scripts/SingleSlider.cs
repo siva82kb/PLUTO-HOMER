@@ -1,8 +1,6 @@
 #region Includes
-using System;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.PlayerLoop;
 using UnityEngine.UI;
 #endregion
 
@@ -17,9 +15,6 @@ namespace TS.DoubleSlider
         [SerializeField] private Label _label;
 
         private Slider _slider;
-
-        private Slider _slider1;
-        
 
         public bool IsEnabled
         {

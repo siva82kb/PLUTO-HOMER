@@ -68,19 +68,6 @@ public class HT_UI : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
-    private void PlayAudio(int clipIndex)
-    {
-        if (clipIndex >= 0 && clipIndex < audioClips.Length && gameSound != null)
-        {
-            gameSound.clip = audioClips[clipIndex];
-            gameSound.Play();
-        }
-        else
-        {
-            Debug.LogWarning("Invalid audio clip index or missing AudioSource component.");
-        }
-    }
-
     public void TogglePause()
     {
         if (Time.timeScale == 1)

@@ -1,25 +1,13 @@
-﻿using System.Linq;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 using UnityEngine;
-using UnityEngine.UI;
 using System;
 using Random = UnityEngine.Random;
-using UnityEngine.SceneManagement;
 using System.IO;
-using TMPro;
-using Unity.VisualScripting;
 
 public class FB_spawnTargets : MonoBehaviour
 {
     public static FB_spawnTargets instance;
-
-    float prevAng;
-
-    int[] successRate;
-    float avgSuccessRate;
-    bool dontAssistTrial;
 
     //runnnin game 
     public float trailDuration = 3;
@@ -28,8 +16,6 @@ public class FB_spawnTargets : MonoBehaviour
     public bool onceReached;
 
     public float playSize = 0;
-    private string mech;
-    private string hospitalnum;
     public static float[] aRom = { 0, 0 };
     public static float[] pRom = { 0, 0 };
 
@@ -38,8 +24,6 @@ public class FB_spawnTargets : MonoBehaviour
 
     GameObject target;
     GameObject player;
-
-    float gameduration = 0;
     public static bool stopAssistance = true;
     public float initialDirection = 0;
     Vector2 targetPos;
@@ -47,10 +31,7 @@ public class FB_spawnTargets : MonoBehaviour
     //AAN parameters
     // Control variables
     private bool isRunning = false;
-    private const float tgtDuration = 3.0f;
-    private float _currentTime = 0;
-    private float _initialTarget = 0;
-    private float _finalTarget = 0;
+
     //private bool _changingTarget = false; 
 
     // Discrete movements related variables
@@ -75,24 +56,14 @@ public class FB_spawnTargets : MonoBehaviour
     });
     private const float tgtHoldDuration = 1f;
     private float _trialTarget = 0f;
-    private float _currTgtForDisplay;
     private float trialDuration = 0f;
     private float stateStartTime = 0f;
     private float _tempIntraStateTimer = 0f;
-
-    // AAN Trajectory parameters. Set each trial.
-    private float _assistPosition;
-    private float _assistVelocity;
-    private float _tgtInitial;
-    private float _tgtFinal;
-    private float _timeInitial;
-    private float _timeDuration;
 
     // Control bound adaptation variables
     private float prevControlBound = 0.16f;
     // Magical minimum value where the mechanisms mostly move without too much instability.
     private float currControlBound = 0.16f;
-    private const float cbChangeDuration = 2.0f;
     private HOMERPlutoAANController aanCtrler;
     private AANDataLogger dlogger;
     private float targetPosition;

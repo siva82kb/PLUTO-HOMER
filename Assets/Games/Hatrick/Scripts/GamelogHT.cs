@@ -1,13 +1,11 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
 public class GamelogHT : MonoBehaviour
 {
     public static GameLog instance;
-    GameObject Player, Target, Target1;
+    GameObject Player;
     public static string dateTime;
     public static string date;
     public static string sessionNum;

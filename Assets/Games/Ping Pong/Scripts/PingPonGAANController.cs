@@ -1,12 +1,8 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
-using Random = UnityEngine.Random;
 
 public class PingPonGAANController : MonoBehaviour
 {
@@ -14,10 +10,9 @@ public class PingPonGAANController : MonoBehaviour
 
     public float playSize = 0f;
     public float targetAngle; // The target angle for the mechanism.
-    // (Optional: You can remove the target GameObject reference if not needed.)
-    GameObject player;
-   // public GameObject aromLeft, aromRight;
-    // This value will hold the predicted y position of the ball at the player bound.
+                              // public GameObject aromLeft, aromRight;
+                              // This value will hold the predicted y position of the ball at the player bound.
+
     private float ballTrajectoryPrediction;
 
 
@@ -27,8 +22,8 @@ public class PingPonGAANController : MonoBehaviour
     bool targetSpwan = false; // Signals when a target is available.
 
 
-    private float targetPosition; // This is the target “position” in angle-space.
-    private float playerPosition; // Player paddle’s current y position.
+    private float targetPosition; // This is the target ï¿½positionï¿½ in angle-space.
+    private float playerPosition; // Player paddleï¿½s current y position.
 
     // --- Predictor parameters ---
     // x coordinate of the player's bound (where the ball will hit).
@@ -42,10 +37,7 @@ public class PingPonGAANController : MonoBehaviour
     //AAN parameters
     // Control variables
     private bool isRunning = false;
-    private const float tgtDuration = 3.0f;
-    private float _currentTime = 0;
-    private float _initialTarget = 0;
-    private float _finalTarget = 0;
+
     //private bool _changingTarget = false; 
 
     // Discrete movements related variables
@@ -70,7 +62,6 @@ public class PingPonGAANController : MonoBehaviour
     });
     private const float tgtHoldDuration = 0.5f;
     private float _trialTarget = 0f;
-    private float _currTgtForDisplay;
     private float trialDuration = 0f;
     private float stateStartTime = 0f;
     private float _tempIntraStateTimer = 0f;
@@ -79,7 +70,6 @@ public class PingPonGAANController : MonoBehaviour
     private float prevControlBound = 0.16f;
     // Magical minimum value where the mechanisms mostly move without too much instability.
     private float currControlBound = 0.16f;
-    private const float cbChangeDuration = 2.0f;
     private HOMERPlutoAANController aanCtrler;
     private AANDataLogger dlogger;
     private void Awake()

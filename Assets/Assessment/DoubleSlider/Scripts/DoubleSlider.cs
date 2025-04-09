@@ -88,12 +88,8 @@ namespace TS.DoubleSlider
         private RectTransform _fillRect;
 
         private RectTransform _fillRectHoc;
-
-        private RectTransform _fillRectHocleft;
         private RectTransform _oldROMRect;
         private RectTransform _oldROMRectHoc;
-        private bool _isAromActive;
-        private bool _isPromActive;
 
 
         #endregion

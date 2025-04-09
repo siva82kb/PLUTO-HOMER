@@ -1,12 +1,9 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
-using static AppData;
 using System;
-using Unity.VisualScripting;
 
 public class calibrationSceneHandler : MonoBehaviour
 {

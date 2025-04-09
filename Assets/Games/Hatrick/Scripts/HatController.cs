@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class HatController : MonoBehaviour
@@ -16,7 +15,6 @@ public class HatController : MonoBehaviour
     public AudioSource gamesound;
     public AudioClip win;
     public AudioClip loose;
-    float[] rom;
     private Vector3 previousPlayerPosition;
     private float playerMovementTime = 0f;
     private Coroutine movementCoroutine;
@@ -51,27 +49,6 @@ public class HatController : MonoBehaviour
         Vector2 targetPosition = new Vector2(targetX, this.transform.position.y);
         gameObject.GetComponent<Rigidbody2D>().MovePosition(targetPosition);
         gameData.moving=true;
-    }
-    private void checkPlayerMovement()
-    {
-        Vector3 currentPlayerPosition = transform.position;
-        float playerDistanceMoved = Vector3.Distance(currentPlayerPosition, previousPlayerPosition); // Calculate the distance moved by the player
-        if (playerDistanceMoved > 0.001f)
-        {
-            if (movementCoroutine == null)
-            {
-                movementCoroutine = StartCoroutine(trackMovementTime());
-            }
-        }
-        else
-        {
-            if (movementCoroutine != null)
-            {
-                StopCoroutine(movementCoroutine);
-                movementCoroutine = null;
-            }
-        }
-        previousPlayerPosition = currentPlayerPosition;
     }
 
     private IEnumerator trackMovementTime()

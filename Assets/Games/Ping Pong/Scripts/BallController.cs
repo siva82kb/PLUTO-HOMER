@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
 using System;
 
 
@@ -17,8 +16,7 @@ public class BallController : MonoBehaviour
     Rigidbody2D rig2D;
 
     public AudioClip[] audioClips;
-    int rand = 1;
-    float threshold = 2;
+
     void Start()
     {
       

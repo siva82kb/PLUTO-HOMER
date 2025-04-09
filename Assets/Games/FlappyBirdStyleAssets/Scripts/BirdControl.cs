@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,11 +10,6 @@ public class BirdControl : MonoBehaviour
     // player controls
 
     public static float playSize;
-    static int FlipAngle = 1;
-    static float tempRobot, tempBird;
-    bool set = false;
-
-
     int totalLife = 5;
     int currentLife = 0;
     bool columnHit;

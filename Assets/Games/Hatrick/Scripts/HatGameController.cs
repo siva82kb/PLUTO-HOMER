@@ -1,13 +1,9 @@
-﻿
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using PlutoNeuroRehabLibrary;
-using TMPro;
 using System;
-using Unity.Mathematics;
 using System.IO;
 
 public class HatGameController : MonoBehaviour
@@ -39,23 +35,14 @@ public class HatGameController : MonoBehaviour
     public bool balldestroyed = true;
     private bool isPlutoButtonPressed = false;
     private bool isPaused = false;
-    private int count;
-    private float x;
     private float targetAngle;
 
     private GameSession currentGameSession;
-    //gamedataLog
-    GameObject Player1, Target, Enemy;
     public static string dateTime1;
     public static string date1;
     public static string sessionNum1;
-
-    string fileName;
-    float time;
-
     private bool isPlaying = false;
-    private float Player;
-    private sbyte direction;
+
     private enum GameState { 
         NOTSTARTED,
         PLAYING,
@@ -64,17 +51,9 @@ public class HatGameController : MonoBehaviour
     }
     private GameState currentState = GameState.NOTSTARTED;
 
-    // Target Display Scaling
-    private const float xmax = 12f;
-    private float[] aRomValue;
-
 
     // Control variables
     private bool isRunning = false;
-    private const float tgtDuration = 3.0f;
-    private float _currentTime = 0;
-    private float _initialTarget = 0;
-    private float _finalTarget = 0;
     private float ballFallingTime = 0f;
     //private bool _changingTarget = false; 
 
@@ -100,34 +79,20 @@ public class HatGameController : MonoBehaviour
     });
     private const float tgtHoldDuration = 0.2f;
     private float _trialTarget = 0f;
-    private float _currTgtForDisplay;
     private float trialDuration = 0f;
     private float stateStartTime = 0f;
     private float _tempIntraStateTimer = 0f;
-
-    // AAN Trajectory parameters. Set each trial.
-    private float _assistPosition;
-    private float _assistVelocity;
-    private float _tgtInitial;
-    private float _tgtFinal;
-    private float _timeInitial;
-    private float _timeDuration;
 
     // Control bound adaptation variables
     private float prevControlBound = 0.16f;
     // Magical minimum value where the mechanisms mostly move without too much instability.
     private float currControlBound = 0.16f;
-    private const float cbChangeDuration = 2.0f;
-    private sbyte currControlDir = 0;
-    private float _currCBforDisplay;
+
     //private int successRate;
 
     // AAN class
     private HOMERPlutoAANController aanCtrler;
     private AANDataLogger dlogger;
-
-
-    private string _dataLogDir = null;
     private string date = null;
     private string sessionNum = null;
 
@@ -143,7 +108,6 @@ public class HatGameController : MonoBehaviour
     //private int successRate;
     public Image targetImage;
     private int randomTargetIndex;
-    private int spawnCounter = 0;
     private System.Random random = new System.Random();
     private string prevScene = "choosegame";
 
@@ -581,38 +545,6 @@ public class HatGameController : MonoBehaviour
         }
     }
 
-    private void InitializeGame()
-    {
-        AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
-        AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene initialized.");
-
-        rig2D = GetComponent<Rigidbody2D>();
-        gameData.isGameLogging = false;
-
-        timeLeftText = GameObject.FindGameObjectWithTag("TimeLeftText").GetComponent<Text>();
-        ScoreText = GameObject.FindGameObjectWithTag("ScoreText").GetComponent<Text>();
-
-        StartButton.SetActive(true);
-        PauseButton.SetActive(false);
-        ResumeButton.SetActive(false);
-
-        if (cam == null)
-        {
-            cam = Camera.main;
-        }
-
-        lastTimestamp = Time.unscaledTime;
-        maxwidth = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width, Screen.height, 0)).x - 0.5f;
-        PlutoComm.OnButtonReleased += onPlutoButtonReleased;
-        randomTargetIndex = random.Next(1, 11);
-        Debug.Log("Random Target:" + randomTargetIndex);
-        date = DateTime.Now.ToString("yyyy-MM-dd");
-        string dateTime = DateTime.Now.ToString("Dyyyy-MM-ddTHH-mm-ss");
-        sessionNum = "Session" + AppData.Instance.currentSessionNumber;
-
-        AppData.Instance._dataLogDir = Path.Combine(DataManager.sessionPath, date, sessionNum, $"{AppData.Instance.selectedMechanism.name}_{AppData.Instance.selectedGame}_{dateTime}"); 
-    }
-
     private float ScreenPositionToAngle(float screenPosition)
     {
         float calibAngleRange = PlutoComm.CALIBANGLE[PlutoComm.mechanism];
@@ -632,34 +564,6 @@ public class HatGameController : MonoBehaviour
         {
             gameData.successRate = (float)gameData.gameScore / 10;
         }
-    }
-
-    private void StartNewGameSession()
-    {
-        // currentGameSession = new GameSession
-        // {
-        //     GameName = "HAT-Trick",
-        //     Assessment = 0
-        // };
-        // Debug.Log("Game Session: " + currentGameSession);
-        // SessionManager.Instance.StartGameSession(currentGameSession);
-        // AppLogger.LogInfo($"Game session {currentGameSession.SessionNumber} started.");
-        // SetSessionDetails();
-    }
-
-    private void SetSessionDetails()
-    {
-        // string device = "PLUTO";
-        // string assistMode = "Null";
-        // string assistModeParameters = "Null";
-        // string deviceSetupLocation = "CMC-Bioeng-dpt";
-        // string gameParameter = "YourGameParameter";
-        // string mech = AppData.Instance.selectedMechanism.name;
-        // SessionManager.Instance.SetDevice(device, currentGameSession);
-        // SessionManager.Instance.SetAssistMode(assistMode, assistModeParameters, currentGameSession);
-        // SessionManager.Instance.SetDeviceSetupLocation(deviceSetupLocation, currentGameSession);
-        // SessionManager.Instance.SetGameParameter(gameParameter, currentGameSession);
-        // SessionManager.Instance.mechanism(mech, currentGameSession);
     }
 
     private void EndCurrentGameSession()

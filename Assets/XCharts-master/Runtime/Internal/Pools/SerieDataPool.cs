@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace XCharts.Runtime
 {
     internal static class SerieDataPool

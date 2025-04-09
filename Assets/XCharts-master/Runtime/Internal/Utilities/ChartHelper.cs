@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -10,7 +9,6 @@ using UnityEngine.UI;
 using TMPro;
 #endif
 #if UNITY_EDITOR
-using UnityEditor;
 #endif
 
 namespace XCharts.Runtime

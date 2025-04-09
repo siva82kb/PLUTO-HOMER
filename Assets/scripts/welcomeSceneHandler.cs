@@ -1,18 +1,9 @@
-using System; 
-using System.Collections;
-using System.Collections.Generic;
-using System.Data;
-using System.Runtime.InteropServices.ComTypes;
+using System;
 using System.IO;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Linq;
-using System.Globalization;
-using Unity.VisualScripting;
 using UnityEngine.SceneManagement;
-using System.Text.RegularExpressions;
-using PlutoNeuroRehabLibrary;
 
 public class welcomSceneHandler : MonoBehaviour
 {

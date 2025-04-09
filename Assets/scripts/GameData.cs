@@ -13,7 +13,7 @@ public abstract class BaseGame
     public bool targetSpwan { protected set; get; } = false;
 
     public int score { protected set; get; }
-    // public int trialNumber { protected set; get; } = 0;
+    public int moveNo { protected set; get; } = 0;
     public abstract string[] events{ protected set; get; }
     public int eventNumber { protected set; get; }
 
@@ -203,7 +203,7 @@ public class HatTrickGame : BaseGame
         name = "HAT";
         mechanism = mech;
         gameParamsFileName = Path.Combine(DataManager.gamePath,$"{name}_{mechanism}.csv");
-        // trialNumber = 0;
+        moveNo = 0;
         dataLog = null;
 
         // If null initialized, then return now.

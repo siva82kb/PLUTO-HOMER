@@ -1,104 +1,36 @@
+/*
+ * This file contails definitions of all classes required for implementing the 
+ * PLUTO AAN Controller.
+ *
+ * Author: Sivakumar Balasubramanian
+ * Date: 09 Apri 2025
+ */
+
 using System;
-using System.IO;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using UnityEditor.PackageManager;
-using UnityEngine;
-using System.Globalization;
-using System.Data;
+using System.IO;
+using Mono.Cecil;
 using System.Linq;
-using Unity.VisualScripting;
-using System.Text;
 
-
-// public class PlutoAANController
-// {
-//     public float initialPosition { private set; get; }
-//     public float targetPosition { private set; get; }
-//     private float currentCtrlBound;
-//     public float previousCtrlBound { private set; get; }
-//     public int successRate { private set; get; }
-//     public float forgetFactor { private set; get; }
-//     public float assistFactor { private set; get; }
-//     public bool trialRunning { private set; get; }
-
-//     public PlutoAANController(float forget = 0.9f, float assist = 1.1f)
-//     {
-//         forgetFactor = forget;
-//         assistFactor = assist;
-//         initialPosition = 0;
-//         targetPosition = 0;
-//         currentCtrlBound = 0.16f;
-//         previousCtrlBound = 0.16f;
-//         successRate = 0;
-//         trialRunning = false;
-//     }
-
-//     public void setNewTrialDetails(float actPos, float tgtPos)
-//     {
-//         initialPosition = actPos;
-//         targetPosition = tgtPos;
-//         trialRunning = true;
-//     }
-
-//     public float getControlBoundForTrial()
-//     {
-//         return currentCtrlBound;
-//     }
-
-//     public sbyte getControlDirectionForTrial()
-//     {
-//         return (sbyte)Math.Sign(targetPosition - initialPosition);
-//     }
-
-//     public void upateTrialResult(bool success)
-//     {
-//         if (trialRunning == false) return;
-
-//         // Update success rate
-//         if (success)
-//         {
-//             if (successRate < 0)
-//             {
-//                 successRate = 1;
-//             }
-//             else
-//             {
-//                 successRate += 1;
-//             }
-//         }
-//         else
-//         {
-//             if (successRate >= 0)
-//             {
-//                 successRate = -1;
-//             }
-//             else
-//             {
-//                 successRate -= 1;
-//             }
-//         }
-//         // Update control bound.
-//         previousCtrlBound = currentCtrlBound;
-//         if (successRate >= 3)
-//         {
-//             currentCtrlBound = forgetFactor * currentCtrlBound;
-//         }
-//         else if (successRate < 0)
-//         {
-//             currentCtrlBound = Math.Min(1.0f, assistFactor * currentCtrlBound);
-//         }
-//         // Trial done. No more update possible for this trial.
-//         trialRunning = false;
-//     }
-// }
-
-public class HOMERPlutoAANController
+public class PlutoAANController
 {
-    public static readonly float MIN_AVG_SPEED = 10.0f;     // 10 deg per second is the minimum speed.
-    public static readonly float MAX_AVG_SPEED = 20.0f;     // 20 deg per second is the maximum speed.
-    public static readonly float MIN_REACH_TIME = 1.0f;     // Movement durations cannpt be shorter than 1 second.
+    public static readonly float MIN_AVG_SPEED = 10.0f;         // 10 deg per second is the minimum speed.
+    public static readonly float MAX_AVG_SPEED = 20.0f;         // 20 deg per second is the maximum speed.
+    public static readonly float MIN_REACH_TIME = 1.0f;         // Movement durations cannpt be shorter than 1 second.
+    public static readonly float BOUNDARY = 0.9f;               // Boundary where assistnace is to be enabled.
+    public static readonly float FORGETINGFACTOR = 0.9f;        // Forgetting factor for the control bound.
+    public static readonly float ASSISTFACTOR = 0.01f;          // Assistance factor for the control bound.
+    public static readonly float DEFAULTCONTROLBOUND = 0.5f;    // Default cotrol bound value.
+
+    public static readonly string[] ADAPTFILEHEADER = new string[] {
+        "SessionNumber", "TrialNumberSession", "TrialNumberDay", 
+        "TargetPosition", "InitialPosition", 
+        "Success", "SuccessRate", "DesiredSuccessRate", 
+        "ControlBound", "ControlDir",
+        "AanExecFileName"
+    };
+    
     public enum TargetType
     {
         InAromFromArom,
@@ -108,7 +40,8 @@ public class HOMERPlutoAANController
         InPromFromPromNoCrossArom,
         None
     }
-    public enum HOMERPlutoAANState
+    
+    public enum PlutoAANState
     {
         None = 0,           // None state. The AAN is not engaged.
         NewTrialTargetSet,  // Target set but not started moving.
@@ -118,22 +51,22 @@ public class HOMERPlutoAANController
         Idle                // Idle state. The AAN is engaged but doing nothing.
     }
 
+    // Mechanism details
+    private PlutoMechanism mechanism;
+    public string mechanismName { 
+        get => mechanism.name ;
+    }
+
     public float initialPosition { private set; get; }
     public float targetPosition { private set; get; }
     public float maxDuration { private set; get; }
-    //public float currentCtrlBound { private set; get; }
-    //public float previousCtrlBound { private set; get; }
-    public int successRate { private set; get; }
-    //public float forgetFactor { private set; get; }
-    //public float assistFactor { private set; get; }
-    public float aromBoundary { private set; get; }
     public bool trialRunning { private set; get; }
-    public float[] aRom { private set; get; }
-    public float[] pRom { private set; get; }
+    public float[] aRom => mechanism.CurrentArom;
+    public float[] pRom => mechanism.CurrentProm;
     // Setter will automatically change the stateChange variable to true/false
     // depending on whether a new state value has been set.
-    private HOMERPlutoAANState _state;
-    public HOMERPlutoAANState state
+    private PlutoAANState _state;
+    public PlutoAANState state
     {
         get => _state;
         private set
@@ -148,26 +81,83 @@ public class HOMERPlutoAANController
     public float trialTime { private set; get; }
     private float[] _newAanTarget;
 
-    public HOMERPlutoAANController(float[] aRomValue, float[] pRomValue, float bndry = 0.9f)
+    public float previousCtrlBound { private set; get; }
+    public float currentCtrlBound { private set; get; }
+    public int currentSuccessRate { private set; get; }
+    public int desiredSuccessRate { private set; get; }
+
+    // Logging variables
+    private string _execFileName;
+    private StreamWriter _execFileHandler = null;
+    public string execFileName
+    { 
+        get => _execFileName;
+        private set 
+        {
+            _execFileName = value;
+            _execFileHandler?.Dispose();
+            _execFileHandler = !string.IsNullOrEmpty(value)
+                ? new StreamWriter(value, false, System.Text.Encoding.UTF8)
+                : null;
+        }
+    }
+
+    public string adaptFileName { private set; get; }
+    
+    public PlutoAANController(PlutoMechanism mechanism)
     {
         //forgetFactor = forget;
         //assistFactor = assist;
-        aromBoundary = bndry;
+        if (mechanism == null) 
+        {
+            // Throw null exception.
+            throw new ArgumentNullException();
+        }
+        // Initialize controller
+        this.mechanism = mechanism;
+        
+        // Logging files
+        execFileName = null;
+        adaptFileName = DataManager.GetAanAdaptFileName(mechanismName);
+        
+        // Execution related variables
         initialPosition = 0;
         targetPosition = 0;
         maxDuration = 0;
-        //currentCtrlBound = ctrlBound;
-        //previousCtrlBound = ctrlBound;
-        //successRate = 0;
         trialRunning = false;
-        aRom = aRomValue;
-        pRom = pRomValue;
-        state = HOMERPlutoAANState.None;
+        state = PlutoAANState.None;
         positionQ = new Queue<float>();
         timeQ = new Queue<float>();
         trialTime = 0;
         _newAanTarget = new float[5];
         _newAanTarget[0] = 999; // Invalid target.
+        
+        // Adaptation related variables.
+        ReadUpdateAdaptionParameters();
+    }
+
+    private void ReadUpdateAdaptionParameters()
+    {
+        // Check if the AAN adaptation file exists.
+        if (!File.Exists(adaptFileName))
+        {
+            using (var writer = new StreamWriter(adaptFileName, false, System.Text.Encoding.UTF8))
+            {
+                // Preheader
+                writer.WriteLine($":mechanism: {mechanismName}");
+                // Header
+                writer.WriteLine(string.Join(",", ADAPTFILEHEADER));
+            }
+        }
+        // Read the adaptation file, and get the last controlbound value.
+        DataTable adaptData = DataManager.loadCSV(adaptFileName);
+        // Check the number of rows.
+        if (adaptData.Rows.Count == 0)
+        {
+            // Default adaptation parameters.
+            previousCtrlBound = DEFAULTCONTROLBOUND;
+            currentCtrlBound = DEFAULTCONTROLBOUND;
+        }
     }
 
     public void Update(float actual, float delT, bool trialDone)
@@ -176,7 +166,7 @@ public class HOMERPlutoAANController
         stateChange = false;
 
         // Do nothing if the state is None.
-        if (state == HOMERPlutoAANState.None) return;
+        if (state == PlutoAANState.None) return;
 
         // Update trial time
         trialTime += delT;
@@ -190,53 +180,53 @@ public class HOMERPlutoAANController
         // Act according to the state of the AAN.
         switch (state)
         {
-            case HOMERPlutoAANState.NewTrialTargetSet:
+            case PlutoAANState.NewTrialTargetSet:
                 // Set the state of the AAN.
                 switch (GetTargetType())
                 {
-                    case HOMERPlutoAANController.TargetType.InAromFromArom:
-                    case HOMERPlutoAANController.TargetType.InPromFromArom:
-                        state = HOMERPlutoAANState.AromMoving;
+                    case TargetType.InAromFromArom:
+                    case TargetType.InPromFromArom:
+                        state = PlutoAANState.AromMoving;
                         break;
-                    case HOMERPlutoAANController.TargetType.InAromFromProm:
-                    case HOMERPlutoAANController.TargetType.InPromFromPromCrossArom:
-                        state = HOMERPlutoAANState.RelaxToArom;
+                    case TargetType.InAromFromProm:
+                    case TargetType.InPromFromPromCrossArom:
+                        state = PlutoAANState.RelaxToArom;
                         // Generate target to relax to AROM.
                         GenerateRelaxToAromAanTarget(actual);
                         break;
-                    case HOMERPlutoAANController.TargetType.InPromFromPromNoCrossArom:
-                        state = HOMERPlutoAANState.AssistToTarget;
+                    case TargetType.InPromFromPromNoCrossArom:
+                        state = PlutoAANState.AssistToTarget;
                         // Generate target to assist.
                         GenerateAssistToTargetAanTarget(actual);
                         break;
                 }
                 break;
-            case HOMERPlutoAANState.AromMoving:
+            case PlutoAANState.AromMoving:
                 // Check if the target is reached.
                 if (IsTargetInArom()) return;
                 // Check if the AROM boundary is reached.
                 int _dir = Math.Sign(targetPosition - initialPosition);
                 float _arompos = (actual - aRom[0]) / (aRom[1] - aRom[0]);
                // Debug.Log(_arompos);
-                if ((_dir > 0 && _arompos >= aromBoundary) || (_dir < 0 && _arompos <= (1 - aromBoundary)))
+                if ((_dir > 0 && _arompos >= BOUNDARY) || (_dir < 0 && _arompos <= (1 - BOUNDARY)))
                 {
                     //Debug.Log("True");
-                    state = HOMERPlutoAANState.AssistToTarget;
+                    state = PlutoAANState.AssistToTarget;
                     // Generate target to assist.
                     GenerateAssistToTargetAanTarget(actual);
                 }
                 // Timeout or Done
                 if (_timeoutDone)
                 {
-                    state = HOMERPlutoAANState.Idle;
+                    state = PlutoAANState.Idle;
                 }
                 break;
-            case HOMERPlutoAANState.RelaxToArom:
+            case PlutoAANState.RelaxToArom:
                 // Check if AROM has not been reached.
                 if (IsActualInArom(actual))
                 {
                     // AROM reached.
-                    state = HOMERPlutoAANState.AromMoving;
+                    state = PlutoAANState.AromMoving;
                     // Reset AAN target
                     _newAanTarget[0] = 999;
                     return;
@@ -244,16 +234,16 @@ public class HOMERPlutoAANController
                 // Timeout or Done
                 if (_timeoutDone)
                 {
-                    state = HOMERPlutoAANState.Idle;
+                    state = PlutoAANState.Idle;
                     // Reset AAN target
                     _newAanTarget[0] = 999;
                 }
                 break;
-            case HOMERPlutoAANState.AssistToTarget:
+            case PlutoAANState.AssistToTarget:
                 // Timeout or Done
                 if (_timeoutDone)
                 {
-                    state = HOMERPlutoAANState.Idle;
+                    state = PlutoAANState.Idle;
                     // Reset AAN target
                     _newAanTarget[0] = 999;
                     return;
@@ -268,7 +258,7 @@ public class HOMERPlutoAANController
         targetPosition = 0;
         maxDuration = 0;
         trialRunning = false;
-        state = HOMERPlutoAANState.None;
+        state = PlutoAANState.None;
         _newAanTarget[0] = 999;
         // Empty the queues.
         positionQ.Clear();
@@ -287,7 +277,7 @@ public class HOMERPlutoAANController
         positionQ.Enqueue(actual);
         timeQ.Enqueue(trialTime);
         stateChange = true;
-        state = HOMERPlutoAANState.NewTrialTargetSet;
+        state = PlutoAANState.NewTrialTargetSet;
     }
 
     public float[] GetNewAanTarget()

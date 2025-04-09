@@ -101,7 +101,7 @@ public partial class AppData
     /*
      * AAN Data
      */
-    public AANController aanController = null;
+    public PlutoAANController aanController = null;
 
     //public static string aanDataFileLocation = null;
     //// Options to drive 

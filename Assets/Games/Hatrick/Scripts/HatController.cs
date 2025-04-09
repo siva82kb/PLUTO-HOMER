@@ -39,7 +39,6 @@ public class HatController : MonoBehaviour
 
     void Update()
     {
-
         targetX = HT_spawnTargets1.instance.Angle2Screen(PlutoComm.angle, AppData.Instance.selectedMechanism.currRom.promMin, AppData.Instance.selectedMechanism.currRom.promMax);
         targetX = Mathf.Clamp(targetX, -maxwidth, maxwidth);
                                       
@@ -97,7 +96,7 @@ public class HatController : MonoBehaviour
             HT_spawnTargets1.instance.reached = true;
             HatGameController.instance.balldestroyed = true;
             HatGameController.instance.targetSpwan = false;
-            HatGameController.instance.SpawnTarget();
+            HatGameController.instance.SpawnTarget(HatTrickGame.Instance.gameSpeed.Value);
             Destroy(collision.gameObject);
         }
 
@@ -111,7 +110,7 @@ public class HatController : MonoBehaviour
             HT_spawnTargets1.instance.reached = true;
             HatGameController.instance.balldestroyed = true;
             HatGameController.instance.targetSpwan = false;
-            HatGameController.instance.SpawnTarget();
+            HatGameController.instance.SpawnTarget(HatTrickGame.Instance.gameSpeed.Value);
             Destroy(collision.gameObject);
         }
 

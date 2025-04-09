@@ -31,7 +31,7 @@ public class HatDestroyOnContact : MonoBehaviour
                 Destroy(GameObject.FindGameObjectWithTag("Target"));
             }
             HatGameController.instance.balldestroyed = true;
-            HatGameController.instance.SpawnTarget();
+            HatGameController.instance.SpawnTarget(HatTrickGame.Instance.gameSpeed.Value);
             Destroy(collision.gameObject);
         }
 
@@ -45,7 +45,7 @@ public class HatDestroyOnContact : MonoBehaviour
 
             HT_spawnTargets1.instance.reached = false;
             HatGameController.instance.balldestroyed = true;
-            HatGameController.instance.SpawnTarget();
+            HatGameController.instance.SpawnTarget(HatTrickGame.Instance.gameSpeed.Value);
             Destroy(collision.gameObject);
         }
     }

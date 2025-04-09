@@ -203,7 +203,8 @@ public class HatGameController : MonoBehaviour
         string dateTime = DateTime.Now.ToString("Dyyyy-MM-ddTHH-mm-ss");
         sessionNum = "Session" + AppData.Instance.currentSessionNumber;
 
-        // Prepare for start.
+        // TODO 
+        // Prepare for start
 
         // Attach PLUTO event callbacks.
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
@@ -222,7 +223,7 @@ public class HatGameController : MonoBehaviour
         // Check if the game is not started or paused.
         if (currentState == GameState.PLAYING)
         {
-            RunGameStateMachines();
+            RunGameStateMachine();
             playerPosition = GameObject.FindGameObjectWithTag("Player").transform.position.x;
         }
 
@@ -402,14 +403,8 @@ public class HatGameController : MonoBehaviour
         timeLeft = trialTime;
         lastTimestamp = Time.unscaledTime;
         gameMoveTime = 0f;
-
-        // Pluto AAN controller
-        aanCtrler = new HOMERPlutoAANController(
-            new float[] { AppData.Instance.selectedMechanism.currRom.aromMin, AppData.Instance.selectedMechanism.currRom.aromMin },
-            new float[] { AppData.Instance.selectedMechanism.currRom.promMin, AppData.Instance.selectedMechanism.currRom.promMax },
-            0.85f);
         isRunning = true;
-        dlogger = new AANDataLogger(aanCtrler);
+        // dlogger = new AANDataLogger(aanCtrler);
         
         // Set Control mode.
         PlutoComm.setControlType("POSITIONAAN");
@@ -421,20 +416,20 @@ public class HatGameController : MonoBehaviour
         // Start the state machine.
         SetTrialState(DiscreteMovementTrialState.REST);
 
-        if (!AppData.Instance.runIndividualGame)
-        {
-            StartNewGameSession();
-        }
+        // if (!AppData.Instance.runIndividualGame)
+        // {
+        //     StartNewGameSession();
+        // }
 
-        //StartNewGameSession();
-        gameData.isGameLogging = true;
+        // StartNewGameSession();
+        // gameData.isGameLogging = true;
 
         StartButton.SetActive(false);
         PauseButton.SetActive(true);
         ResumeButton.SetActive(false);
 
         AppLogger.LogInfo("Game Started.");
-        SpawnTarget();
+        SpawnTarget(HatTrickGame.Instance.gameSpeed.Value);
     }
 
     public void PauseGame()
@@ -473,7 +468,7 @@ public class HatGameController : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
-    private void RunGameStateMachines()
+    private void RunGameStateMachine()
     {
         if (Time.timeScale > 0 && isPlaying)
         {
@@ -515,12 +510,13 @@ public class HatGameController : MonoBehaviour
         Debug.Log("Spawn Area Enabled: " + isEnabled);
     }
 
-    public void SpawnTarget()
+    public void SpawnTarget(float targetSpeed)
     {
         if (timeLeft > 0 && balldestroyed)
         {
             balldestroyed = false;
-            float ballSpeed = 1f + 0.3f * (1 + gameData.gameSpeedHT);
+            // float ballSpeed = 1f + 0.3f * (1 + gameData.gameSpeedHT);
+            float ballSpeed = 1f + 0.3f * (1 + targetSpeed);
             float trailDuration = (8.0f / ballSpeed) * 0.8f;
             HT_spawnTargets1.instance.trailDuration = trailDuration;
             totalTargetsSpawned++;
@@ -640,30 +636,30 @@ public class HatGameController : MonoBehaviour
 
     private void StartNewGameSession()
     {
-        currentGameSession = new GameSession
-        {
-            GameName = "HAT-Trick",
-            Assessment = 0
-        };
-        Debug.Log("Game Session: " + currentGameSession);
-        SessionManager.Instance.StartGameSession(currentGameSession);
-        AppLogger.LogInfo($"Game session {currentGameSession.SessionNumber} started.");
-        SetSessionDetails();
+        // currentGameSession = new GameSession
+        // {
+        //     GameName = "HAT-Trick",
+        //     Assessment = 0
+        // };
+        // Debug.Log("Game Session: " + currentGameSession);
+        // SessionManager.Instance.StartGameSession(currentGameSession);
+        // AppLogger.LogInfo($"Game session {currentGameSession.SessionNumber} started.");
+        // SetSessionDetails();
     }
 
     private void SetSessionDetails()
     {
-        string device = "PLUTO";
-        string assistMode = "Null";
-        string assistModeParameters = "Null";
-        string deviceSetupLocation = "CMC-Bioeng-dpt";
-        string gameParameter = "YourGameParameter";
-        string mech = AppData.Instance.selectedMechanism.name;
-        SessionManager.Instance.SetDevice(device, currentGameSession);
-        SessionManager.Instance.SetAssistMode(assistMode, assistModeParameters, currentGameSession);
-        SessionManager.Instance.SetDeviceSetupLocation(deviceSetupLocation, currentGameSession);
-        SessionManager.Instance.SetGameParameter(gameParameter, currentGameSession);
-        SessionManager.Instance.mechanism(mech, currentGameSession);
+        // string device = "PLUTO";
+        // string assistMode = "Null";
+        // string assistModeParameters = "Null";
+        // string deviceSetupLocation = "CMC-Bioeng-dpt";
+        // string gameParameter = "YourGameParameter";
+        // string mech = AppData.Instance.selectedMechanism.name;
+        // SessionManager.Instance.SetDevice(device, currentGameSession);
+        // SessionManager.Instance.SetAssistMode(assistMode, assistModeParameters, currentGameSession);
+        // SessionManager.Instance.SetDeviceSetupLocation(deviceSetupLocation, currentGameSession);
+        // SessionManager.Instance.SetGameParameter(gameParameter, currentGameSession);
+        // SessionManager.Instance.mechanism(mech, currentGameSession);
     }
 
     private void EndCurrentGameSession()

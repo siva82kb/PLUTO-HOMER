@@ -29,5 +29,6 @@ public partial class AppData
         trialStopTime = null;
         trialNumberDay += 1;
         trialNumberSession += 1;
+        
     }
 }

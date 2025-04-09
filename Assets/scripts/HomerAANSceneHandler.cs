@@ -299,7 +299,7 @@ public class Homer_AAN_SceneHandler : MonoBehaviour
         btnStartStop.onClick.AddListener(delegate { OnStartStopDemo(); });
 
         // PLUTO Diagnostics Button click.
-        btnDiagnsotics.onClick.AddListener(() => SceneManager.LoadScene("plutoDiagnostics"));
+        btnDiagnsotics.onClick.AddListener(() => SceneManager.LoadScene("PlutoDiagnostics"));
 
         // Listen to PLUTO's event
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;

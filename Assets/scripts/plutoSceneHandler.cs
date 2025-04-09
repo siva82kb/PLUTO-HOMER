@@ -144,7 +144,7 @@ public class Pluto_SceneHandler : MonoBehaviour
 
     private void OnAANDemoSceneLoad()
     {
-        SceneManager.LoadScene("homer_aan");
+        SceneManager.LoadScene("AAN");
     }
 
     private void PlutoComm_OnMechanismChange()

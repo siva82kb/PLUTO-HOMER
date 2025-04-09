@@ -161,6 +161,10 @@ public class MechanismSceneHandler : MonoBehaviour
 
     void LoadNextScene()
     {
+        // Create a new AAN controller.
+        AppData.Instance.aanController = new PlutoAANController(AppData.Instance.selectedMechanism);
+        AppLogger.LogInfo($"New AAN controller created for '{AppData.Instance.selectedMechanism.name}'.");
+
         // Set the mechanism.
         AppLogger.LogInfo($"Switching scene to '{nextScene}'.");
         SceneManager.LoadScene(nextScene);

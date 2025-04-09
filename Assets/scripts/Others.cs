@@ -699,29 +699,29 @@ public class ROM
 /*
  * AAN Controller for HOMER
  */
-public class AANController : HOMERPlutoAANController
-{   
-    public const float BOUNDARY = 0.9f;
-    // Other variables for logging
-    private int sessNo;
-    private int trialNoDay;
-    private int trialNoSess;
-    // Logging realted variables.
-    private string  adaptFileName = null;
-    private StreamWriter execFileWriter = null;
+// public class AANController : HOMERPlutoAANController
+// {   
+//     public const float BOUNDARY = 0.9f;
+//     // Other variables for logging
+//     private int sessNo;
+//     private int trialNoDay;
+//     private int trialNoSess;
+//     // Logging realted variables.
+//     private string  adaptFileName = null;
+//     private StreamWriter execFileWriter = null;
 
-    private AANController(int sessNo, PlutoMechanism mechanism, ) : base(aRomValue, pRomValue, BOUNDARY)
-    {
-        // If AROM or PROM is null, then this is a null initialization.
-        if (aRomValue == null || pRomValue == null) return;
-    }
+//     private AANController(int sessNo, PlutoMechanism mechanism, float[] aRomValue, float[] pRomValue) : base(aRomValue, pRomValue, BOUNDARY)
+//     {
+//         // If AROM or PROM is null, then this is a null initialization.
+//         if (aRomValue == null || pRomValue == null) return;
+//     }
 
-    public void StartNewTrial(float actual, float target, float maxDur)
-    {
-        SetNewTrialDetails(actual, target, maxDur);
-        //
-    }
-}
+//     public void StartNewTrial(float actual, float target, float maxDur)
+//     {
+//         SetNewTrialDetails(actual, target, maxDur);
+//         //
+//     }
+// }
 
 /// <summary>
 /// Stores global game-related data and settings.

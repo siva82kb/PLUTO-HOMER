@@ -15,7 +15,7 @@ public partial class AppData
      * CONSTANT FIXED VARIABLES.
      */
     // COM Port for the device
-    public const string COMPort = "COM4";
+    public const string COMPort = "COM5";
 
     // Keeping track of time.
     private double nanosecPerTick = 1.0f / Stopwatch.Frequency;

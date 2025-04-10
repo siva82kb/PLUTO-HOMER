@@ -26,14 +26,48 @@ public static class PlutoDefs
     }
 }
 
-public static class HomerTherapyConstants
+public static class HomerTherapy
 {
     public static readonly float SuccessRateThForSpeedIncrement = 0.9f;
-    static public readonly Dictionary<string, float> GameSpeedIncrements = new Dictionary<string, float>  {
+    public static readonly Dictionary<string, float> GameSpeedIncrements = new Dictionary<string, float>  {
         { "PING-PONG", 0.5f },
         { "TUK-TUK", 0.2f },
         { "HAT-Trick", 1f }
     };
+
+    public enum TrialType 
+    {
+        SR85PCCATCH,
+        TRAIN,
+        SR85PCTRAIN
+    }
+
+    private static float[] SuccessRateForTrials = new float[] {
+        85, 90, 90, 87, 84,
+        79, 79, 79, 79, 79,
+        79, 79, 81, 83, 85,
+        85, 85, 85, 85, 85
+    };
+    private static TrialType[] TrialTypeForTrials = new TrialType[] {
+        TrialType.SR85PCTRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN,
+        TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN,
+        TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN,
+        TrialType.SR85PCCATCH, TrialType.SR85PCTRAIN, TrialType.SR85PCTRAIN, TrialType.SR85PCTRAIN, TrialType.SR85PCTRAIN, 
+    };
+
+    // Function to return the success rate and trial type.
+    public static (float sRate, TrialType tType) GetTrailTypeAndSuccessRate(int trialNo)
+    {
+        float sRate;
+        TrialType tType;
+
+        trialNo = (trialNo - 1) % 20;
+        sRate = SuccessRateForTrials[trialNo];
+        tType = TrialTypeForTrials[trialNo];
+        // Updat success rate.
+        sRate += tType == TrialType.TRAIN ? UnityEngine.Random.Range(-4, 5) : 0;
+        return (sRate, tType);
+    }
 }
 
 // PLUTO UserData Class
@@ -51,17 +85,7 @@ public class PlutoUserData
     // Total movement times.
     public float totalMoveTimePrsc
     {
-        get
-        {
-            if (mechMoveTimePrsc == null)
-            {
-                return -1f;
-            }
-            else
-            {
-                return mechMoveTimePrsc.Values.Sum();
-            }
-        }
+        get => mechMoveTimePrsc == null ? -1f : mechMoveTimePrsc.Values.Sum();
     }
 
     public float totalMoveTimePrev
@@ -235,7 +259,7 @@ public class PlutoUserData
         AppLogger.LogInfo($"Last usage date for mechanism {AppData.Instance.selectedMechanism}: {lastUsageDate:dd-MM-yyyy}");
 
         Dictionary<string, float> updatedGameSpeeds = new Dictionary<string, float>();
-        foreach (var _gameName in HomerTherapyConstants.GameSpeedIncrements.Keys)
+        foreach (var _gameName in HomerTherapy.GameSpeedIncrements.Keys)
         {
             var rows = dTableSession.AsEnumerable()
                 .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == lastUsageDate)
@@ -244,9 +268,9 @@ public class PlutoUserData
             float previousGameSpeed = rows.Any() ? rows.Average(row => Convert.ToSingle(row["GameSpeed"])) : 0f;
             float avgSuccessRate = rows.Any() ? rows.Average(row => Convert.ToSingle(row["SuccessRate"])) : 0f;
 
-            if (avgSuccessRate >= HomerTherapyConstants.SuccessRateThForSpeedIncrement)
+            if (avgSuccessRate >= HomerTherapy.SuccessRateThForSpeedIncrement)
             {
-                updatedGameSpeeds[_gameName] = previousGameSpeed + HomerTherapyConstants.GameSpeedIncrements[_gameName];
+                updatedGameSpeeds[_gameName] = previousGameSpeed + HomerTherapy.GameSpeedIncrements[_gameName];
             }
             else
             {
@@ -378,7 +402,12 @@ public class PlutoMechanism
 
     public bool IsSide(string sideName) => string.Equals(side, sideName, StringComparison.OrdinalIgnoreCase);
 
-    public bool IsSpeedUpdated() => currSpeed < 0;
+    public bool IsSpeedUpdated() => currSpeed > 0;
+
+    public void NextTrail() { 
+        trialNumberDay += 1;
+        trialNumberSession += 1;
+    }
 
     public float[] CurrentArom => currRom == null? null : new float[] { currRom.aromMin, currRom.aromMax };
     public float[] CurrentProm => currRom == null? null : new float[] { currRom.promMin, currRom.promMax };
@@ -424,7 +453,7 @@ public class PlutoMechanism
     public void UpdateSpeed()
     {
         // Read the mechanism file.
-        string fileName = DataManager.GetMechFileName(this.name);
+        string fileName = DataManager.GetMechFileName(name);
         bool _updateFile = false;
         // Create file if needed.
         if (!File.Exists(fileName))
@@ -437,9 +466,8 @@ public class PlutoMechanism
         // Read the file and get the most recent speed value.
         DataTable speedData = DataManager.loadCSV(fileName);
         // Check the number of rows.
-
         // If the last line is empty, set default value for the speed.
-        if (speedData.Rows.Count ==0)
+        if (speedData.Rows.Count == 0)
         {
             currSpeed = DefaultMechanismSpeeds[name];
             _updateFile = true;
@@ -467,6 +495,7 @@ public class PlutoMechanism
                 _updateFile = true;
             }
         }
+        UnityEngine.Debug.Log($"Current Speed of {name}: {currSpeed}");
         // Update file?
         if (_updateFile)
         {
@@ -506,75 +535,6 @@ public class PlutoMechanism
         }
     }
 }
-
-/// <summary>
-/// This class contains all the necessary information to run the assessment scene.
-/// </summary>
-//public class AssessmentData
-//{
-//    public string mechanism { get; private set; }
-//    public bool promCompleted { get; private set; }
-//    public bool aromCompleted { get; private set; }
-//    public ROM oldRom { get; private set; }
-//    public ROM newRom { get; private set; }
-//    public string side { get; private set; }
-
-//    public AssessmentData(string mech, string side)
-//    {
-//        mechanism = mech;
-//        oldRom = new ROM(mech);
-//        newRom = new ROM();
-//        promCompleted = false;
-//        aromCompleted = false;
-//        this.side = side;
-//    }
-//    public void ResetPromValues()
-//    {
-//        newRom.promMin = 0;
-//        newRom.promMax = 0;
-//        promCompleted = false;
-//    }
-
-//    public void ResetAromValues()
-//    {
-//        newRom.aromMin = 0;
-//        newRom.aromMax = 0;
-//        aromCompleted = false;
-//    }
-
-//    public void SetNewPromValues(float pmin, float pmax)
-//    {
-//        newRom.promMin = pmin;
-//        newRom.promMax = pmax;
-//        if (pmin != 0 || pmax != 0)
-//        {
-//            promCompleted = true;
-
-//        }
-
-//    }
-
-//    public void SetNewAromValues(float amin, float amax)
-//    {
-//        newRom.aromMin = amin;
-//        newRom.aromMax = amax;
-//        if (amin != 0 || amax != 0)
-//        {
-//            aromCompleted = true;
-//        }
-
-//    }
-
-//    public void SaveAssessmentData()
-//    {
-//        if (promCompleted && aromCompleted)
-//        {
-//            // Save the new ROM values to the file.
-//            newRom.WriteToAssessmentFile();
-//        }
-
-//    }
-//}
 
 public class ROM
 {
@@ -775,7 +735,7 @@ public static class gameData
             StopLogging();
         }
         // Start new logger
-        if (AppData.Instance.selectedGame == "PINGPONG")
+        if (AppData.Instance.selectedGame.name == "PINGPONG")
         {
             if (fname != "")
             {
@@ -790,7 +750,7 @@ public static class gameData
                 isLogging = false;
             }
         }
-        else if (AppData.Instance.selectedGame == "HATTRICK")
+        else if (AppData.Instance.selectedGame.name == "HATTRICK")
         {
             if (fname != "")
             {
@@ -805,7 +765,7 @@ public static class gameData
                 isLogging = false;
             }
         }
-        else if (AppData.Instance.selectedGame == "TUKTUK")
+        else if (AppData.Instance.selectedGame.name == "TUKTUK")
         {
             if (fname != "")
             {
@@ -933,7 +893,6 @@ public class DataLogger
         }
     }
 }
-
 
 public class AANDataLogger
 {

@@ -56,6 +56,7 @@ public class PlutoAANController
         get => mechanism.name ;
     }
 
+    // AAN real-time execution related variables.
     public float initialPosition { private set; get; }
     public float targetPosition { private set; get; }
     public float maxDuration { private set; get; }
@@ -80,10 +81,8 @@ public class PlutoAANController
     public float trialTime { private set; get; }
     private float[] _newAanTarget;
 
-    public float previousCtrlBound { private set; get; }
+    // AAN control bound adaptation related variables.
     public float currentCtrlBound { private set; get; }
-    public int currentSuccessRate { private set; get; }
-    public int desiredSuccessRate { private set; get; }
 
     // Logging variables
     private string _execFileName;
@@ -154,7 +153,6 @@ public class PlutoAANController
         if (adaptData.Rows.Count == 0)
         {
             // Default adaptation parameters.
-            previousCtrlBound = DEFAULTCONTROLBOUND;
             currentCtrlBound = DEFAULTCONTROLBOUND;
         }
     }
@@ -330,6 +328,14 @@ public class PlutoAANController
             return actual >= aRom[1];
         }
         return actual <= aRom[0];
+    }
+
+    public void AdaptControLBound(float desiredSuccessRate, float previousSuccessRate)
+    {
+        // First do some forgetting
+        currentCtrlBound *= FORGETINGFACTOR;
+        // Now, do some learning or error correction.
+        currentCtrlBound += ASSISTFACTOR * (desiredSuccessRate - previousSuccessRate);
     }
 
     //public sbyte getControlDirectionForTrial()

@@ -50,10 +50,9 @@ public class ChooseGameSceneHandler : MonoBehaviour
         // Update App Logger
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");
-        AppLogger.SetCurrentGame("NONE");
         
         // Reset selected game.
-        AppData.Instance.selectedGame = null;
+        AppData.Instance.SetGame(null);
 
         // Attach callback.
         AttachCallbacks();
@@ -147,17 +146,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
                 $"Curr PROM: [{AppData.Instance.selectedMechanism.currRom.promMin:F2}, {AppData.Instance.selectedMechanism.currRom.promMax:F2}]" +
                 $" | AROM: [{AppData.Instance.selectedMechanism.currRom.aromMin:F2}, {AppData.Instance.selectedMechanism.currRom.aromMax:F2}]");
             // Instantitate the game object and load the appropriate scene.
-            AppData.Instance.selectedGame = game;
-            switch (game)
-            {
-                case "PONG":
-                    break;
-                case "TUK":
-                    break;
-                case "HAT":
-                    HatTrickGame.Instance.Initialize(AppData.Instance.selectedMechanism);
-                    break;
-            }
+            AppData.Instance.SetGame(game);
             SceneManager.LoadScene(sceneName);
         }
     }

@@ -37,8 +37,8 @@ public class HatController : MonoBehaviour
         {
             gamesound.clip = win;
             gamesound.Play();
-            HatGameController.instance.score++;
-            HatGameController.instance.SpawnTarget();
+            HatGameController.Instance.score++;
+            HatGameController.Instance.SpawnTarget();
             Destroy(collision.gameObject);
         }
     }

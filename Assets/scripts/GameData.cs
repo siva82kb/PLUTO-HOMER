@@ -1,17 +1,19 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 
-public abstract class BaseGame
+public abstract class PlutoGame<TGameStates, TGameEvents> 
+    where TGameStates: Enum
+    where TGameEvents: Enum
 {
     public string name{ protected set; get; }
     public PlutoMechanism mechanism { protected set; get; }
+    public TGameStates gameState { protected set; get; }
     public bool isLogging { protected set; get; }
     public bool targetSpwan { protected set; get; } = false;
 
     public int score { protected set; get; }
     public int moveNo { protected set; get; } = 0;
-    public abstract string[] events{ protected set; get; }
-    public int eventNumber { protected set; get; }
 
     public float targetPosition { protected set; get; }
     public float playerPosition { protected set; get; }
@@ -26,10 +28,17 @@ public abstract class BaseGame
     protected string dataLogDir = null;
     protected DataLogger dataLog;
 
-    public BaseGame(PlutoMechanism mech)
+    public PlutoGame(PlutoMechanism mech)
     {
         mechanism = mech;
     }
+
+    // Abstract functions.
+    public abstract bool IsTrialRunning();
+    public abstract float ConvertToGameSpeed(float mechSpeed);
+    public abstract void ReadLastGameParameters();
+    public abstract void StartGameTrial();
+    public abstract void RunGameStateMachine(TGameEvents gEvent);
 
     //private static readonly string[] gameHeader = new string[] {
     //    "time","controltype","error","buttonState","angle","control",
@@ -173,31 +182,38 @@ public abstract class BaseGame
 }
 
 /// <summary>
-/// HatTrickGame inherits from BaseGameClass and defines its own game events.
+/// HatTrickGame inherits from PlutoGameClass and defines its own game events.
 /// </summary>
-public class HatTrickGame : BaseGame
+public class HatTrickGame : PlutoGame<HatTrickGame.GameStates, HatTrickGame.GameEvents>
 {
-    // Singleton instance (thread-safe via Lazy<T>)
-    private static Lazy<HatTrickGame> _lazyInstance = new Lazy<HatTrickGame>(() => new HatTrickGame(null));
-    public static HatTrickGame Instance => _lazyInstance.Value;
-    // public string[] HEADER { get; } = new string[] { "DateTime", "GameSpeed" };
     // Default game parameters
     public const float DEFAULTGAMESPEED = 0.5f;
-
-    public override string[] events
+    public enum GameStates
     {
-        protected set { }
-        get
-        {
-            return new string[] { "MOVING", "BALLCAUGHT", "BOMBCAUGHT", "BALLMISSED", "BOMBMISSED" };
-        }
+        WAITING = 0,
+        START,
+        STOP,
+        PUASED,
+        SPAWNBALL,
+        MOVE,
+        SUCESS,
+        FAILURE
     }
 
-    private HatTrickGame(PlutoMechanism mech) : base(mech)
+    public enum GameEvents
+    {
+        NONE,
+        BALLCREATED,
+        BALLCAUGHT,
+        BALLMISSED
+    }
+    
+    public HatTrickGame(PlutoMechanism mech) : base(mech)
     {
         // Initialize the game parameters
         name = "HAT";
         mechanism = mech;
+        gameState = GameStates.START;
         gameParamsFileName = Path.Combine(DataManager.gamePath,$"{name}_{mechanism}.csv");
         moveNo = 0;
         dataLog = null;
@@ -206,6 +222,7 @@ public class HatTrickGame : BaseGame
         if (mechanism == null) return;
         
         // Call the intialization function to get the game speed.
+        UnityEngine.Debug.Log(mechanism.IsSpeedUpdated());
         if (mechanism.IsSpeedUpdated())
         {
             gameSpeed = ConvertToGameSpeed(mechanism.currSpeed);
@@ -220,37 +237,42 @@ public class HatTrickGame : BaseGame
         ReadLastGameParameters();
     }
 
-    // Initialize (thread-safe)
-    public void Initialize(PlutoMechanism mech)
-    {
-        if (mech == null)
-            throw new ArgumentNullException(nameof(mech));
-
-        // If already initialized with the same mechanism, do nothing
-        if (Instance.mechanism == mech)
-            return;
-
-        // Force reinitialization (works because Lazy is thread-safe)
-        _lazyInstance = new Lazy<HatTrickGame>(() => new HatTrickGame(mech));
-    }
-
-    // Read and update game parameters from the game parameter file
-    public void ReadLastGameParameters()
-    {
-    }
-
+    // Abstract functions
     // Function to convert the game speed
-    public float ConvertToGameSpeed(float mechSpeed)
+    public override float ConvertToGameSpeed(float mechSpeed)
     {
         // TODO
         return 0.5f * mechSpeed;
+    }
+
+    // Read and update game parameters from the game parameter file
+    public override void ReadLastGameParameters()
+    {
+       // TODO 
+    }
+
+    // Check if a trial is running.
+    public override bool IsTrialRunning() => gameState != GameStates.WAITING;
+
+    // Start game trial
+    public override void StartGameTrial()
+    {
+        // Set the starting state.
+        gameState = GameStates.START;
+    }
+
+    // Execute game statemachine
+    public override void RunGameStateMachine(GameEvents gEvent)
+    {
+        // TODO
+        throw new NotImplementedException();
     }
 }
 
 
 
 
-//public class BaseGameData
+//public class PlutoGameData
 //{
 //    // Assessment check
 //    public bool isPROMcompleted = false;

@@ -137,6 +137,7 @@ public class calibrationSceneHandler : MonoBehaviour
     {
         // Updat game speed for the chosen mechanism.
         AppData.Instance.selectedMechanism.UpdateSpeed();
+        Debug.Log(AppData.Instance.selectedMechanism.IsSpeedUpdated());
         AppLogger.LogInfo($"Game speed set to {AppData.Instance.selectedMechanism.currSpeed} deg/sec.");
 
         // Check make sure the current ROM is not null. If it is, then we need to 

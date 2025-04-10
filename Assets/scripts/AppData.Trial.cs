@@ -13,8 +13,50 @@ public partial class AppData
     {
         trialStartTime = DateTime.Now;
         trialStopTime = null;
-        trialNumberDay += 1;
-        trialNumberSession += 1;
+        selectedMechanism.NextTrail();
         
+        // Desired success rate and trial type for the game.
+        var tSrType = HomerTherapy.GetTrailTypeAndSuccessRate(selectedMechanism.trialNumberDay);
+        
+        // Compute AAN control bound.
+        if (selectedMechanism.trialNumberDay ==  1) 
+        {
+            _prevControlBound = aanController.currentCtrlBound;
+            _currControlBound = aanController.currentCtrlBound;
+        } 
+        else 
+        {
+            // Compute the control bound based on the success rate, depending 
+            // on the trial type.
+            _prevControlBound = _currControlBound;
+            if (tSrType.tType  == HomerTherapy.TrialType.SR85PCCATCH) 
+            {
+                _currControlBound = 0.0f;
+            } 
+            else 
+            {
+                aanController.AdaptControLBound(tSrType.sRate, _prevSuccessRate);
+                _currControlBound = aanController.currentCtrlBound;
+            }
+        }
+
+        // Write trial details to the log file.
+        string _tdetails = string.Join(" | ",
+            new string[] {
+                $"Start Time: {trialStartTime:yyyy-MM-ddTHH:mm:ss}",
+                $"Trial#Day: {selectedMechanism.trialNumberDay}",
+                $"Trial#Sess: {selectedMechanism.trialNumberSession}",
+                $"TrialType: ({(int)tSrType.tType}){tSrType.tType}",
+                $"Desired SR: {tSrType.sRate}",
+                $"Previous SR: {_prevControlBound}",
+                $"Current CB: {_currControlBound}"
+        });
+        AppLogger.LogInfo($"<StartNewTrial> {_tdetails}");
+    }
+
+    // Function to excute the trial by calling the game and AAN statemachines.
+    public void ExecuteTrial()
+    {
+
     }
 }

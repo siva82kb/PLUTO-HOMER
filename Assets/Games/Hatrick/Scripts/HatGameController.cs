@@ -11,8 +11,9 @@ using System.IO;
 
 public class HatGameController : MonoBehaviour
 {
-    public static HatGameController instance;
+    public static HatGameController Instance { get; private set; }
 
+    // Game graphics related variables.
     public Text ScoreText;
     public Text timeLeftText;
     public GameObject GameOverObject;
@@ -31,7 +32,6 @@ public class HatGameController : MonoBehaviour
     public Image targetImage;
     public AudioSource gamesound;
     public AudioClip loose;
-
 
     private float playSize;
     public int score = 0;
@@ -61,11 +61,14 @@ public class HatGameController : MonoBehaviour
 
     private string prevScene = "CHGAME";
 
+    // Game event to be reported to the game state machine.
+    private HatTrickGame.GameEvents gEvent = HatTrickGame.GameEvents.NONE;
+
     private void Awake()
     {
-        if (instance == null)
+        if (Instance == null)
         {
-            instance = this;
+            Instance = this;
         }
         else
         {
@@ -88,7 +91,6 @@ public class HatGameController : MonoBehaviour
         HandleGameState();
         if (!paramSet)
         {
-
             HTGameLevel = 1;
             player = GameObject.FindGameObjectWithTag("Player");
             scale = new Vector3(1f - 0.05f * HTGameLevel, 1f - 0.05f * HTGameLevel, 1f - 0.05f * HTGameLevel);
@@ -99,9 +101,9 @@ public class HatGameController : MonoBehaviour
         {
             HandleGameUpdate();
             playerPosition = GameObject.FindGameObjectWithTag("Player").transform.position.x;
-
         }
     }
+
     public float Angle2Screen(float angle)
     {
         float newPROM_tmin = 60f;
@@ -114,13 +116,18 @@ public class HatGameController : MonoBehaviour
     {
         if (currentState == GameState.NotStarted || currentState == GameState.Paused)
         {
+            // Start new trial.
+            AppData.Instance.StartNewTrial();
+
+            // Reset game event.
+            gEvent = HatTrickGame.GameEvents.NONE;
+
             currentState = GameState.Playing;
             isPlaying = true;
             timeLeft = trialTime;
             StartButton.SetActive(false);
             PauseButton.SetActive(true);
             ResumeButton.SetActive(false);
-
             SpawnTarget();
         }
     }
@@ -163,6 +170,19 @@ public class HatGameController : MonoBehaviour
     private void HandleGameUpdate()
     {
         timeLeft -= Time.deltaTime;
+        // Act according to the current game state.
+        switch (AppData.Instance.selectedGame.gameState)
+        {
+            case HatTrickGame.GameStates.SPAWNBALL:
+                // Spawn a new ball.
+                break;
+            case HatTrickGame.GameStates.MOVE:
+                // Wait for the user to success or fail.
+                break;
+            case HatTrickGame.GameStates.
+                // Wait for the user to score.
+                break;
+        }
         if (timeLeft <= 0)
         {
             timeLeft = 0;
@@ -292,5 +312,4 @@ public class HatGameController : MonoBehaviour
             Destroy(collision.gameObject);
         }
     }
-
 }

@@ -1103,8 +1103,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3fa589991bea8b4b90533daad84835d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cam: {fileID: 519420031}
   maxwidth: 0
+  cam: {fileID: 519420031}
   gamesound: {fileID: 1341203544}
   win: {fileID: 8300000, guid: fae4296e9b317c04ab761a0474c1585b, type: 3}
   loose: {fileID: 8300000, guid: eeb3f122c09add043b2c67124821ebbe, type: 3}
@@ -2012,20 +2012,17 @@ MonoBehaviour:
   - {fileID: 5816639487924542826, guid: 5b823bad31cf21245aa04c21bff5ff85, type: 3}
   aromLeft: {fileID: 1057131366}
   aromRight: {fileID: 1464396596}
-  PlayerObj: {fileID: 0}
-  score: 0
-  balldestroyed: 1
-  targetSpwan: 0
-  aromRangeSpawn: 0
-  spawnAreaToggle: {fileID: 0}
-  targetImage: {fileID: 344611146}
-  gamesound: {fileID: 1341203544}
-  loose: {fileID: 8300000, guid: eeb3f122c09add043b2c67124821ebbe, type: 3}
   audioClips:
   - {fileID: 8300000, guid: eeb3f122c09add043b2c67124821ebbe, type: 3}
   - {fileID: 8300000, guid: fae4296e9b317c04ab761a0474c1585b, type: 3}
   gameSound: {fileID: 0}
-  winScore: 7
+  targetImage: {fileID: 344611146}
+  gamesound: {fileID: 1341203544}
+  loose: {fileID: 8300000, guid: eeb3f122c09add043b2c67124821ebbe, type: 3}
+  targetSpwan: 0
+  nTargets: 0
+  nSuccess: 0
+  nFailure: 0
 --- !u!4 &768395343
 Transform:
   m_ObjectHideFlags: 0
@@ -2409,7 +2406,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 768395342}
         m_TargetAssemblyTypeName: HatGameController, Assembly-CSharp
-        m_MethodName: StartGame
+        m_MethodName: OnStartButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

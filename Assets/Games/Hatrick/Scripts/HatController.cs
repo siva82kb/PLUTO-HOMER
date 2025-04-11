@@ -21,7 +21,6 @@ public class HatController : MonoBehaviour
         float hatwidth = GameObject.Find("HatFrontSprite").GetComponent<Renderer>().bounds.extents.x;
         Vector3 targetWidth = cam.ScreenToWorldPoint(UpperCorner);
         maxwidth = targetWidth.x - hatwidth;
-        //playSize = maxwidth * 0.9f;
         playSize = maxwidth * 1f;
     }
 
@@ -31,17 +30,18 @@ public class HatController : MonoBehaviour
         Vector2 targetPosition = new Vector2(position, this.transform.position.y);
         gameObject.GetComponent<Rigidbody2D>().MovePosition(targetPosition);
     }
+
     void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.gameObject.tag == "Target")
         {
             gamesound.clip = win;
             gamesound.Play();
-            HatGameController.Instance.score++;
-            HatGameController.Instance.SpawnTarget();
             Destroy(collision.gameObject);
+            HatGameController.Instance.BallCaught();
         }
     }
+
     private float movementControl(float targetX)
     {
         float val;

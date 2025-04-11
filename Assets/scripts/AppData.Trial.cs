@@ -17,6 +17,8 @@ public partial class AppData
         
         // Desired success rate and trial type for the game.
         var tSrType = HomerTherapy.GetTrailTypeAndSuccessRate(selectedMechanism.trialNumberDay);
+        desiredSuccessRate = tSrType.sRate;
+        trialType = tSrType.tType;
         
         // Compute AAN control bound.
         if (selectedMechanism.trialNumberDay ==  1) 
@@ -29,13 +31,13 @@ public partial class AppData
             // Compute the control bound based on the success rate, depending 
             // on the trial type.
             _prevControlBound = _currControlBound;
-            if (tSrType.tType  == HomerTherapy.TrialType.SR85PCCATCH) 
+            if (tSrType.tType  == HomerTherapy.TrialType.SR85PCCATCH)
             {
                 _currControlBound = 0.0f;
             } 
-            else 
+            else
             {
-                aanController.AdaptControLBound(tSrType.sRate, _prevSuccessRate);
+                aanController.AdaptControLBound(desiredSuccessRate, _prevSuccessRate);
                 _currControlBound = aanController.currentCtrlBound;
             }
         }
@@ -54,9 +56,25 @@ public partial class AppData
         AppLogger.LogInfo($"<StartNewTrial> {_tdetails}");
     }
 
-    // Function to excute the trial by calling the game and AAN statemachines.
-    public void ExecuteTrial()
+    public void StopTrial(int nTargets, int nSuccess, int nFailure)
     {
-
+        trialStopTime = DateTime.Now;
+        // Write trial details to the log file.
+        string _tdetails = string.Join(" | ",
+            new string[] {
+                $"Start Time: {trialStartTime:yyyy-MM-ddTHH:mm:ss}",
+                $"Stop Time: {trialStopTime:yyyy-MM-ddTHH:mm:ss}",
+                $"Trial#Day: {selectedMechanism.trialNumberDay}",
+                $"Trial#Sess: {selectedMechanism.trialNumberSession}",
+                $"TrialType: ({(int)trialType}){trialType}",
+                $"NTargets: {nTargets}",
+                $"NSuccess: {nSuccess}",
+                $"NFailure: {nFailure}",
+                $"Desired SR: {desiredSuccessRate}",
+                $"Trial SR: {100f * nSuccess / nTargets}",
+                $"Previous SR: {_prevControlBound}",
+                $"Current CB: {_currControlBound}"
+        });
+        AppLogger.LogInfo($"<StopTrial> {_tdetails}");
     }
 }

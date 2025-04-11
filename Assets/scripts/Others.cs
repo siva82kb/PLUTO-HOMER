@@ -29,6 +29,7 @@ public static class PlutoDefs
 public static class HomerTherapy
 {
     public static readonly float SuccessRateThForSpeedIncrement = 0.9f;
+    public static readonly float TrialDuration = 60.0f;
     public static readonly Dictionary<string, float> GameSpeedIncrements = new Dictionary<string, float>  {
         { "PING-PONG", 0.5f },
         { "TUK-TUK", 0.2f },
@@ -67,6 +68,46 @@ public static class HomerTherapy
         // Updat success rate.
         sRate += tType == TrialType.TRAIN ? UnityEngine.Random.Range(-4, 5) : 0;
         return (sRate, tType);
+    }
+
+    // Generate new target position
+    private static float[] GetRomBoundariesForTargets(float[] arom, float[] prom)
+    {
+        if (prom[0] == 0 && arom[0] == 0)
+        {
+            return new float[] {
+                arom[0],
+                arom[1] / 2,
+                arom[1],
+                (prom[1] - arom[1]) / 2,
+                prom[1]
+            };
+        }
+        return new float[] {
+            prom[0],
+            (arom[0] + prom[0]) / 2,
+            arom[0],
+            arom[0] + (arom[1] + arom[0]) / 4,
+            (arom[1] + arom[0]) / 2,
+            arom[0] + 3 * (arom[1] + arom[0]) / 4,
+            arom[1],
+            (prom[1] - arom[1]) / 2,
+            prom[1]
+        };
+    }
+    public static float GetNewTargetPosition(float[] arom, float[] prom)
+    {
+        float[] region_boundaries = GetRomBoundariesForTargets(arom, prom);
+        
+        // Sample the region where the target is the appear.
+        float _region = UnityEngine.Random.Range(0.01f, region_boundaries.Length - 1.01f);
+        
+        // Get the integer and fractional part of _region.
+        int _intpart = (int)Math.Floor(_region);
+        float _decpart = _region - _intpart;
+
+        // Choose target accoding to _randloc
+        return region_boundaries[_intpart] + (region_boundaries[_intpart + 1] - region_boundaries[_intpart]) * _decpart;
     }
 }
 
@@ -735,7 +776,7 @@ public static class gameData
             StopLogging();
         }
         // Start new logger
-        if (AppData.Instance.selectedGame.name == "PINGPONG")
+        if (AppData.Instance.selectedGame == "PINGPONG")
         {
             if (fname != "")
             {
@@ -750,7 +791,7 @@ public static class gameData
                 isLogging = false;
             }
         }
-        else if (AppData.Instance.selectedGame.name == "HATTRICK")
+        else if (AppData.Instance.selectedGame == "HATTRICK")
         {
             if (fname != "")
             {
@@ -765,7 +806,7 @@ public static class gameData
                 isLogging = false;
             }
         }
-        else if (AppData.Instance.selectedGame.name == "TUKTUK")
+        else if (AppData.Instance.selectedGame == "TUKTUK")
         {
             if (fname != "")
             {

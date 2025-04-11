@@ -24,7 +24,6 @@ public class ChooseGameSceneHandler : MonoBehaviour
 
     void Start()
     {
-        Debug.Log("start");
         // Initialize if needed
         if (AppData.Instance.userData == null)
         {
@@ -58,7 +57,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
         AttachCallbacks();
 
         // Make sure No control is set
-        PlutoComm.setControlType("NONE");
+        PlutoComm.setControlType("NONE");s
 
         Debug.Log($"Curr ROM: {AppData.Instance.selectedMechanism.currRom.promMin:F2}, {AppData.Instance.selectedMechanism.currRom.promMax:F2}, {AppData.Instance.selectedMechanism.currRom.aromMin:F2}, {AppData.Instance.selectedMechanism.currRom.aromMax:F2}");
     }
@@ -74,7 +73,6 @@ public class ChooseGameSceneHandler : MonoBehaviour
         }
 
         // Magic key cobmination for doing the assessment.
-        Debug.Log("adsgadsg");
         if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.R))
         {
             SceneManager.LoadScene("ASSESS");

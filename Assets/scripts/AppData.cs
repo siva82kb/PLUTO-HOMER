@@ -1,5 +1,6 @@
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Unity.VisualScripting;
 
@@ -47,7 +48,7 @@ public partial class AppData
      */
     public PlutoUserData userData;
     public PlutoMechanism selectedMechanism { get; private set; }
-    public PlutoGame selectedGame { get; private set; } = null;
+    public string selectedGame { get; private set; } = null;
 
     /*
      * SESSION DETAILS
@@ -71,11 +72,19 @@ public partial class AppData
     public string moveTime { get; set; }
     // public int trialNumberDay { get; set; }
     // public int trialNumberSession { get; set; }
-    public string trialType { get; set; }
+    // public string trialType { get; set; }
     public DateTime trialStartTime { get; set; }
     public DateTime? trialStopTime { get; set; }
 
     public void SetStopTime() => stopTime = DateTime.Now;
+
+    /*
+     * Game trial data
+     */
+    public List<float> previousSuccessRates = null;
+    public float desiredSuccessRate { get; private set; }
+    public HomerTherapy.TrialType trialType;
+
 
     /*
      * AAN Data
@@ -175,36 +184,37 @@ public partial class AppData
 
     public void SetGame(string gameName)
     {
-        // Cannot set game before selecting mechanism.
-        if (selectedMechanism == null) 
-        {
-            AppLogger.LogError($"Setting game before mechanism not possible.");
-            throw new ArgumentNullException(nameof(selectedMechanism));
-        }
+        selectedGame = gameName;
+        // // Cannot set game before selecting mechanism.
+        // if (selectedMechanism == null) 
+        // {
+        //     AppLogger.LogError($"Setting game before mechanism not possible.");
+        //     throw new ArgumentNullException(nameof(selectedMechanism));
+        // }
 
-        // Set game to null when gameName is empty or null.
-        if (string.IsNullOrEmpty(gameName))
-        {
-            AppLogger.SetCurrentGame("");
-            selectedGame = null;
-            return;
-        }
+        // // Set game to null when gameName is empty or null.
+        // if (string.IsNullOrEmpty(gameName))
+        // {
+        //     AppLogger.SetCurrentGame("");
+        //     selectedGame = null;
+        //     return;
+        // }
         
-        // Set the game object appropriately.
-        switch (gameName)
-        {
-            case "HAT":
-                selectedGame = new HatTrickGame(selectedMechanism);
-                break;
-            default:
-                AppLogger.LogError($"Unknow game selected '{gameName}'.");
-                AppLogger.SetCurrentGame("");
-                selectedGame = null;
-                return;
-        }
+        // // Set the game object appropriately.
+        // switch (gameName)
+        // {
+        //     case "HAT":
+        //         selectedGame = new HatTrickGame(selectedMechanism);
+        //         break;
+        //     default:
+        //         AppLogger.LogError($"Unknow game selected '{gameName}'.");
+        //         AppLogger.SetCurrentGame("");
+        //         selectedGame = null;
+        //         return;
+        // }
         // Set selected game.
-        AppLogger.LogInfo($"Selected game '{selectedGame.name}'.");
-        AppLogger.SetCurrentGame(selectedGame.name);
+        AppLogger.LogInfo($"Selected game '{selectedGame}'.");
+        AppLogger.SetCurrentGame(selectedGame);
     }
 
     public string trainingSide => userData?.rightHand == true ? "RIGHT" : "LEFT";

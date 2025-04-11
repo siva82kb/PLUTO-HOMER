@@ -2,10 +2,19 @@ using System;
 using System.Diagnostics;
 using System.IO;
 
-public abstract class PlutoGame<TGameStates, TGameEvents> 
+public interface IPlutoGame
+{
+    Type GameStatesType { get; }
+    Type GameEventsType { get; }
+    PlutoMechanism mechanism { get; }
+}
+
+public abstract class PlutoGame<TGameStates, TGameEvents> : IPlutoGame
     where TGameStates: Enum
     where TGameEvents: Enum
 {
+    public Type GameStatesType => typeof(TGameStates);
+    public Type GameEventsType => typeof(TGameEvents);
     public string name{ protected set; get; }
     public PlutoMechanism mechanism { protected set; get; }
     public TGameStates gameState { protected set; get; }
@@ -196,13 +205,14 @@ public class HatTrickGame : PlutoGame<HatTrickGame.GameStates, HatTrickGame.Game
         PUASED,
         SPAWNBALL,
         MOVE,
-        SUCESS,
+        SUCCESS,
         FAILURE
     }
 
     public enum GameEvents
     {
         NONE,
+        GAMESTARTED,
         BALLCREATED,
         BALLCAUGHT,
         BALLMISSED

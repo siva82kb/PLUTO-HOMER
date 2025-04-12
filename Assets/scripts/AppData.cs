@@ -79,10 +79,17 @@ public partial class AppData
     public void SetStopTime() => stopTime = DateTime.Now;
 
     /*
+     * Logging file names.
+     */
+    public string trialRawDataFile { get; private set; } = null;
+    public string trialAanExecDataFile { get; private set; } = null;
+
+    /*
      * Game trial data
      */
     public List<float> previousSuccessRates = null;
     public float desiredSuccessRate { get; private set; }
+    public float successRate { get; private set; } = 0f;
     public HomerTherapy.TrialType trialType;
 
 
@@ -149,6 +156,12 @@ public partial class AppData
     private void InitializeRobotConnection(bool doNotResetMech)
     {
         ConnectToRobot.Connect(COMPort);
+        // Check if the connection is successful.
+        if (!ConnectToRobot.isConnected)
+        {
+            AppLogger.LogError($"Failed to connect to PLUTO @ {COMPort}.");
+            throw new Exception($"Failed to connect to PLUTO @ {COMPort}.");
+        }
         AppLogger.LogInfo($"Connected to PLUTO @ {COMPort}.");
         // Set control to NONE, calibrate and get version.
         PlutoComm.sendHeartbeat();

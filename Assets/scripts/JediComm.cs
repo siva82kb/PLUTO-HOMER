@@ -89,6 +89,7 @@ public static class JediComm
             if (serPort.IsOpen == false)
             {
                 Debug.Log("Serial port is not open.");
+                stop = true;
                 continue;
             }
             try

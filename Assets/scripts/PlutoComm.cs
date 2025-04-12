@@ -484,6 +484,7 @@ public static class ConnectToRobot
 {
     public static string _port;
     public static bool isPLUTO = false;
+    public static bool isConnected = false;
 
     public static void Connect(string port)
     {
@@ -504,6 +505,7 @@ public static class ConnectToRobot
                 UnityEngine.Debug.Log(_port);
                 JediComm.Connect();
             }
+            isConnected = JediComm.serPort.IsOpen;
         }
     }
     public static void disconnect()

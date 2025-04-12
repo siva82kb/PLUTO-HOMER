@@ -1,5 +1,8 @@
 
 using System;
+using System.IO;
+using System.Text;
+using Unity.VisualScripting;
 
 
 /*
@@ -42,6 +45,18 @@ public partial class AppData
             }
         }
 
+        // Set the trial data files.
+        trialRawDataFile = DataManager.GetTrialRawDataFileName(
+            selectedMechanism.trialNumberSession,
+            selectedMechanism.trialNumberDay,
+            Instance.selectedGame,
+            Instance.selectedMechanism.name);
+        trialAanExecDataFile = DataManager.GetTrialAanExecDataFileName(
+            selectedMechanism.trialNumberSession,
+            selectedMechanism.trialNumberDay,
+            Instance.selectedGame,
+            Instance.selectedMechanism.name);
+
         // Write trial details to the log file.
         string _tdetails = string.Join(" | ",
             new string[] {
@@ -51,7 +66,9 @@ public partial class AppData
                 $"TrialType: ({(int)tSrType.tType}){tSrType.tType}",
                 $"Desired SR: {tSrType.sRate}",
                 $"Previous SR: {_prevControlBound}",
-                $"Current CB: {_currControlBound}"
+                $"Current CB: {_currControlBound}",
+                $"TrialRawDataFile: {trialRawDataFile}",
+                $"TrialAanExecFile: {trialAanExecDataFile}"
         });
         AppLogger.LogInfo($"<StartNewTrial> {_tdetails}");
     }
@@ -59,6 +76,9 @@ public partial class AppData
     public void StopTrial(int nTargets, int nSuccess, int nFailure)
     {
         trialStopTime = DateTime.Now;
+        successRate = 100 * nSuccess / nTargets;
+        // Write trial information to the session details file.
+        WriteTrialToSessionsFile();
         // Write trial details to the log file.
         string _tdetails = string.Join(" | ",
             new string[] {
@@ -71,10 +91,63 @@ public partial class AppData
                 $"NSuccess: {nSuccess}",
                 $"NFailure: {nFailure}",
                 $"Desired SR: {desiredSuccessRate}",
-                $"Trial SR: {100f * nSuccess / nTargets}",
+                $"Trial SR: {successRate}",
                 $"Previous SR: {_prevControlBound}",
-                $"Current CB: {_currControlBound}"
+                $"Current CB: {_currControlBound}",
+                $"TrialRawDataFile: {trialRawDataFile}",
+                $"TrialAanExecFile: {trialAanExecDataFile}"
         });
         AppLogger.LogInfo($"<StopTrial> {_tdetails}");
+    }
+
+    private void WriteTrialToSessionsFile()
+    {
+        // Create folders for this session if they do not exist.
+        DataManager.CreateSessinFolders(currentSessionNumber);
+
+        // Build the trial row.
+        string[] trialRow = new string[] {
+            // "SessionNumber"
+            $"{selectedMechanism.trialNumberSession}",
+            // "DateTime"
+            startTime.ToString(DataManager.DATEFORMAT),
+            // "TrialNumberDay"
+            $"{selectedMechanism.trialNumberDay}",
+            // "TrialNumberSession"
+            $"{selectedMechanism.trialNumberSession}",
+            // "TrialType"
+            $"{trialType}",
+            // "TrialStartTime"
+            trialStartTime.ToString(DataManager.DATEFORMAT),
+            // "TrialStopTime"
+            trialStopTime?.ToString(DataManager.DATEFORMAT),
+            // "TrialRawDataFile"
+            trialRawDataFile.Split("/data/")[1],
+            // "TrialAanExecFile", 
+            trialAanExecDataFile.Split("/data/")[1],
+            // "Mechanism"
+            selectedMechanism.name, 
+            // "GameName"
+            selectedGame,
+            // "GameParameter"
+            null,
+            // "GameSpeed"
+            selectedMechanism.currSpeed.ToString(),
+            // "AssistMode"
+            trialType == HomerTherapy.TrialType.SR85PCCATCH ? "ACTIVE" : "AAN",
+            // "AssistModeParameters"
+            trialType == HomerTherapy.TrialType.SR85PCCATCH ? null : $"{_currControlBound:F3}", 
+            // "DesiredSuccessRate"
+            $"{desiredSuccessRate:F3}",
+            // "SuccessRate"
+            $"{successRate:F3}",
+        };
+
+        // Write the trial row to the session file.
+        using (StreamWriter sw = new StreamWriter(DataManager.sessionFile, true, Encoding.UTF8))
+        {
+            // Write the trial row to the session file.
+            sw.WriteLine(string.Join(",", trialRow));
+        }
     }
 }

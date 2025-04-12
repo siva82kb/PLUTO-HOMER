@@ -18,7 +18,7 @@ public struct DaySummary
 
 public static class DataManager
 {
-    public static readonly string basePath = Application.dataPath + "/data";
+    public static readonly string basePath = FixPath(Path.Combine(Application.dataPath, "data"));
     static string directoryPathConfig;
     public static string sessionPath { get; private set; }
     public static string gamePath { get; private set; }
@@ -35,32 +35,51 @@ public static class DataManager
     // Sessions file definitions.
     public static string[] SESSIONFILEHEADER = new string[] {
         "SessionNumber", "DateTime",
-        "TrialNumberDay", "TrialNumberSession", "TrialType", "TrialStartTime", "TrialStopTime", "TrialDataFileLocation",
-        "GameName", "GameParameter", "GameSpeed",  
+        "TrialNumberDay", "TrialNumberSession", "TrialType", "TrialStartTime", "TrialStopTime", "TrialRawDataFile", "TrialAanExecFile", 
+        "Mechanism", "GameName", "GameParameter", "GameSpeed",  
         "AssistMode", "AssistModeParameters",
-        "DesiredSuccessRate", "SuccessRate", "MoveTime"
+        "DesiredSuccessRate", "SuccessRate"
     };
 
-    // Functions to generate file names.
-    public static string GetAanAdaptFileName(string mechanism) => Path.Combine(aanAdaptPath, $"{mechanism}-adaptaan.csv");
-    public static string GetAanExecFileName(string mechanism) => Path.Combine(aanExecPath, $"{mechanism}-execaan.csv");
-    public static string GetGameFileName(string game) => Path.Combine(gamePath, $"{game}-gameparams.csv");
-    public static string GetMechFileName(string mechanism) => Path.Combine(mechPath, $"{mechanism}-mechparams.csv");
-    public static string GetRawFileName(string game, string mechanism, string datetime) => Path.Combine(rawPath, $"{datetime}-{game}-{mechanism}-raw.csv");
-    public static string GetRomFileName(string mechanism) => Path.Combine(romPath, $"{mechanism}-rom.csv");
+    // Date format strict.
+    public static string DATEFORMAT = "yyyy-MM-dd HH:mm:ss";
 
+    // Functions to generate file names.
+    public static string GetAanAdaptFileName(string mechanism) => FixPath(Path.Combine(aanAdaptPath, $"{mechanism}-adaptaan.csv"));
+    public static string GetAanExecFileName(string mechanism) => FixPath(Path.Combine(aanExecPath, $"{mechanism}-execaan.csv"));
+    public static string GetGameFileName(string game) => FixPath(Path.Combine(gamePath, $"{game}-gameparams.csv"));
+    public static string GetMechFileName(string mechanism) => FixPath(Path.Combine(mechPath, $"{mechanism}-mechparams.csv"));
+    public static string GetRawFileName(
+        string game,
+        string mechanism,
+        string datetime) => FixPath(Path.Combine(rawPath, $"{datetime}-{game}-{mechanism}-raw.csv"));
+    public static string GetRomFileName(string mechanism) => FixPath(Path.Combine(romPath, $"{mechanism}-rom.csv"));
+    public static string GetTrialRawDataFileName(
+        int sessNo, 
+        int trialNo,
+        string game,
+        string mechanism) => FixPath(Path.Combine(rawPath, $"session-{sessNo}", $"raw-sess{sessNo:D2}-trial{trialNo:D3}-{game}-{mechanism}.csv"));
+    public static string GetTrialAanExecDataFileName(
+        int sessNo,
+        int trialNo,
+        string game,
+        string mechanism) => FixPath(Path.Combine(rawPath, $"session-{sessNo}", $"aanexec-sess{sessNo:D2}-trial{trialNo:D3}-{game}-{mechanism}.csv"));
+
+    // Fix stupid Window's path separator issue.
+    public static string FixPath(string path) => path.Replace("\\", "/");
+    
     public static void CreateFileStructure()
     {
-        directoryPathConfig = basePath + "/configuration";
-        sessionPath = basePath + "/sessions";
-        gamePath = basePath + "/gameparams";
-        mechPath = basePath + "/mechparams";
-        aanAdaptPath = basePath + "/aanadapt";
-        aanExecPath = basePath + "/aanexec";
-        rawPath = basePath + "/rawdata";
-        romPath = basePath + "/rom";
-        logPath = basePath + "/applog";
-        sessionFile = sessionPath + "/sessions.csv";
+        directoryPathConfig = FixPath(basePath + "/configuration");
+        sessionPath = FixPath(Path.Combine(basePath, "sessions"));
+        gamePath = FixPath(Path.Combine(basePath, "gameparams"));
+        mechPath = FixPath(Path.Combine(basePath, "mechparams"));
+        aanAdaptPath = FixPath(Path.Combine(basePath, "aanadapt"));
+        aanExecPath = FixPath(Path.Combine(basePath, "aanexec"));
+        rawPath = FixPath(Path.Combine(basePath, "rawdata"));
+        romPath = FixPath(Path.Combine(basePath, "rom"));
+        logPath = FixPath(Path.Combine(basePath, "applog"));
+        sessionFile = FixPath(Path.Combine(sessionPath, "sessions.csv"));
         // Check if the directory exists
         Directory.CreateDirectory(sessionPath);
         Directory.CreateDirectory(gamePath);
@@ -128,6 +147,18 @@ public static class DataManager
             }
             AppLogger.LogWarning("Sessions.csv file not founds. Created one.");
         }
+    }
+
+    // Create the folder for the current session.
+    public static void CreateSessinFolders(int sessNo)
+    {
+        // In raw data folder
+        string dn = FixPath(Path.Combine(rawPath, $"session-{sessNo}"));
+        if (Directory.Exists(dn)) Directory.Delete(dn, true);
+        
+        // In AAN exec folder
+        dn = FixPath(Path.Combine(aanExecPath, $"session-{sessNo}"));
+        if (Directory.Exists(dn)) Directory.Delete(dn, true);
     }
 }
 

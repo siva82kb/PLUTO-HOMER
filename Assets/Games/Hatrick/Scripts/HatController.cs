@@ -44,22 +44,15 @@ public class HatController : MonoBehaviour
 
     private float movementControl(float targetX)
     {
+        Debug.Log(targetX);
         float val;
-        if (Input.GetKey(KeyCode.RightArrow))
-        {
-           
-            if ((targetX >= 0f)|| (targetX<8)) val = 0.2f + targetX;
-            else val = 0.2f - targetX;
-
-            return val;
-        }
-        else if (Input.GetKey(KeyCode.LeftArrow))
-        {
-            if ((targetX <= 0f) || (targetX < -8)) val = -0.2f + targetX;
-            else val = targetX - 0.2f;
-
-            return val;
-        }
-        else return targetX;
+        Debug.Log(Input.GetKey(KeyCode.RightArrow));
+        if (Input.GetKey(KeyCode.RightArrow)) val = Math.Abs(targetX) <= 8 ? targetX + 0.2f : targetX;
+        else if (Input.GetKey(KeyCode.LeftArrow)) val = Math.Abs(targetX) <= 8 ? targetX - 0.2f : targetX;
+        else val = targetX;
+        // Clip value to +/-8.
+        if (val > 8) val = 8;
+        else if (val < -8) val = -8;
+        return val;
     }
 }

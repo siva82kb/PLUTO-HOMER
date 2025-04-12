@@ -29,7 +29,7 @@ public static class PlutoDefs
 public static class HomerTherapy
 {
     public static readonly float SuccessRateThForSpeedIncrement = 0.9f;
-    public static readonly float TrialDuration = 60.0f;
+    public static readonly float TrialDuration = 20.0f;
     public static readonly Dictionary<string, float> GameSpeedIncrements = new Dictionary<string, float>  {
         { "PING-PONG", 0.5f },
         { "TUK-TUK", 0.2f },
@@ -271,7 +271,7 @@ public class PlutoUserData
         {
             // Get the total movement time for each mechanism
             var _totalMoveTime = dTableSession.AsEnumerable()
-                .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == DateTime.Now.Date)
+                .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), DataManager.DATEFORMAT, CultureInfo.InvariantCulture).Date == DateTime.Now.Date)
                 .Where(row => row.Field<string>("Mechanism") == PlutoDefs.Mechanisms[i])
                 .Sum(row => Convert.ToInt32(row["MoveTime"]));
             mechMoveTimePrev[PlutoDefs.Mechanisms[i]] = _totalMoveTime / 60f;
@@ -288,7 +288,7 @@ public class PlutoUserData
         // Get the recent data of use for the selected mechanism.
         var lastUsageDate = dTableSession.AsEnumerable()
             .Where(row => row.Field<string>("Mechanism") == AppData.Instance.selectedMechanism.name)
-            .Select(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date)
+            .Select(row => DateTime.ParseExact(row.Field<string>("DateTime"), DataManager.DATEFORMAT, CultureInfo.InvariantCulture).Date)
             .Where(date => date < DateTime.Now.Date) // Exclude today
             .OrderByDescending(date => date)
             .FirstOrDefault();
@@ -303,7 +303,7 @@ public class PlutoUserData
         foreach (var _gameName in HomerTherapy.GameSpeedIncrements.Keys)
         {
             var rows = dTableSession.AsEnumerable()
-                .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == lastUsageDate)
+                .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), DataManager.DATEFORMAT, CultureInfo.InvariantCulture).Date == lastUsageDate)
                 .Where(row => row.Field<string>("GameName") == _gameName && row.Field<string>("Mechanism") == AppData.Instance.selectedMechanism.name);
 
             float previousGameSpeed = rows.Any() ? rows.Average(row => Convert.ToSingle(row["GameSpeed"])) : 0f;
@@ -355,7 +355,7 @@ public class PlutoUserData
     public float getPrevTodayMoveTime()
     {
         var _totalMoveTimeToday = dTableSession.AsEnumerable()
-            .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == DateTime.Now.Date)
+            .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), DataManager.DATEFORMAT, CultureInfo.InvariantCulture).Date == DateTime.Now.Date)
             .Sum(row => Convert.ToInt32(row["MoveTime"]));
         UnityEngine.Debug.Log(_totalMoveTimeToday);
         return _totalMoveTimeToday / 60f;
@@ -379,7 +379,7 @@ public class PlutoUserData
 
             // Calculate the total move time for the given day. If no data is found, _moveTime will be zero.
             int _moveTime = dTableSession.AsEnumerable()
-                .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == _day)
+                .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), DataManager.DATEFORMAT, CultureInfo.InvariantCulture).Date == _day)
                 .Sum(row => Convert.ToInt32(row["MoveTime"]));
 
             daySummaries[i - 1] = new DaySummary
@@ -518,7 +518,7 @@ public class PlutoMechanism
             // Get datetime from the last row.
             DateTime lastDate = DateTime.ParseExact(
                 speedData.Rows[speedData.Rows.Count - 1].Field<string>("DateTime"),
-                "dd-MM-yyyy HH:mm:ss",
+                DataManager.DATEFORMAT,
                 CultureInfo.InvariantCulture
             );
             if (lastDate.Date == DateTime.Now.Date)
@@ -543,7 +543,7 @@ public class PlutoMechanism
             // Write the new speed to the file.
             using (StreamWriter file = new StreamWriter(fileName, true))
             {
-                file.WriteLine(string.Join(",", new string[] { DateTime.Now.ToString(), currSpeed.ToString() }));
+                file.WriteLine(string.Join(",", new string[] { DateTime.Now.ToString(DataManager.DATEFORMAT), currSpeed.ToString() }));
             }
         }
     }
@@ -555,9 +555,9 @@ public class PlutoMechanism
     {
         // Get the last row for the today, for the selected mechanism.
         var lastRow = AppData.Instance.userData.dTableSession.AsEnumerable()?
-            .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture).Date == DateTime.Now.Date)
+            .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), DataManager.DATEFORMAT, CultureInfo.InvariantCulture).Date == DateTime.Now.Date)
             .Where(row => row.Field<string>("Mechanism") == this.name)
-            .OrderByDescending(row => DateTime.ParseExact(row.Field<string>("DateTime"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture))
+            .OrderByDescending(row => DateTime.ParseExact(row.Field<string>("DateTime"), DataManager.DATEFORMAT, CultureInfo.InvariantCulture))
             .FirstOrDefault();
         // Check if the last row is null.
         if (lastRow == null)

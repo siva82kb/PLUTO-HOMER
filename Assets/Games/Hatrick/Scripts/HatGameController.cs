@@ -91,7 +91,6 @@ public class HatGameController : MonoBehaviour
         {
             _gameState = value;
             // SetGameState(value);
-            Debug.Log(_gameState);
         }
     }
 

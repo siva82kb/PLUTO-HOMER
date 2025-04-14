@@ -1,6 +1,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Unity.VisualScripting;
 
@@ -67,8 +68,8 @@ public partial class AppData
                 $"Desired SR: {tSrType.sRate}",
                 $"Previous SR: {_prevControlBound}",
                 $"Current CB: {_currControlBound}",
-                $"TrialRawDataFile: {trialRawDataFile}",
-                $"TrialAanExecFile: {trialAanExecDataFile}"
+                $"TrialRawDataFile: {trialRawDataFile.Split('/').Last()}",
+                $"TrialAanExecFile: {trialAanExecDataFile.Split('/').Last()}",
         });
         AppLogger.LogInfo($"<StartNewTrial> {_tdetails}");
     }
@@ -94,8 +95,8 @@ public partial class AppData
                 $"Trial SR: {successRate}",
                 $"Previous SR: {_prevControlBound}",
                 $"Current CB: {_currControlBound}",
-                $"TrialRawDataFile: {trialRawDataFile}",
-                $"TrialAanExecFile: {trialAanExecDataFile}"
+                $"TrialRawDataFile: {trialRawDataFile.Split('/').Last()}",
+                $"TrialAanExecFile: {trialAanExecDataFile.Split('/').Last()}"
         });
         AppLogger.LogInfo($"<StopTrial> {_tdetails}");
     }
@@ -108,7 +109,7 @@ public partial class AppData
         // Build the trial row.
         string[] trialRow = new string[] {
             // "SessionNumber"
-            $"{selectedMechanism.trialNumberSession}",
+            $"{currentSessionNumber}",
             // "DateTime"
             startTime.ToString(DataManager.DATEFORMAT),
             // "TrialNumberDay"

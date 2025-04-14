@@ -273,7 +273,7 @@ public class PlutoUserData
             var _totalMoveTime = dTableSession.AsEnumerable()
                 .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), DataManager.DATEFORMAT, CultureInfo.InvariantCulture).Date == DateTime.Now.Date)
                 .Where(row => row.Field<string>("Mechanism") == PlutoDefs.Mechanisms[i])
-                .Sum(row => Convert.ToInt32(row["MoveTime"]));
+                .Sum(row => 60);
             mechMoveTimePrev[PlutoDefs.Mechanisms[i]] = _totalMoveTime / 60f;
         }
     }
@@ -380,7 +380,7 @@ public class PlutoUserData
             // Calculate the total move time for the given day. If no data is found, _moveTime will be zero.
             int _moveTime = dTableSession.AsEnumerable()
                 .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), DataManager.DATEFORMAT, CultureInfo.InvariantCulture).Date == _day)
-                .Sum(row => Convert.ToInt32(row["MoveTime"]));
+                .Sum(row => 60);
 
             daySummaries[i - 1] = new DaySummary
             {
@@ -426,7 +426,7 @@ public class PlutoMechanism
     public int trialNumberDay { get; private set; }
     public int trialNumberSession { get; private set; }
 
-    public PlutoMechanism(string name, string side)
+    public PlutoMechanism(string name, string side, int sessno)
     {
         this.name = name?.ToUpper() ?? string.Empty;
         this.side = side;
@@ -436,7 +436,7 @@ public class PlutoMechanism
         aromCompleted = false;
         this.side = side;
         currSpeed = -1f;
-        UpdateTrialNumbers();
+        UpdateTrialNumbers(sessno);
     }
 
     public bool IsMechanism(string mechName) => string.Equals(name, mechName, StringComparison.OrdinalIgnoreCase);
@@ -551,29 +551,38 @@ public class PlutoMechanism
     /*
      * Function to update the trial numbers for the day and session for the mechanism for today.
      */
-    public void UpdateTrialNumbers()
+    public void UpdateTrialNumbers(int sessno)
     {
         // Get the last row for the today, for the selected mechanism.
-        var lastRow = AppData.Instance.userData.dTableSession.AsEnumerable()?
+        var selRows = AppData.Instance.userData.dTableSession.AsEnumerable()?
             .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), DataManager.DATEFORMAT, CultureInfo.InvariantCulture).Date == DateTime.Now.Date)
-            .Where(row => row.Field<string>("Mechanism") == this.name)
-            .OrderByDescending(row => DateTime.ParseExact(row.Field<string>("DateTime"), DataManager.DATEFORMAT, CultureInfo.InvariantCulture))
-            .FirstOrDefault();
-        // Check if the last row is null.
-        if (lastRow == null)
+            .Where(row => row.Field<string>("Mechanism") == this.name);
+
+        // Check if the selected rows is null.
+        if (selRows.Count() == 0)
         {
             // Set the trial numbers to 1.
             trialNumberDay = 0;
             trialNumberSession = 0;
             return;
         }
-        else
+        // Get the trial number as the maximum number for the trialNumber Day.
+        trialNumberDay = selRows.Max(row => Convert.ToInt32(row.Field<string>("TrialNumberDay")));
+
+        // Now let's get the session number for the current session.
+        selRows = AppData.Instance.userData.dTableSession.AsEnumerable()?
+            .Where(row => DateTime.ParseExact(row.Field<string>("DateTime"), DataManager.DATEFORMAT, CultureInfo.InvariantCulture).Date == DateTime.Now.Date)
+            .Where(row => Convert.ToInt32(row.Field<string>("SessionNumber")) == sessno)
+            .Where(row => row.Field<string>("Mechanism") == this.name);
+        if (selRows.Count() == 0)
         {
-            // Last row is not null.
-            // Get the trial numbers from the last row.
-            trialNumberDay = Convert.ToInt32(lastRow.Field<string>("TrialNumberDay"));
-            trialNumberSession = Convert.ToInt32(lastRow.Field<string>("TrialNumberSession"));
+            // Set the trial numbers to 1.
+            trialNumberSession = 0;
+            return;
         }
+        // Get the maximum trial number for the session.
+        UnityEngine.Debug.Log(selRows.Count());
+        trialNumberSession = selRows.Max(row => Convert.ToInt32(row.Field<string>("TrialNumberSession")));
     }
 }
 

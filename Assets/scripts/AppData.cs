@@ -149,7 +149,7 @@ public partial class AppData
 
         // Get current session number.
         currentSessionNumber = userData.dTableSession.Rows.Count > 0 ? 
-            Convert.ToInt32(userData.dTableSession.Rows[userData.dTableSession.Rows.Count - 1]["SessionNumber"]) + 1 : 1;
+            Convert.ToInt32(userData.dTableSession.Rows[userData.dTableSession.Rows.Count - 1]["SessionNumber"]) + 1 : 1;        
         AppLogger.LogWarning($"Session number set to {currentSessionNumber}.");
     }
 
@@ -189,7 +189,7 @@ public partial class AppData
             return;
         }
         // Set the mechanism name.
-        selectedMechanism = new PlutoMechanism(name: name, side: trainingSide);
+        selectedMechanism = new PlutoMechanism(name: name, side: trainingSide, sessno: currentSessionNumber);
         AppLogger.LogInfo($"Selected mechanism '{selectedMechanism.name}'.");
         AppLogger.SetCurrentMechanism(selectedMechanism.name);
         AppLogger.LogInfo($"Trial numbers for ' {selectedMechanism.name}' updated. Day: {selectedMechanism.trialNumberDay}, Session: {selectedMechanism.trialNumberSession}.");

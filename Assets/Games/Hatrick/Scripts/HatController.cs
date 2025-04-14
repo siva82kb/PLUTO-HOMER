@@ -44,9 +44,7 @@ public class HatController : MonoBehaviour
 
     private float movementControl(float targetX)
     {
-        Debug.Log(targetX);
         float val;
-        Debug.Log(Input.GetKey(KeyCode.RightArrow));
         if (Input.GetKey(KeyCode.RightArrow)) val = Math.Abs(targetX) <= 8 ? targetX + 0.2f : targetX;
         else if (Input.GetKey(KeyCode.LeftArrow)) val = Math.Abs(targetX) <= 8 ? targetX - 0.2f : targetX;
         else val = targetX;

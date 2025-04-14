@@ -5,7 +5,6 @@ using UnityEngine;
 
 public class HatController : MonoBehaviour
 {
-    
     public float maxwidth;
     public static float playSize;
     float position = 0f;

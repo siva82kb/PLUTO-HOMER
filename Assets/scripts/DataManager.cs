@@ -41,6 +41,16 @@ public static class DataManager
         "AssistMode", "DesiredSuccessRate", "SuccessRate", "CurrentControlBound", "NextControlBound"
     };
 
+    // Raw data header.    
+    public static string[] RAWFILEHEADER = new string[] {
+        "DeviceRunTime", "PacketNumber", "Status", "DataType", "ErrorStatus", 
+        "ControlType", "Calibration",  "Mechanism", 
+        "Button", "Angle", "Torque", "Desired", "Control", "ControlBound", "ControlDir", "Target", 
+        "Error", "ErrorDiff", "ErrorSum",
+        "GameTargetX", "GameTargetY", "GameState",
+        "AanTargetPosition", "AanInitialPosition", "AanState"
+    };
+
     // Date format strict.
     public static string DATEFORMAT = "yyyy-MM-dd HH:mm:ss";
 

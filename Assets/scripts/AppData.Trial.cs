@@ -26,18 +26,9 @@ public partial class AppData
         
         // Set current control bound.
         _currControlBound = trialType  == HomerTherapy.TrialType.SR85PCCATCH ? 0.0f : aanController.currentCtrlBound;
-        
+
         // Set the trial data files.
-        trialRawDataFile = DataManager.GetTrialRawDataFileName(
-            currentSessionNumber,
-            selectedMechanism.trialNumberDay,
-            Instance.selectedGame,
-            Instance.selectedMechanism.name);
-        trialAanExecDataFile = DataManager.GetTrialAanExecDataFileName(
-            currentSessionNumber,
-            selectedMechanism.trialNumberDay,
-            Instance.selectedGame,
-            Instance.selectedMechanism.name);
+        StartRawAndAanExecDataLogging();
 
         // Write trial details to the log file.
         string _tdetails = string.Join(" | ",
@@ -87,6 +78,10 @@ public partial class AppData
                 $"TrialAanExecFile: {trialAanExecDataFile.Split('/').Last()}"
         });
         AppLogger.LogInfo($"<StopTrial> {_tdetails}");
+        // Stop Raw and AAN real-time data logging.
+        WriteTrialDataToRawDataFile();
+        trialRawDataFile = null;
+        trialAanExecDataFile = null;
     }
 
     private void WriteTrialToSessionsFile()
@@ -141,4 +136,138 @@ public partial class AppData
             sw.WriteLine(string.Join(",", trialRow));
         }
     }
+
+    public void StartRawAndAanExecDataLogging()
+    {
+        // Set the file name.
+        trialRawDataFile = DataManager.GetTrialRawDataFileName(
+            currentSessionNumber,
+            selectedMechanism.trialNumberDay,
+            Instance.selectedGame,
+            Instance.selectedMechanism.name);
+        trialAanExecDataFile = DataManager.GetTrialAanExecDataFileName(
+            currentSessionNumber,
+            selectedMechanism.trialNumberDay,
+            Instance.selectedGame,
+            Instance.selectedMechanism.name);
+
+        // Initialize the string builders.
+        rawDataString = new StringBuilder();
+        // Write pre-header and header information
+        rawDataString.AppendLine($":Device: PLUTO");
+        rawDataString.AppendLine($":Location: {userData.GetDeviceLocation()}");
+        rawDataString.AppendLine($":Mechanism: {selectedMechanism.name}");
+        rawDataString.AppendLine($":Game: {selectedGame}");
+        rawDataString.AppendLine($":TrialType: {trialType}");
+        rawDataString.AppendLine($":TrialStartTime: {trialStartTime:yyyy-MM-ddTHH:mm:ss}");
+        rawDataString.AppendLine($":AROM: [{selectedMechanism.CurrentArom[0]:F3},{selectedMechanism.CurrentArom[1]:F3}]");        
+        rawDataString.AppendLine($":PROM: [{selectedMechanism.CurrentProm[0]:F3},{selectedMechanism.CurrentProm[1]:F3}]");
+        rawDataString.AppendLine($":DesiredSuccessRate: {desiredSuccessRate:F3}");
+        rawDataString.AppendLine($":ControlBound: {_currControlBound:F3}");
+        rawDataString.AppendLine(string.Join(",", DataManager.RAWFILEHEADER));
+
+        // Attach the event handler for data logging.
+        PlutoComm.OnNewPlutoData += OnNewPlutoDataDataLogging;
+    }
+
+    public void OnNewPlutoDataDataLogging()
+    {
+        if (rawDataString == null) return;
+
+        // Device data
+        // "DeviceRunTime"
+        rawDataString.Append($"{PlutoComm.runTime},");
+        // "PacketNumber"
+        rawDataString.Append($"{PlutoComm.packetNumber},");
+        // "Status"
+        rawDataString.Append($"{PlutoComm.status},");
+        // "DataType"
+        rawDataString.Append($"{PlutoComm.dataType},");
+        // "ErrorStatus"
+        rawDataString.Append($"{PlutoComm.errorStatus},");
+        // "ControlType"
+        rawDataString.Append($"{PlutoComm.controlType},");
+        // "Calibration"
+        rawDataString.Append($"{PlutoComm.calibration},");
+        // "Mechanism" 
+        rawDataString.Append($"{PlutoComm.MECHANISMS[PlutoComm.mechanism]},");
+        // "Button"
+        rawDataString.Append($"{PlutoComm.button},");
+        // "Angle"
+        rawDataString.Append($"{PlutoComm.angle},");
+        // "Torque"
+        rawDataString.Append($"{PlutoComm.torque},");
+        // "Desired"
+        rawDataString.Append($"{PlutoComm.desired},");
+        // "Control"
+        rawDataString.Append($"{PlutoComm.control},");
+        // "ControlBound"
+        rawDataString.Append($"{PlutoComm.controlBound},");
+        // "ControlDir"
+        rawDataString.Append($"{PlutoComm.controlDir},");
+        // "Target"
+        rawDataString.Append($"{PlutoComm.target},");
+        // "Error"
+        rawDataString.Append($"{PlutoComm.err},");
+        // "ErrorDiff"
+        rawDataString.Append($"{PlutoComm.errDiff},");
+        // "ErrorSum"
+        rawDataString.Append($"{PlutoComm.errSum},");
+
+        // Game Data
+        // "GameTargetX", "GameTargetY"
+        rawDataString.Append($"{GetGameTargetPosition()},");
+        // "GameState"
+        rawDataString.Append($"{GetGameState()},");
+        
+        // AAN Data
+        // "AanTargetPosition"
+        rawDataString.Append($"{aanController.targetPosition:F3},");
+        // "AanInitialPosition"
+        rawDataString.Append($"{aanController.initialPosition:F3},");
+        // "AanState"
+        rawDataString.Append($"{aanController.state}");
+
+        // End of line.
+        rawDataString.Append("\n");
+    }
+
+    private void WriteTrialDataToRawDataFile()
+    {
+        UnityEngine.Debug.Log($"Writing to: {trialRawDataFile}"); // Check if path changes unexpectedly
+        UnityEngine.Debug.Log($"File exists before write? {File.Exists(trialRawDataFile)}");
+
+        string _dir = Path.GetDirectoryName(trialRawDataFile);
+        if (!Directory.Exists(_dir)) Directory.CreateDirectory(_dir);
+        
+        using (StreamWriter sw = new StreamWriter(trialRawDataFile, false, Encoding.UTF8))
+        {
+            sw.Write(rawDataString.ToString());
+        }
+        UnityEngine.Debug.Log($"File exists after write? {File.Exists(trialRawDataFile)}");
+    }
+
+    private string GetGameTargetPosition()
+    {
+        // Get the game target X position.
+        if (selectedGame == "HAT")
+        {
+            if (HatGameController.Instance.TargetPosition != null)
+            {
+                return $"{HatGameController.Instance.TargetPosition.Value.x:F3},{HatGameController.Instance.TargetPosition.Value.y:F3}";
+            }   
+        }
+        return ",";
+    }
+
+    private string GetGameState()
+    {
+        // Get the game state.
+        if (selectedGame == "HAT")
+        {
+            return $"{HatGameController.Instance.gameState}";
+        }
+        return "";
+    }
+
 }

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 using Unity.VisualScripting;
 
 /*
@@ -83,6 +84,8 @@ public partial class AppData
      */
     public string trialRawDataFile { get; private set; } = null;
     public string trialAanExecDataFile { get; private set; } = null;
+    private StringBuilder rawDataString = null;
+    private StringBuilder aanExecDataString = null;
 
     /*
      * Game trial data

@@ -37,6 +37,12 @@ public class HatGameController : MonoBehaviour
     public AudioSource gamesound;
     public AudioClip loose;
 
+
+    // Target and player positions
+    public Vector3? TargetPosition { get; private set; }
+    public Vector3 PlayerPosition { get; private set; }
+
+
     // Graphics variables.
     private float PLAYSIZE;
     // public int score = 0;
@@ -108,6 +114,7 @@ public class HatGameController : MonoBehaviour
     private float targetAngle;
     private float targetPosition;
     private float playerPosition;
+    private  GameObject targetTemp;
 
     private void Awake()
     {
@@ -147,7 +154,9 @@ public class HatGameController : MonoBehaviour
         }
         // Handle the current game state.
         RunGameStateMachine();
-        playerPosition = GameObject.FindGameObjectWithTag("Player").transform.position.x;
+        PlayerPosition = GameObject.FindGameObjectWithTag("Player").transform.position;
+        targetTemp = GameObject.FindGameObjectWithTag("Target");
+        TargetPosition = targetTemp != null ? targetTemp.transform.position : null;   
     }
 
     public void BallCaught() {
@@ -164,6 +173,22 @@ public class HatGameController : MonoBehaviour
 
     public void OnStartButtonClick() {
         isGameStarted = true;
+    }
+
+    public void GetTargetPositionX() {
+
+    }
+
+    public void GetTargetPositionY() {
+
+    }
+
+    public void GetPlayerPositionX() {
+
+    }
+
+    public void GetPlayerPositionY() {
+
     }
 
     public void StartGame()

@@ -9,6 +9,8 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -24,10 +26,8 @@ public class PlutoAANController
 
     public static readonly string[] ADAPTFILEHEADER = new string[] {
         "SessionNumber", "TrialNumberSession", "TrialNumberDay", 
-        "TargetPosition", "InitialPosition", 
-        "Success", "SuccessRate", "DesiredSuccessRate", 
-        "ControlBound", "ControlDir",
-        "AanExecFileName"
+        "SuccessRate", "DesiredSuccessRate", 
+        "ControlBound", "AanExecFileName"
     };
     
     public enum TargetType
@@ -102,7 +102,7 @@ public class PlutoAANController
 
     public string adaptFileName { private set; get; }
     
-    public PlutoAANController(PlutoMechanism mechanism)
+    public PlutoAANController(PlutoMechanism mechanism, DataTable sessionData, int sessionNo)
     {
         //forgetFactor = forget;
         //assistFactor = assist;
@@ -131,30 +131,45 @@ public class PlutoAANController
         _newAanTarget[0] = 999; // Invalid target.
         
         // Adaptation related variables.
-        ReadUpdateAdaptionParameters();
+        ReadUpdateAdaptionParameters(sessionData, sessionNo);
     }
 
-    private void ReadUpdateAdaptionParameters()
+    private void ReadUpdateAdaptionParameters(DataTable sessionData, int sessionNo)
     {
         // Check if the AAN adaptation file exists.
-        if (!File.Exists(adaptFileName))
-        {
-            using (var writer = new StreamWriter(adaptFileName, false, System.Text.Encoding.UTF8))
-            {
-                // Preheader
-                writer.WriteLine($":mechanism: {mechanismName}");
-                // Header
-                writer.WriteLine(string.Join(",", ADAPTFILEHEADER));
-            }
-        }
+        // if (!File.Exists(adaptFileName))
+        // {
+        //     using (var writer = new StreamWriter(adaptFileName, false, System.Text.Encoding.UTF8))
+        //     {
+        //         // Preheader
+        //         writer.WriteLine($":mechanism: {mechanismName}");
+        //         // Header
+        //         writer.WriteLine(string.Join(",", ADAPTFILEHEADER));
+        //     }
+        // }
         // Read the adaptation file, and get the last controlbound value.
-        DataTable adaptData = DataManager.loadCSV(adaptFileName);
-        // Check the number of rows.
-        if (adaptData.Rows.Count == 0)
+        // DataTable adaptData = DataManager.loadCSV(adaptFileName);
+        // Get the rows for the current mechanism and session.
+        var selRows = sessionData.AsEnumerable()?
+            .Where(row => row.Field<string>("Mechanism") == mechanism.name)
+            .OrderBy(row => Convert.ToInt32(row.Field<string>("SessionNumber")))
+            .ThenBy(row => Convert.ToInt32(row.Field<string>("TrialNumberSession")));
+        // Set default value if there are no rows.
+        UnityEngine.Debug.Log($"Selected rows: {selRows.Count()}");
+        if (selRows.Count() == 0)
         {
             // Default adaptation parameters.
             currentCtrlBound = DEFAULTCONTROLBOUND;
         }
+        else
+        {
+            // Now order the selRows by the trailNumberDay in increasing order and get the last row.
+            DataRow lastRow = selRows.LastOrDefault();
+            UnityEngine.Debug.Log($"Last row: {lastRow}");
+            currentCtrlBound = Convert.ToSingle(lastRow.Field<string>("NextControlBound"));
+            UnityEngine.Debug.Log($"Next CB: {Convert.ToSingle(lastRow.Field<string>("NextControlBound"))}");
+        }
+        UnityEngine.Debug.Log($"Currrent Control Bound: {currentCtrlBound}");
     }
 
     public void Update(float actual, float delT, bool trialDone)

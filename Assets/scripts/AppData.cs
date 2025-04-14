@@ -97,9 +97,8 @@ public partial class AppData
      * AAN Data
      */
     public PlutoAANController aanController = null;
-    private float _prevControlBound;
     private float _currControlBound;
-    private float _prevSuccessRate;
+   // private float _prevSuccessRate;
 
 
     //public static string aanDataFileLocation = null;

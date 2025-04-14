@@ -36,9 +36,9 @@ public static class DataManager
     public static string[] SESSIONFILEHEADER = new string[] {
         "SessionNumber", "DateTime",
         "TrialNumberDay", "TrialNumberSession", "TrialType", "TrialStartTime", "TrialStopTime", "TrialRawDataFile", "TrialAanExecFile", 
-        "Mechanism", "GameName", "GameParameter", "GameSpeed",  
-        "AssistMode", "AssistModeParameters",
-        "DesiredSuccessRate", "SuccessRate"
+        "Mechanism", 
+        "GameName", "GameParameter", "GameSpeed",  
+        "AssistMode", "DesiredSuccessRate", "SuccessRate", "CurrentControlBound", "NextControlBound"
     };
 
     // Date format strict.

@@ -24,36 +24,17 @@ public partial class AppData
         desiredSuccessRate = tSrType.sRate;
         trialType = tSrType.tType;
         
-        // Compute AAN control bound.
-        if (selectedMechanism.trialNumberDay ==  1) 
-        {
-            _prevControlBound = aanController.currentCtrlBound;
-            _currControlBound = aanController.currentCtrlBound;
-        } 
-        else 
-        {
-            // Compute the control bound based on the success rate, depending 
-            // on the trial type.
-            _prevControlBound = _currControlBound;
-            if (tSrType.tType  == HomerTherapy.TrialType.SR85PCCATCH)
-            {
-                _currControlBound = 0.0f;
-            } 
-            else
-            {
-                aanController.AdaptControLBound(desiredSuccessRate, _prevSuccessRate);
-                _currControlBound = aanController.currentCtrlBound;
-            }
-        }
-
+        // Set current control bound.
+        _currControlBound = trialType  == HomerTherapy.TrialType.SR85PCCATCH ? 0.0f : aanController.currentCtrlBound;
+        
         // Set the trial data files.
         trialRawDataFile = DataManager.GetTrialRawDataFileName(
-            selectedMechanism.trialNumberSession,
+            currentSessionNumber,
             selectedMechanism.trialNumberDay,
             Instance.selectedGame,
             Instance.selectedMechanism.name);
         trialAanExecDataFile = DataManager.GetTrialAanExecDataFileName(
-            selectedMechanism.trialNumberSession,
+            currentSessionNumber,
             selectedMechanism.trialNumberDay,
             Instance.selectedGame,
             Instance.selectedMechanism.name);
@@ -66,7 +47,6 @@ public partial class AppData
                 $"Trial#Sess: {selectedMechanism.trialNumberSession}",
                 $"TrialType: ({(int)tSrType.tType}){tSrType.tType}",
                 $"Desired SR: {tSrType.sRate}",
-                $"Previous SR: {_prevControlBound}",
                 $"Current CB: {_currControlBound}",
                 $"TrialRawDataFile: {trialRawDataFile.Split('/').Last()}",
                 $"TrialAanExecFile: {trialAanExecDataFile.Split('/').Last()}",
@@ -78,9 +58,17 @@ public partial class AppData
     {
         trialStopTime = DateTime.Now;
         successRate = 100 * nSuccess / nTargets;
+
+        // Update the control bound if needed.
+        if (trialType  != HomerTherapy.TrialType.SR85PCCATCH)
+        {
+            aanController.AdaptControLBound(desiredSuccessRate, successRate);
+        }
+
         // Write trial information to the session details file.
         WriteTrialToSessionsFile();
         // Write trial details to the log file.
+        float? _currcb = trialType == HomerTherapy.TrialType.SR85PCCATCH ? null : _currControlBound;
         string _tdetails = string.Join(" | ",
             new string[] {
                 $"Start Time: {trialStartTime:yyyy-MM-ddTHH:mm:ss}",
@@ -93,8 +81,8 @@ public partial class AppData
                 $"NFailure: {nFailure}",
                 $"Desired SR: {desiredSuccessRate}",
                 $"Trial SR: {successRate}",
-                $"Previous SR: {_prevControlBound}",
-                $"Current CB: {_currControlBound}",
+                $"Current CB: {_currcb.Value:F3}",
+                $"Next CB: {aanController.currentCtrlBound:F3}",
                 $"TrialRawDataFile: {trialRawDataFile.Split('/').Last()}",
                 $"TrialAanExecFile: {trialAanExecDataFile.Split('/').Last()}"
         });
@@ -136,12 +124,14 @@ public partial class AppData
             selectedMechanism.currSpeed.ToString(),
             // "AssistMode"
             trialType == HomerTherapy.TrialType.SR85PCCATCH ? "ACTIVE" : "AAN",
-            // "AssistModeParameters"
-            trialType == HomerTherapy.TrialType.SR85PCCATCH ? null : $"{_currControlBound:F3}", 
             // "DesiredSuccessRate"
             $"{desiredSuccessRate:F3}",
             // "SuccessRate"
             $"{successRate:F3}",
+            // "CurrentControlBound"
+            trialType == HomerTherapy.TrialType.SR85PCCATCH ? null : $"{_currControlBound:F3}",
+            // "NextControlBound"
+            trialType == HomerTherapy.TrialType.SR85PCCATCH ? null : $"{aanController.currentCtrlBound:F3}"
         };
 
         // Write the trial row to the session file.

@@ -19,6 +19,7 @@ public struct DaySummary
 public static class DataManager
 {
     public static readonly string basePath = FixPath(Path.Combine(Application.dataPath, "data"));
+    // public static readonly string basePath = FixPath(Path.Combine(Application.persistentDataPath, "data"));
     static string directoryPathConfig;
     public static string sessionPath { get; private set; }
     public static string gamePath { get; private set; }
@@ -68,12 +69,14 @@ public static class DataManager
         int sessNo, 
         int trialNo,
         string game,
-        string mechanism) => FixPath(Path.Combine(rawPath, $"session-{sessNo}", $"raw-sess{sessNo:D2}-trial{trialNo:D3}-{game}-{mechanism}.csv"));
+        string mechanism) => FixPath(Path.Combine(rawPath, $"raw-sess{sessNo:D2}-trial{trialNo:D3}-{game}-{mechanism}.csv"));
+        // string mechanism) => FixPath(Path.Combine(rawPath, $"session-{sessNo}", $"raw-sess{sessNo:D2}-trial{trialNo:D3}-{game}-{mechanism}.csv"));
     public static string GetTrialAanExecDataFileName(
         int sessNo,
         int trialNo,
         string game,
-        string mechanism) => FixPath(Path.Combine(rawPath, $"session-{sessNo}", $"aanexec-sess{sessNo:D2}-trial{trialNo:D3}-{game}-{mechanism}.csv"));
+        string mechanism) => FixPath(Path.Combine(rawPath, $"aanexec-sess{sessNo:D2}-trial{trialNo:D3}-{game}-{mechanism}.csv"));
+        // string mechanism) => FixPath(Path.Combine(rawPath, $"session-{sessNo}", $"aanexec-sess{sessNo:D2}-trial{trialNo:D3}-{game}-{mechanism}.csv"));
 
     // Fix stupid Window's path separator issue.
     public static string FixPath(string path) => path.Replace("\\", "/");
@@ -157,18 +160,6 @@ public static class DataManager
             }
             AppLogger.LogWarning("Sessions.csv file not founds. Created one.");
         }
-    }
-
-    // Create the folder for the current session.
-    public static void CreateSessinFolders(int sessNo)
-    {
-        // In raw data folder
-        string dn = FixPath(Path.Combine(rawPath, $"session-{sessNo}"));
-        if (Directory.Exists(dn)) Directory.Delete(dn, true);
-        
-        // In AAN exec folder
-        dn = FixPath(Path.Combine(aanExecPath, $"session-{sessNo}"));
-        if (Directory.Exists(dn)) Directory.Delete(dn, true);
     }
 }
 

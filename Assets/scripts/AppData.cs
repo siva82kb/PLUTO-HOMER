@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using Unity.VisualScripting;
+using UnityEngine;
 
 /*
  * HOMER PLUTO Application Data Class.
@@ -127,6 +128,8 @@ public partial class AppData
 
     public void Initialize(string scene, bool doNotResetMech = true)
     {
+        UnityEngine.Debug.Log(Application.persistentDataPath);
+
         // Set sesstion start time.
         startTime = DateTime.Now;
 

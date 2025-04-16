@@ -47,6 +47,9 @@ public partial class AppData
 
     public void StopTrial(int nTargets, int nSuccess, int nFailure)
     {
+        // Dettach the event handler for data logging.
+        // PlutoComm.OnNewPlutoData -= OnNewPlutoDataDataLogging;
+
         trialStopTime = DateTime.Now;
         successRate = 100 * nSuccess / nTargets;
 
@@ -86,9 +89,6 @@ public partial class AppData
 
     private void WriteTrialToSessionsFile()
     {
-        // Create folders for this session if they do not exist.
-        DataManager.CreateSessinFolders(currentSessionNumber);
-
         // Build the trial row.
         string[] trialRow = new string[] {
             // "SessionNumber"
@@ -160,6 +160,7 @@ public partial class AppData
         rawDataString.AppendLine($":Game: {selectedGame}");
         rawDataString.AppendLine($":TrialType: {trialType}");
         rawDataString.AppendLine($":TrialStartTime: {trialStartTime:yyyy-MM-ddTHH:mm:ss}");
+        rawDataString.AppendLine($":TrialNumberDay: {selectedMechanism.trialNumberDay}");
         rawDataString.AppendLine($":AROM: [{selectedMechanism.CurrentArom[0]:F3},{selectedMechanism.CurrentArom[1]:F3}]");        
         rawDataString.AppendLine($":PROM: [{selectedMechanism.CurrentProm[0]:F3},{selectedMechanism.CurrentProm[1]:F3}]");
         rawDataString.AppendLine($":DesiredSuccessRate: {desiredSuccessRate:F3}");
@@ -176,7 +177,7 @@ public partial class AppData
 
         // Device data
         // "DeviceRunTime"
-        rawDataString.Append($"{PlutoComm.runTime},");
+        rawDataString.Append($"{PlutoComm.runTime:F6},");
         // "PacketNumber"
         rawDataString.Append($"{PlutoComm.packetNumber},");
         // "Status"
@@ -245,6 +246,8 @@ public partial class AppData
             sw.Write(rawDataString.ToString());
         }
         UnityEngine.Debug.Log($"File exists after write? {File.Exists(trialRawDataFile)}");
+        rawDataString.Clear();
+        rawDataString = null;
     }
 
     private string GetGameTargetPosition()
@@ -269,5 +272,4 @@ public partial class AppData
         }
         return "";
     }
-
 }

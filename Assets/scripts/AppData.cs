@@ -102,6 +102,7 @@ public partial class AppData
      */
     public PlutoAANController aanController = null;
     private float _currControlBound;
+    public float CurrentControlBound => _currControlBound;
    // private float _prevSuccessRate;
 
 
@@ -180,7 +181,8 @@ public partial class AppData
         PlutoComm.getVersion();
         // Start sensorstream.
         PlutoComm.sendHeartbeat();
-        PlutoComm.startSensorStream();
+        PlutoComm.setDiagnosticMode();
+        // PlutoComm.startSensorStream();
         AppLogger.LogInfo($"PLUTO SensorStream started.");
     }
 
@@ -239,6 +241,4 @@ public partial class AppData
     
     // Check training size.
     public bool IsTrainingSide(string side) => string.Equals(trainingSide, side, StringComparison.OrdinalIgnoreCase);
-
-    public float GetCurrentControlBound => _currControlBound;
 }

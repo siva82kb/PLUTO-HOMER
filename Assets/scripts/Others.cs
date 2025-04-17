@@ -29,7 +29,7 @@ public static class PlutoDefs
 public static class HomerTherapy
 {
     public static readonly float SuccessRateThForSpeedIncrement = 0.9f;
-    public static readonly float TrialDuration = 20.0f;
+    public static readonly float TrialDuration = 60.0f;
     public static readonly Dictionary<string, float> GameSpeedIncrements = new Dictionary<string, float>  {
         { "PING-PONG", 0.5f },
         { "TUK-TUK", 0.2f },
@@ -95,6 +95,7 @@ public static class HomerTherapy
             prom[1]
         };
     }
+
     public static float GetNewTargetPosition(float[] arom, float[] prom)
     {
         float[] region_boundaries = GetRomBoundariesForTargets(arom, prom);
@@ -108,6 +109,18 @@ public static class HomerTherapy
 
         // Choose target accoding to _randloc
         return region_boundaries[_intpart] + (region_boundaries[_intpart + 1] - region_boundaries[_intpart]) * _decpart;
+    }
+
+    public static float GetNewTargetPositionUniform(float[] arom, float[] prom)
+    {
+        if (UnityEngine.Random.Range(0f, 1f) < 0.5) return UnityEngine.Random.Range(arom[0], arom[1]);
+        if (UnityEngine.Random.Range(0f, 1f) < 0.5) return UnityEngine.Random.Range(prom[0], arom[0]);
+        else return UnityEngine.Random.Range(arom[1], prom[1]);
+    }
+
+    public static float GetNewTargetPositionUniformFull(float[] arom, float[] prom)
+    {
+        return UnityEngine.Random.Range(prom[0], prom[1]);
     }
 }
 

@@ -104,8 +104,6 @@ public class PlutoAANController
     
     public PlutoAANController(PlutoMechanism mechanism, DataTable sessionData, int sessionNo)
     {
-        //forgetFactor = forget;
-        //assistFactor = assist;
         if (mechanism == null) 
         {
             // Throw null exception.
@@ -184,12 +182,13 @@ public class PlutoAANController
         trialTime += delT;
 
         // Check if max duration is reached.
-        bool _timeoutDone = (trialTime >= maxDuration) || trialDone;
+        // bool _timeoutDone = (trialTime >= maxDuration) || trialDone;
 
         // Update movement and time queues.
         UpdatePositionTimeQueues(actual, trialTime);
 
         // Act according to the state of the AAN.
+        PlutoAANState _prevstate = state;
         switch (state)
         {
             case PlutoAANState.NewTrialTargetSet:
@@ -199,38 +198,41 @@ public class PlutoAANController
                     case TargetType.InAromFromArom:
                     case TargetType.InPromFromArom:
                         state = PlutoAANState.AromMoving;
+                        AppLogger.LogInfo($"AAN  Details (Update) | {_prevstate} -> {state} | {GetTargetType()}");
                         break;
                     case TargetType.InAromFromProm:
                     case TargetType.InPromFromPromCrossArom:
                         state = PlutoAANState.RelaxToArom;
                         // Generate target to relax to AROM.
                         GenerateRelaxToAromAanTarget(actual);
+                        AppLogger.LogInfo($"AAN  Details (Update) | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
                         break;
                     case TargetType.InPromFromPromNoCrossArom:
                         state = PlutoAANState.AssistToTarget;
                         // Generate target to assist.
-                        GenerateAssistToTargetAanTarget(actual);
+                        GenerateAssistToTargetAanTarget(actual, false);
+                        AppLogger.LogInfo($"AAN  Details (Update) | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
                         break;
                 }
                 break;
             case PlutoAANState.AromMoving:
+                // Check if the trial is done.
+                if (trialDone)
+                {
+                    state = PlutoAANState.Idle;
+                    return;
+                }
                 // Check if the target is reached.
                 if (IsTargetInArom()) return;
                 // Check if the AROM boundary is reached.
                 int _dir = Math.Sign(targetPosition - initialPosition);
                 float _arompos = (actual - aRom[0]) / (aRom[1] - aRom[0]);
-               // Debug.Log(_arompos);
                 if ((_dir > 0 && _arompos >= BOUNDARY) || (_dir < 0 && _arompos <= (1 - BOUNDARY)))
                 {
-                    //Debug.Log("True");
                     state = PlutoAANState.AssistToTarget;
                     // Generate target to assist.
-                    GenerateAssistToTargetAanTarget(actual);
-                }
-                // Timeout or Done
-                if (_timeoutDone)
-                {
-                    state = PlutoAANState.Idle;
+                    GenerateAssistToTargetAanTarget(actual, true);
+                    AppLogger.LogInfo($"AAN  Details (Update) | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
                 }
                 break;
             case PlutoAANState.RelaxToArom:
@@ -241,24 +243,19 @@ public class PlutoAANController
                     state = PlutoAANState.AromMoving;
                     // Reset AAN target
                     _newAanTarget[0] = 999;
+                    AppLogger.LogInfo($"AAN  Details (Update) | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
                     return;
-                }
-                // Timeout or Done
-                if (_timeoutDone)
-                {
-                    state = PlutoAANState.Idle;
-                    // Reset AAN target
-                    _newAanTarget[0] = 999;
                 }
                 break;
             case PlutoAANState.AssistToTarget:
-                // Timeout or Done
-                if (_timeoutDone)
+                // Check if the trial is done.
+                if (trialDone)
                 {
-                    state = PlutoAANState.Idle;
-                    // Reset AAN target
-                    _newAanTarget[0] = 999;
-                    return;
+                    // We need to relax to the AroM.
+                    // Generate target to relax to AROM.
+                    GenerateRelaxToAromAanTarget(actual);
+                    state = PlutoAANState.RelaxToArom;
+                    AppLogger.LogInfo($"AAN  Details (Update) | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
                 }
                 break;
         }
@@ -276,6 +273,7 @@ public class PlutoAANController
         positionQ.Clear();
         timeQ.Clear();
         trialTime = 0;
+        AppLogger.LogInfo($"AAN  Details (Reset) | {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
     }
 
     public void SetNewTrialDetails(float actual, float target, float maxDur)
@@ -387,21 +385,22 @@ public class PlutoAANController
         _newAanTarget[4] = Math.Min(maxDuration, Math.Max(MIN_REACH_TIME, Math.Abs(_nearestAromEdge - actual) / MAX_AVG_SPEED));
     }
 
-    private void GenerateAssistToTargetAanTarget(float actual)
+    private void GenerateAssistToTargetAanTarget(float actual, bool fromArom)
     {
+        // Reach Duration
+        float _maxAvgSpeed = Math.Max(MIN_AVG_SPEED, Math.Min(Math.Abs(actual - initialPosition) / trialTime, MAX_AVG_SPEED));
+        float _maxDur = Math.Min(maxDuration, Math.Max(MIN_REACH_TIME, Math.Abs(targetPosition - actual) / _maxAvgSpeed));
         // There is a valid target
         _newAanTarget[0] = 0;
         // Initial Position
         _newAanTarget[1] = actual;
         // Initial Time
-        _newAanTarget[2] = 0;
+        _newAanTarget[2] = fromArom ? - 0.25f * _maxDur : 0;
         // Target Position
         _newAanTarget[3] = targetPosition;
-        // Reach Duration
-        float _maxAvgSpeed = Math.Max(MIN_AVG_SPEED, Math.Min(Math.Abs(actual - initialPosition) / trialTime, MAX_AVG_SPEED));
-        _newAanTarget[4] = Math.Min(maxDuration, Math.Max(MIN_REACH_TIME, Math.Abs(targetPosition - actual) / _maxAvgSpeed));
+        // Target Time
+        _newAanTarget[4] = _maxDur;
     }
-
     //public void upateTrialResult(bool success)
     //{
     //    if (trialRunning == false) return;

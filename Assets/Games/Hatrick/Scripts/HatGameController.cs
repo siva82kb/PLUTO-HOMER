@@ -8,6 +8,7 @@ using TMPro;
 using System;
 using Unity.Mathematics;
 using System.IO;
+using Unity.VisualScripting;
 
 public class HatGameController : MonoBehaviour
 {
@@ -15,7 +16,9 @@ public class HatGameController : MonoBehaviour
 
     // Constant game related variables.
     private static readonly float BALLSPEED = 1f + 0.3f * (1 + 1);
-    private static readonly float MOVEDURATION = 8.0f * 0.8f / BALLSPEED ;        
+    private static readonly float BALLSTARTY = 6.0f;
+    private static readonly float BALLENDY = -2.0f;
+    private static readonly float MOVEDURATION = 0.5f * (BALLSTARTY - BALLENDY) / BALLSPEED;
 
     // Game graphics related variables.
     public Text ScoreText;
@@ -87,7 +90,8 @@ public class HatGameController : MonoBehaviour
         SPAWNBALL,
         MOVE,
         SUCCESS,
-        FAILURE
+        FAILURE,
+        DONE
     }
     private GameStates _gameState;
     public GameStates gameState
@@ -109,6 +113,7 @@ public class HatGameController : MonoBehaviour
     private float[] arom;
     private float[] prom;
     private float targetAngle;
+    private float maxTargetDur;
     private float targetPosition;
     private float playerPosition;
     private  GameObject targetTemp;
@@ -135,6 +140,17 @@ public class HatGameController : MonoBehaviour
         // Do not show the paused and finished objects at the start.
         HidePaused();
         HideFinished();
+        // Set the position of the AROM lines.
+        aromLeft.transform.position = new Vector3(
+            AngleToScreen(AppData.Instance.selectedMechanism.currRom.aromMin),
+            aromLeft.transform.position.y,
+            aromLeft.transform.position.z
+        );
+        aromRight.transform.position = new Vector3(
+            AngleToScreen(AppData.Instance.selectedMechanism.currRom.aromMax),
+            aromRight.transform.position.y,
+            aromRight.transform.position.z
+        );
     }
     
     private void Update()
@@ -145,6 +161,9 @@ public class HatGameController : MonoBehaviour
 
     void FixedUpdate()
     {
+        // Send PLUTO heartbeat
+        PlutoComm.sendHeartbeat();
+
         // Handle the current game state.
         RunGameStateMachine();
 
@@ -174,6 +193,15 @@ public class HatGameController : MonoBehaviour
     {
         // Start new trial.
         AppData.Instance.StartNewTrial();
+
+        // Put PLUTO in the AAN mode.
+        PlutoComm.setControlType("POSITIONAAN");
+        // PlutoComm.setControlBound(AppData.Instance.CurrentControlBound);
+        PlutoComm.setControlBound(1f);
+        PlutoComm.setControlDir(0);
+
+        // Reset the AAN controller.
+        AppData.Instance.aanController.ResetTrial();
         
         // Initialize game variables.
         triaTimeLeft = HomerTherapy.TrialDuration;
@@ -244,25 +272,30 @@ public class HatGameController : MonoBehaviour
                 break;
             case GameStates.SPAWNBALL:
                 // Spawn a new ball.
+                AppData.Instance.aanController.ResetTrial();
                 // Get new target position.
-                targetAngle = HomerTherapy.GetNewTargetPosition(arom, prom);
+                // targetAngle = HomerTherapy.GetNewTargetPosition(arom, prom);
+                targetAngle = HomerTherapy.GetNewTargetPositionUniformFull(arom, prom);
                 targetPosition = AngleToScreen(targetAngle);
                 SpawnTarget();
+                // Set new trial in the AAN controller.
+                AppData.Instance.aanController.SetNewTrialDetails(PlutoComm.angle, targetAngle, MOVEDURATION);
                 gameState = GameStates.MOVE;
                 break;
             case GameStates.MOVE:
+                // Update AANController.
+                AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, false);
+                // Set AAN target if needed.
+                if (AppData.Instance.aanController.stateChange) UpdatePlutoAANTarget();
                 // Wait for the user to success or fail.
                 if (isBallCaught) gameState = GameStates.SUCCESS;
                 if (isBallMissed) gameState = GameStates.FAILURE;
                 break;
             case GameStates.SUCCESS:
+            case GameStates.FAILURE:
                 // Wait for the user to score.
                 gameState = isTimeUp ? GameStates.STOP : GameStates.SPAWNBALL;
                 isBallCaught = false;
-                break;
-            case GameStates.FAILURE:
-                // Wait for the user to fail.
-                gameState = isTimeUp ? GameStates.STOP : GameStates.SPAWNBALL;
                 isBallMissed = false;
                 break;
             case GameStates.PAUSED:
@@ -270,11 +303,37 @@ public class HatGameController : MonoBehaviour
                 break;
             case GameStates.STOP:
                 // Trial complete.
-                AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
-                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+                // Update AANController.
+                AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
+                // Set AAN target if needed.
+                if (AppData.Instance.aanController.stateChange) UpdatePlutoAANTarget();
+                // Change to done only when the subject is in Arom.
+                if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AromMoving) 
+                {
+                    AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+                    gameState = GameStates.DONE;
+                    SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+                }
                 break;
         }
         UpdateText();
+    }
+
+    private void UpdatePlutoAANTarget()
+    {
+        switch(AppData.Instance.aanController.state)
+        {
+            case PlutoAANController.PlutoAANState.AromMoving:
+                // Reset AAN Target
+                PlutoComm.ResetAANTarget();
+                break;
+            case PlutoAANController.PlutoAANState.RelaxToArom:
+            case PlutoAANController.PlutoAANState.AssistToTarget:
+                // Set AAN Target to the nearest AROM edge.
+                float[] _newAanTarget = AppData.Instance.aanController.GetNewAanTarget();
+                PlutoComm.setAANTarget(_newAanTarget[0], _newAanTarget[1], _newAanTarget[2], _newAanTarget[3]);
+                break;
+        }
     }
 
     public float AngleToScreen(float angle) => Mathf.Lerp(-PLAYSIZE, PLAYSIZE, (angle - prom[0]) / (prom[1]- prom[0]));
@@ -373,6 +432,7 @@ public class HatGameController : MonoBehaviour
             g.SetActive(false);
         }
     }
+
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.gameObject.tag == "Target")
@@ -387,19 +447,8 @@ public class HatGameController : MonoBehaviour
 
     private void onPlutoButtonReleased()
     {
-        //Debug.Log("Button pressed.");
         // This can mean different things depending on the game state.
-        if (gameState == GameStates.WAITING)
-        {
-            // Start the game.
-            isGameStarted = true;
-        }
-        else if (gameState != GameStates.STOP)
-        {
-            // Debug.Log("Game state not stopped. " + isGamePaused);
-            // Pause/Unpause the game.
-            isGamePaused = !isGamePaused;
-            isButtonPressed = true;
-        }
+        if (gameState == GameStates.WAITING) isGameStarted = true;
+        else if (gameState != GameStates.STOP) isGamePaused = !isGamePaused;
     }
 }

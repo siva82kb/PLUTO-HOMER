@@ -66,6 +66,9 @@ public static class PlutoComm
     public static readonly double HOCScale = 0.10752; // 3.97 * Math.PI / 180;
     public static readonly int INVALID_TARGET = 999;
 
+    // Private AppLogger header.
+    private static readonly string LOGGERHEADER = "<PLUTO Command>";
+
     // Button released event.
     public delegate void PlutoButtonReleasedEvent();
     public static event PlutoButtonReleasedEvent OnButtonReleased;
@@ -412,8 +415,8 @@ public static class PlutoComm
     }
 
     public static void setAANTarget(float tgt0, float t0, float tgt1, float dur)
-    {// Debug.Log("AAN running");
-        Debug.Log($"tgt0: {tgt0:F2} | t0: {t0:F2} | tgt1: {tgt1:F2} | dur: {dur:F2}");
+    {
+        AppLogger.LogInfo($"{LOGGERHEADER} Setting AAN Target: | tgt0: {tgt0:F2} | t0: {t0:F2} | tgt1: {tgt1:F2} | dur: {dur:F2}");
         byte[] tgt0Bytes = BitConverter.GetBytes(tgt0);
         byte[] t0Bytes = BitConverter.GetBytes(t0);
         byte[] tgt1Bytes = BitConverter.GetBytes(tgt1);
@@ -431,6 +434,7 @@ public static class PlutoComm
 
     public static void ResetAANTarget()
     {
+        AppLogger.LogInfo($"{LOGGERHEADER} Resetting AAN Target.");
         JediComm.SendMessage(
             new byte[] {
                 (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "RESET_AAN_TARGET")]
@@ -443,6 +447,7 @@ public static class PlutoComm
         // Limit the value to be between 0 and 1.
         //Debug.Log("CB running "+ ctrlBound);
         ctrlBound = Math.Max(0, Math.Min(1, ctrlBound));
+        AppLogger.LogInfo($"{LOGGERHEADER} Setting Control Bound: {ctrlBound:F2}");
         byte _ctrlboundbyte = (byte)(ctrlBound * 255);
         JediComm.SendMessage(
             new byte[] {

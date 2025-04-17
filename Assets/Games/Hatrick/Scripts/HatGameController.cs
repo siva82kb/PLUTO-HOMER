@@ -105,6 +105,10 @@ public class HatGameController : MonoBehaviour
     public bool isBallCaught { get; private set; } = false;
     public bool isBallMissed { get; private set; } = false;
 
+
+    bool isPressed = false;
+    bool isPaused = false;
+
     // Target and player positions.
     private float[] arom;
     private float[] prom;
@@ -137,7 +141,7 @@ public class HatGameController : MonoBehaviour
         HideFinished();
     }
 
-    void FixedUpdate()
+    void Update()
     {
         Debug.Log("Fixed update1");
         // HandleGameState();
@@ -151,6 +155,7 @@ public class HatGameController : MonoBehaviour
             player.transform.localScale = scale;
             paramSet = true;
         }
+
         Debug.Log("Fixed update2");
         // Handle the current game state.
         RunGameStateMachine();
@@ -213,32 +218,22 @@ public class HatGameController : MonoBehaviour
 
     public void PauseGame()
     {
-        // if (currentState == GameState.Playing)
-        // {
-        //     currentState = GameState.Paused;
-        //     isPlaying = false;
-        //     isPaused = true;
         _prevGameState = gameState;
         gameState = GameStates.PAUSED;
         Time.timeScale = 0;
-        //     ShowPaused();
-        //     PauseButton.SetActive(false);
-        //     ResumeButton.SetActive(true);
-        // }
+        ShowPaused();
+        PauseButton.SetActive(false);
+        ResumeButton.SetActive(true);
     }
 
     public void ResumeGame()
     {
-        // if (currentState == GameState.Paused)
-        // {
-        //     currentState = GameState.Playing;
-        //     isPlaying = true;
-        //     HidePaused();
+        HidePaused();
+        Debug.Log($"prev GS :{_prevGameState}");
         gameState = _prevGameState;
         Time.timeScale = 1;
-        //     PauseButton.SetActive(true);
-        //     ResumeButton.SetActive(false);
-        // }
+        PauseButton.SetActive(true);
+        ResumeButton.SetActive(false);
     }
 
     public void RestartGame()
@@ -260,7 +255,7 @@ public class HatGameController : MonoBehaviour
     {
         // Check if the game is to be paused or unpaused.
         Debug.Log("Game Update");
-        if (isGamePaused) PauseGame(); 
+        if (isGamePaused) PauseGame();
         else if (gameState == GameStates.PAUSED) ResumeGame();
 
         // Run the game timer
@@ -271,10 +266,13 @@ public class HatGameController : MonoBehaviour
         switch (gameState)
         {
             case GameStates.WAITING:
+                ShowPaused();
                 // Check of game has been started.
                 if (isGameStarted) gameState = GameStates.START;
                 break;
             case GameStates.START:
+                HidePaused();
+                HideFinished();
                 // Start the game.
                 StartGame();
                 gameState = GameStates.SPAWNBALL;
@@ -486,9 +484,9 @@ public class HatGameController : MonoBehaviour
         }
         else if (gameState != GameStates.STOP)
         {
-            Debug.Log("Game state not stopped. " + isGamePaused);
+             Debug.Log("Game state not stopped. " + isGamePaused);
             // Pause/Unpause the game.
-            isGamePaused = !isGamePaused;
+             isGamePaused = !isGamePaused;
         }
     }
 }

@@ -105,9 +105,6 @@ public class HatGameController : MonoBehaviour
     public bool isBallCaught { get; private set; } = false;
     public bool isBallMissed { get; private set; } = false;
 
-
-    bool isButtonPressed = false;
-
     // Target and player positions.
     private float[] arom;
     private float[] prom;
@@ -139,40 +136,19 @@ public class HatGameController : MonoBehaviour
         HidePaused();
         HideFinished();
     }
+    
     private void Update()
     {
-
-        if (!paramSet)
-        {
-            Debug.Log("Fixed update1.5");
-            // HTGameLevel = 1;
-            player = GameObject.FindGameObjectWithTag("Player");
-            // scale = new Vector3(1f - 0.05f * HTGameLevel, 1f - 0.05f * HTGameLevel, 1f - 0.05f * HTGameLevel);
-            scale = new Vector3(1f, 1f, 1f);
-            player.transform.localScale = scale;
-            paramSet = true;
-        }
-
-        if ((Input.GetKeyDown(KeyCode.P) && gameState != GameStates.STOP) || (isButtonPressed && gameState != GameStates.STOP))
-        {
-            if (gameState != GameStates.PAUSED)
-            {
-                PauseGame();
-            }
-            else
-            {
-                ResumeGame();
-            }
-
-            isButtonPressed = false;
-        }
+        if (isGamePaused && gameState != GameStates.PAUSED) PauseGame();
+        else if (!isGamePaused && gameState == GameStates.PAUSED) ResumeGame();
     }
+
     void FixedUpdate()
     {
-        Debug.Log("Fixed update2");
         // Handle the current game state.
         RunGameStateMachine();
-        Debug.Log("Fixed update3");
+
+        // Update player and target positions
         PlayerPosition = GameObject.FindGameObjectWithTag("Player").transform.position;
         targetTemp = GameObject.FindGameObjectWithTag("Target");
         TargetPosition = targetTemp != null ? targetTemp.transform.position : null;   
@@ -192,22 +168,6 @@ public class HatGameController : MonoBehaviour
 
     public void OnStartButtonClick() {
         isGameStarted = true;
-    }
-
-    public void GetTargetPositionX() {
-
-    }
-
-    public void GetTargetPositionY() {
-
-    }
-
-    public void GetPlayerPositionX() {
-
-    }
-
-    public void GetPlayerPositionY() {
-
     }
 
     public void StartGame()
@@ -231,41 +191,22 @@ public class HatGameController : MonoBehaviour
 
     public void PauseGame()
     {
-        // if (currentState == GameState.Playing)
-        // {
-        //     currentState = GameState.Paused;
-          //  isPlaying = false;;
         _prevGameState = gameState;
         gameState = GameStates.PAUSED;
         Time.timeScale = 0;
         ShowPaused();
         PauseButton.SetActive(false);
         ResumeButton.SetActive(true);
-        // }
     }
 
     public void ResumeGame()
     {
-        // if (currentState == GameState.Paused)
-        // {
-        //     currentState = GameState.Playing;
-        //isPlaying = true;
-        
         HidePaused();
         Debug.Log($"prev GS :{_prevGameState}");
         gameState = _prevGameState;
         Time.timeScale = 1;
         PauseButton.SetActive(true);
         ResumeButton.SetActive(false);
-        // }
-    }
-
-    public void RestartGame()
-    {
-        // currentState = GameState.NotStarted;
-        // isPlaying = false;
-        // score = 0;
-        // SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     public bool IsGamePlaying()
@@ -336,42 +277,6 @@ public class HatGameController : MonoBehaviour
         UpdateText();
     }
 
-    private void SetGameState(GameStates newGameState)
-    {
-        // switch (newGameState)
-        // {
-        //     case GameStates.START:
-        //         // Start the game.
-        //         StartGame();
-        //         break;
-        //     case GameStates.SPAWNBALL:
-                
-        //         // Spawn a new ball.
-                
-        //         break;
-        //     case GameStates.MOVE:
-        //         // Wait for the user to success or fail.
-        //         break;
-        //     case GameStates.SUCCESS:
-        //         // Wait for the user to score.
-        //         break;
-        //     case GameStates.FAILURE:
-        //         // Wait for the user to fail.
-        //         break;
-        //     case GameStates.PAUSED:
-        //         break;
-        //     case GameStates.STOP:
-        //         break;
-        // }
-    }
-
-    private void GameOver()
-    {
-        // currentState = GameState.GameOver;
-        // isPlaying = false;
-        // SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-    }
-
     public float AngleToScreen(float angle) => Mathf.Lerp(-PLAYSIZE, PLAYSIZE, (angle - prom[0]) / (prom[1]- prom[0]));
 
     public void SpawnTarget()
@@ -379,26 +284,21 @@ public class HatGameController : MonoBehaviour
         nTargets++;
         Vector3 spawnPosition = new Vector3(targetPosition, 6f, 0);
         PlayerObj = GameObject.FindGameObjectWithTag("Player");
-
-        // // Calculate the total distance 
-        // float xDistance = spawnPosition.x - PlayerObj.transform.position.x;
-        // float yDistance = spawnPosition.y - PlayerObj.transform.position.y;
-        // float totalDistance = Mathf.Sqrt(xDistance * xDistance + yDistance * yDistance);
-
-        // // Calculate the time for the ball to reach the hat
-        // float fallTime = totalDistance / BALLSPEED;
-        // ballFallingTime = fallTime - (fallTime * 0.25f);
         Quaternion spawnRotation = Quaternion.identity;
 
         int ballIndex = UnityEngine.Random.Range(0, ball.Length);
         GameObject target = Instantiate(ball[ballIndex], spawnPosition, spawnRotation);
-        // targetSpwan = ((ballIndex == 0) || (ballIndex == 1) || (ballIndex == 2) || (ballIndex == 3)); //it will be used when bomb added to the game Object 
         target.GetComponent<Rigidbody2D>().velocity = new Vector2(0, -BALLSPEED);
         target.transform.localScale = scale;
     }
 
     private void InitializeGame()
     {
+        // Initialize the game objects.
+        player = GameObject.FindGameObjectWithTag("Player");
+        scale = new Vector3(1f, 1f, 1f);
+        player.transform.localScale = scale;
+        
         // Intialize text
         timeLeftText = GameObject.FindGameObjectWithTag("TimeLeftText").GetComponent<Text>();
         ScoreText = GameObject.FindGameObjectWithTag("ScoreText").GetComponent<Text>();
@@ -440,19 +340,6 @@ public class HatGameController : MonoBehaviour
     {
         Time.timeScale = 1f;
         SceneManager.LoadScene(prevScene);
-    }
-
-    private void HandleGameState()
-    {
-        // if (isPlaying && !isPaused)
-        // {
-        //     HideFinished();
-        //     HidePaused();
-        // }
-        // else if (!isPlaying)
-        // {
-        //     ShowFinished();
-        // }
     }
 
     public void ShowPaused()
@@ -511,7 +398,7 @@ public class HatGameController : MonoBehaviour
         {
             // Debug.Log("Game state not stopped. " + isGamePaused);
             // Pause/Unpause the game.
-            // isGamePaused = true;
+            isGamePaused = !isGamePaused;
             isButtonPressed = true;
         }
     }

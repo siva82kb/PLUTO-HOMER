@@ -19,7 +19,6 @@ public struct DaySummary
 public static class DataManager
 {
     public static readonly string basePath = FixPath(Path.Combine(Application.dataPath, "data"));
-    // public static readonly string basePath = FixPath(Path.Combine(Application.persistentDataPath, "data"));
     static string directoryPathConfig;
     public static string sessionPath { get; private set; }
     public static string gamePath { get; private set; }
@@ -48,7 +47,7 @@ public static class DataManager
         "ControlType", "Calibration",  "Mechanism", 
         "Button", "Angle", "Torque", "Desired", "Control", "ControlBound", "ControlDir", "Target", 
         "Error", "ErrorDiff", "ErrorSum",
-        "GameTargetX", "GameTargetY", "GameState",
+        "GamePlayerX", "GamePlayerY", "GameTargetX", "GameTargetY", "GameState",
         "AanTargetPosition", "AanInitialPosition", "AanState"
     };
 
@@ -262,7 +261,7 @@ public static class AppLogger
             if (logWriter != null)
             {
                 string _user = AppData.Instance.userData != null ? AppData.Instance.userData.hospNumber : "";
-                string _msg = $"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} {InBraces(_user), -10} {InBraces(currentScene), -12} {InBraces(currentMechanism), -8} {InBraces(currentGame), -8} {message}";
+                string _msg = $"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} {InBraces(_user), -10} {InBraces(currentScene), -12} {InBraces(currentMechanism), -8} {InBraces(currentGame), -8} >> {message}";
                 logWriter.WriteLine(_msg);
                 logWriter.Flush();
                 if (DEBUG) Debug.Log(_msg);

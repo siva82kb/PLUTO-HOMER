@@ -93,12 +93,9 @@ public class HatGameController : MonoBehaviour
     public GameStates gameState
     {
         get => _gameState;
-        private set
-        {
-            _gameState = value;
-            // SetGameState(value);
-        }
+        private set => _gameState = value;
     }
+    private GameStates _prevGameState = GameStates.WAITING;
 
     // Bunch of event flags
     public bool isGameStarted { get; private set; } = false;
@@ -142,9 +139,11 @@ public class HatGameController : MonoBehaviour
 
     void FixedUpdate()
     {
+        Debug.Log("Fixed update1");
         // HandleGameState();
         if (!paramSet)
         {
+            Debug.Log("Fixed update1.5");
             // HTGameLevel = 1;
             player = GameObject.FindGameObjectWithTag("Player");
             // scale = new Vector3(1f - 0.05f * HTGameLevel, 1f - 0.05f * HTGameLevel, 1f - 0.05f * HTGameLevel);
@@ -152,8 +151,10 @@ public class HatGameController : MonoBehaviour
             player.transform.localScale = scale;
             paramSet = true;
         }
+        Debug.Log("Fixed update2");
         // Handle the current game state.
         RunGameStateMachine();
+        Debug.Log("Fixed update3");
         PlayerPosition = GameObject.FindGameObjectWithTag("Player").transform.position;
         targetTemp = GameObject.FindGameObjectWithTag("Target");
         TargetPosition = targetTemp != null ? targetTemp.transform.position : null;   
@@ -198,8 +199,6 @@ public class HatGameController : MonoBehaviour
         
         // Initialize game variables.
         triaTimeLeft = HomerTherapy.TrialDuration;
-        arom = AppData.Instance.selectedMechanism.CurrentArom;
-        prom = AppData.Instance.selectedMechanism.CurrentProm;
 
         // Reset score related variables.
         nTargets = 0;
@@ -219,7 +218,9 @@ public class HatGameController : MonoBehaviour
         //     currentState = GameState.Paused;
         //     isPlaying = false;
         //     isPaused = true;
-        //     Time.timeScale = 0;
+        _prevGameState = gameState;
+        gameState = GameStates.PAUSED;
+        Time.timeScale = 0;
         //     ShowPaused();
         //     PauseButton.SetActive(false);
         //     ResumeButton.SetActive(true);
@@ -233,7 +234,8 @@ public class HatGameController : MonoBehaviour
         //     currentState = GameState.Playing;
         //     isPlaying = true;
         //     HidePaused();
-        //     Time.timeScale = 1;
+        gameState = _prevGameState;
+        Time.timeScale = 1;
         //     PauseButton.SetActive(true);
         //     ResumeButton.SetActive(false);
         // }
@@ -256,9 +258,14 @@ public class HatGameController : MonoBehaviour
 
     private void RunGameStateMachine()
     {
+        // Check if the game is to be paused or unpaused.
+        Debug.Log("Game Update");
+        if (isGamePaused) PauseGame(); 
+        else if (gameState == GameStates.PAUSED) ResumeGame();
+
         // Run the game timer
         if (IsGamePlaying()) triaTimeLeft -= Time.deltaTime;
-
+        Debug.Log(isGameStarted);
         // Act according to the current game state.
         bool isTimeUp = triaTimeLeft <= 0;
         switch (gameState)
@@ -296,6 +303,7 @@ public class HatGameController : MonoBehaviour
                 isBallMissed = false;
                 break;
             case GameStates.PAUSED:
+                Debug.Log(isGamePaused);
                 break;
             case GameStates.STOP:
                 // Trial complete.
@@ -342,7 +350,7 @@ public class HatGameController : MonoBehaviour
         // SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
-    private float AngleToScreen(float angle) => Mathf.Lerp(-PLAYSIZE, PLAYSIZE, (angle - prom[0]) / (prom[1]- prom[0]));
+    public float AngleToScreen(float angle) => Mathf.Lerp(-PLAYSIZE, PLAYSIZE, (angle - prom[0]) / (prom[1]- prom[0]));
 
     public void SpawnTarget()
     {
@@ -391,6 +399,13 @@ public class HatGameController : MonoBehaviour
         isBallSpawned = false;
         isBallCaught = false;
         isBallMissed = false;
+
+        // Set current AROM and PROM.
+        arom = AppData.Instance.selectedMechanism.CurrentArom;
+        prom = AppData.Instance.selectedMechanism.CurrentProm;
+
+        // Attach PLUTO button event.
+        PlutoComm.OnButtonReleased += onPlutoButtonReleased;
     }
 
     private void UpdateText()
@@ -457,6 +472,23 @@ public class HatGameController : MonoBehaviour
             gamesound.Play();
             Destroy(collision.gameObject);
             BallMissed();
+        }
+    }
+
+    private void onPlutoButtonReleased()
+    {
+        Debug.Log("Button pressed.");
+        // This can mean different things depending on the game state.
+        if (gameState == GameStates.WAITING)
+        {
+            // Start the game.
+            isGameStarted = true;
+        }
+        else if (gameState != GameStates.STOP)
+        {
+            Debug.Log("Game state not stopped. " + isGamePaused);
+            // Pause/Unpause the game.
+            isGamePaused = !isGamePaused;
         }
     }
 }

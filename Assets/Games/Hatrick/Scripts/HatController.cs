@@ -25,7 +25,7 @@ public class HatController : MonoBehaviour
 
     void Update()
     {
-        position = movementControl(this.transform.position.x);
+        position = HatGameController.Instance.AngleToScreen(PlutoComm.angle);
         Vector2 targetPosition = new Vector2(position, this.transform.position.y);
         gameObject.GetComponent<Rigidbody2D>().MovePosition(targetPosition);
     }

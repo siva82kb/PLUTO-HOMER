@@ -42,7 +42,7 @@ public partial class AppData
                 $"TrialRawDataFile: {trialRawDataFile.Split('/').Last()}",
                 $"TrialAanExecFile: {trialAanExecDataFile.Split('/').Last()}",
         });
-        AppLogger.LogInfo($"<StartNewTrial> {_tdetails}");
+        AppLogger.LogInfo($"StartNewTrial | {_tdetails}");
     }
 
     public void StopTrial(int nTargets, int nSuccess, int nFailure)
@@ -80,7 +80,7 @@ public partial class AppData
                 $"TrialRawDataFile: {trialRawDataFile.Split('/').Last()}",
                 $"TrialAanExecFile: {trialAanExecDataFile.Split('/').Last()}"
         });
-        AppLogger.LogInfo($"<StopTrial> {_tdetails}");
+        AppLogger.LogInfo($"StopTrial | {_tdetails}");
         // Stop Raw and AAN real-time data logging.
         WriteTrialDataToRawDataFile();
         trialRawDataFile = null;
@@ -216,6 +216,8 @@ public partial class AppData
         rawDataString.Append($"{PlutoComm.errSum},");
 
         // Game Data
+        // "GamePlayerX", "GamePlayerY"
+        rawDataString.Append($"{GetGamePlayerPosition()},");
         // "GameTargetX", "GameTargetY"
         rawDataString.Append($"{GetGameTargetPosition()},");
         // "GameState"
@@ -248,6 +250,16 @@ public partial class AppData
         UnityEngine.Debug.Log($"File exists after write? {File.Exists(trialRawDataFile)}");
         rawDataString.Clear();
         rawDataString = null;
+    }
+
+    private string GetGamePlayerPosition()
+    {
+        // Get the game target X position.
+        if (selectedGame == "HAT")
+        {
+            return $"{HatGameController.Instance.PlayerPosition.x:F3},{HatGameController.Instance.PlayerPosition.y:F3}";
+        }
+        return ",";
     }
 
     private string GetGameTargetPosition()

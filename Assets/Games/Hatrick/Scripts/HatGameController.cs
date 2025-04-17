@@ -105,6 +105,9 @@ public class HatGameController : MonoBehaviour
     public bool isBallCaught { get; private set; } = false;
     public bool isBallMissed { get; private set; } = false;
 
+
+    bool isButtonPressed = false;
+
     // Target and player positions.
     private float[] arom;
     private float[] prom;
@@ -136,11 +139,9 @@ public class HatGameController : MonoBehaviour
         HidePaused();
         HideFinished();
     }
-
-    void FixedUpdate()
+    private void Update()
     {
-        Debug.Log("Fixed update1");
-        // HandleGameState();
+
         if (!paramSet)
         {
             Debug.Log("Fixed update1.5");
@@ -151,6 +152,23 @@ public class HatGameController : MonoBehaviour
             player.transform.localScale = scale;
             paramSet = true;
         }
+
+        if ((Input.GetKeyDown(KeyCode.P) && gameState != GameStates.STOP) || (isButtonPressed && gameState != GameStates.STOP))
+        {
+            if (gameState != GameStates.PAUSED)
+            {
+                PauseGame();
+            }
+            else
+            {
+                ResumeGame();
+            }
+
+            isButtonPressed = false;
+        }
+    }
+    void FixedUpdate()
+    {
         Debug.Log("Fixed update2");
         // Handle the current game state.
         RunGameStateMachine();
@@ -216,14 +234,13 @@ public class HatGameController : MonoBehaviour
         // if (currentState == GameState.Playing)
         // {
         //     currentState = GameState.Paused;
-        //     isPlaying = false;
-        //     isPaused = true;
+          //  isPlaying = false;;
         _prevGameState = gameState;
         gameState = GameStates.PAUSED;
         Time.timeScale = 0;
-        //     ShowPaused();
-        //     PauseButton.SetActive(false);
-        //     ResumeButton.SetActive(true);
+        ShowPaused();
+        PauseButton.SetActive(false);
+        ResumeButton.SetActive(true);
         // }
     }
 
@@ -232,12 +249,14 @@ public class HatGameController : MonoBehaviour
         // if (currentState == GameState.Paused)
         // {
         //     currentState = GameState.Playing;
-        //     isPlaying = true;
-        //     HidePaused();
+        //isPlaying = true;
+        
+        HidePaused();
+        Debug.Log($"prev GS :{_prevGameState}");
         gameState = _prevGameState;
         Time.timeScale = 1;
-        //     PauseButton.SetActive(true);
-        //     ResumeButton.SetActive(false);
+        PauseButton.SetActive(true);
+        ResumeButton.SetActive(false);
         // }
     }
 
@@ -260,7 +279,7 @@ public class HatGameController : MonoBehaviour
     {
         // Check if the game is to be paused or unpaused.
         Debug.Log("Game Update");
-        if (isGamePaused) PauseGame(); 
+        if (isGamePaused) PauseGame();
         else if (gameState == GameStates.PAUSED) ResumeGame();
 
         // Run the game timer
@@ -271,10 +290,13 @@ public class HatGameController : MonoBehaviour
         switch (gameState)
         {
             case GameStates.WAITING:
+                ShowPaused();
                 // Check of game has been started.
                 if (isGameStarted) gameState = GameStates.START;
                 break;
             case GameStates.START:
+                HidePaused();
+                HideFinished();
                 // Start the game.
                 StartGame();
                 gameState = GameStates.SPAWNBALL;
@@ -416,6 +438,7 @@ public class HatGameController : MonoBehaviour
 
     public void exitGame()
     {
+        Time.timeScale = 1f;
         SceneManager.LoadScene(prevScene);
     }
 
@@ -477,7 +500,7 @@ public class HatGameController : MonoBehaviour
 
     private void onPlutoButtonReleased()
     {
-        Debug.Log("Button pressed.");
+        //Debug.Log("Button pressed.");
         // This can mean different things depending on the game state.
         if (gameState == GameStates.WAITING)
         {
@@ -486,9 +509,10 @@ public class HatGameController : MonoBehaviour
         }
         else if (gameState != GameStates.STOP)
         {
-            Debug.Log("Game state not stopped. " + isGamePaused);
+            // Debug.Log("Game state not stopped. " + isGamePaused);
             // Pause/Unpause the game.
-            isGamePaused = !isGamePaused;
+            // isGamePaused = true;
+            isButtonPressed = true;
         }
     }
 }

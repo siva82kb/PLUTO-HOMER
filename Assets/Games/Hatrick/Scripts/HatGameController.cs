@@ -196,8 +196,7 @@ public class HatGameController : MonoBehaviour
 
         // Put PLUTO in the AAN mode.
         PlutoComm.setControlType("POSITIONAAN");
-        // PlutoComm.setControlBound(AppData.Instance.CurrentControlBound);
-        PlutoComm.setControlBound(1f);
+        PlutoComm.setControlBound(AppData.Instance.CurrentControlBound);
         PlutoComm.setControlDir(0);
 
         // Reset the AAN controller.
@@ -307,8 +306,9 @@ public class HatGameController : MonoBehaviour
                 AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
                 // Set AAN target if needed.
                 if (AppData.Instance.aanController.stateChange) UpdatePlutoAANTarget();
-                // Change to done only when the subject is in Arom.
-                if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AromMoving) 
+                // Change to done only when the AAN Controller is AromMoving or Idle state.
+                if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AromMoving
+                    || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.Idle) 
                 {
                     AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
                     gameState = GameStates.DONE;

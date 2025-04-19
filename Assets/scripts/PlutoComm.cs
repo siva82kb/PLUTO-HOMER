@@ -1,9 +1,23 @@
 using System;
+using System.IO;
 using System.Text;
 using UnityEngine;
 
 public static class PlutoComm
 {
+    // For error logging
+    // Thread-safe version using lock
+    private static readonly System.Random _random = new System.Random();
+    private static readonly object _lock = new object();
+
+    private static int GetRandomNumber()
+    {
+        lock (_lock)
+        {
+            return _random.Next(1, 101);
+        }
+    }
+
     // Device Level Constants
     public static readonly string[] OUTDATATYPE = new string[] { "SENSORSTREAM", "CONTROLPARAM", "DIAGNOSTICS", "VERSION" };
     public static readonly string[] MECHANISMS = new string[] { "NOMECH", "WFE", "WURD", "FPS", "HOC", "FME1", "FME2" };
@@ -66,9 +80,6 @@ public static class PlutoComm
     public static readonly double HOCScale = 0.10752; // 3.97 * Math.PI / 180;
     public static readonly int INVALID_TARGET = 999;
 
-    // Private AppLogger header.
-    private static readonly string LOGGERHEADER = "<PLUTO Command>";
-
     // Button released event.
     public delegate void PlutoButtonReleasedEvent();
     public static event PlutoButtonReleasedEvent OnButtonReleased;
@@ -120,6 +131,7 @@ public static class PlutoComm
             return (status >> 4);
         }
     }
+    static private int prevErrorStatus = 0;
     static public int errorStatus
     {
         get
@@ -129,20 +141,7 @@ public static class PlutoComm
     }
     static public string errorString
     {
-        get
-        {
-            if (currentStateData[2] == 0) return "NOERROR";
-            string _str = "";
-            for (int i = 0; i < 16; i++)
-            {
-                if ((errorStatus & (1 << i)) != 0)
-                {
-                    _str += (_str != "") ? " | " : "";
-                    _str += ERRORTYPES[i];
-                }
-            }
-            return _str;
-        }
+        get => getErrorString(errorStatus);
     }
     static public int controlType
     {
@@ -255,6 +254,21 @@ public static class PlutoComm
         return (statusByte & 0x0E) >> 1;
     }
 
+    private static string getErrorString(int err)
+    {
+        if (err == 0) return "NOERROR";
+        string _str = "";
+        for (int i = 0; i < 16; i++)
+        {
+            if ((errorStatus & (1 << i)) != 0)
+            {
+                _str += (_str != "") ? " | " : "";
+                _str += ERRORTYPES[i];
+            }
+        }
+        return _str;
+    }
+
     public static void parseByteArray(byte[] payloadBytes, int payloadCount, DateTime payloadTime)
     {
         if (payloadCount == 0)
@@ -271,7 +285,18 @@ public static class PlutoComm
         // Status
         currentStateData[1] = rawBytes[1];
         // Error
+        prevErrorStatus = errorStatus;
         currentStateData[2] = 255 * rawBytes[3] + rawBytes[2];
+        // Check if the error is not 0.
+        if (errorStatus != 0)
+        {
+            // Print when error changes. If error is the same, then flip a coin to decide if we print or not.
+            // This is to avoid flooding the log with the same error message. 
+            if (prevErrorStatus != errorStatus || GetRandomNumber() <= 5) PlutoComLogger.LogError($"Error: {errorString} ({errorStatus}) | Time: {runTime:F2}");
+        } else {
+            // Print if the error is resolved.
+            if (prevErrorStatus != errorStatus) PlutoComLogger.LogInfo($"Error Resolved: {errorString} | Previous Error: {getErrorString(prevErrorStatus)}({prevErrorStatus}) | Time: {runTime:F2}");
+        }
         // Actuated - Mech
         currentStateData[3] = rawBytes[4];
 
@@ -318,18 +343,21 @@ public static class PlutoComm
                 // Check if the button has been released.
                 if (previousStateData[6] == 0 && currentStateData[6] == 1)
                 {
+                    PlutoComLogger.LogInfo($"Pluto Button Released | Button: {currentStateData[6]} | Time: {runTime:F2}");
                     OnButtonReleased?.Invoke();
                 }
 
                 // Check if the control mode has been changed.
                 if (getControlType(previousStateData[1]) != getControlType(currentStateData[1]))
                 {
+                    PlutoComLogger.LogInfo($"Control Mode Changed | ControlType: {getControlType(currentStateData[1])} | Time: {runTime:F2}");
                     OnControlModeChange?.Invoke();
                 }
 
                 // Check if the mechanism has been changed.
                 if ((previousStateData[3] >> 4) != (currentStateData[3] >> 4))
                 {
+                    PlutoComLogger.LogInfo($"Mechanism Changed | Mechanism: {currentStateData[3] >> 4} | Time: {runTime:F2}");
                     OnMechanismChange?.Invoke();
                 }
 
@@ -338,10 +366,10 @@ public static class PlutoComm
                 break;
             case "VERSION":
                 // Read the bytes into a string.
-                Debug.Log("Version");
                 deviceId = Encoding.ASCII.GetString(rawBytes, 5, rawBytes[0] - 4 - 1).Split(",")[0];
                 version = Encoding.ASCII.GetString(rawBytes, 5, rawBytes[0] - 4 - 1).Split(",")[1];
                 compileDate = Encoding.ASCII.GetString(rawBytes, 5, rawBytes[0] - 4 - 1).Split(",")[2];
+                PlutoComLogger.LogInfo($"Received Version | Version: {version} | Compile Date: {compileDate} | Device ID: {deviceId}");
                 break;
         }
     }
@@ -355,31 +383,35 @@ public static class PlutoComm
     public static float getHOCAngle(float disp)
     {
         return (float)(-disp / HOCScale);
-
     }
 
     public static void startSensorStream()
     {
+        PlutoComLogger.LogInfo("Starting Sensor Stream");
         JediComm.SendMessage(new byte[] { (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "START_STREAM")] });
     }
 
     public static void stopSensorStream()
     {
+        PlutoComLogger.LogInfo("Stopping Sensor Stream");
         JediComm.SendMessage(new byte[] { (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "STOP_STREAM")] });
     }
 
     public static void setDiagnosticMode()
     {
+        PlutoComLogger.LogInfo("Setting Diagnostic Mode");
         JediComm.SendMessage(new byte[] { (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "SET_DIAGNOSTICS")] });
     }
 
     public static void getVersion()
     {
+        PlutoComLogger.LogInfo("Getting Version");
         JediComm.SendMessage(new byte[] { (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "GET_VERSION")] });
     }
 
     public static void calibrate(string mech)
     {
+        PlutoComLogger.LogInfo("Calibrating Mechanism | Mechanism: " + mech);
         JediComm.SendMessage(
             new byte[] {
                 (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "CALIBRATE")],
@@ -391,6 +423,7 @@ public static class PlutoComm
 
     public static void setControlType(string controlType)
     {
+        PlutoComLogger.LogInfo($"Setting Control Type | ControlType: {controlType}");
         JediComm.SendMessage(
             new byte[] {
                 (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "SET_CONTROL_TYPE")],
@@ -401,7 +434,7 @@ public static class PlutoComm
 
     public static void setControlTarget(float target)
     {
-        //Debug.Log("CT running");
+        PlutoComLogger.LogInfo($"Setting Control Target | Target: {target:F2}");
         byte[] targetBytes = BitConverter.GetBytes(target);
         JediComm.SendMessage(
             new byte[] {
@@ -416,7 +449,7 @@ public static class PlutoComm
 
     public static void setAANTarget(float tgt0, float t0, float tgt1, float dur)
     {
-        AppLogger.LogInfo($"{LOGGERHEADER} Setting AAN Target: | tgt0: {tgt0:F2} | t0: {t0:F2} | tgt1: {tgt1:F2} | dur: {dur:F2}");
+        PlutoComLogger.LogInfo($"Setting AAN Target | tgt0: {tgt0:F2} | t0: {t0:F2} | tgt1: {tgt1:F2} | dur: {dur:F2}");
         byte[] tgt0Bytes = BitConverter.GetBytes(tgt0);
         byte[] t0Bytes = BitConverter.GetBytes(t0);
         byte[] tgt1Bytes = BitConverter.GetBytes(tgt1);
@@ -434,7 +467,7 @@ public static class PlutoComm
 
     public static void ResetAANTarget()
     {
-        AppLogger.LogInfo($"{LOGGERHEADER} Resetting AAN Target.");
+        PlutoComLogger.LogInfo($"Resetting AAN Target.");
         JediComm.SendMessage(
             new byte[] {
                 (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "RESET_AAN_TARGET")]
@@ -445,9 +478,8 @@ public static class PlutoComm
     public static void setControlBound(float ctrlBound)
     {
         // Limit the value to be between 0 and 1.
-        //Debug.Log("CB running "+ ctrlBound);
         ctrlBound = Math.Max(0, Math.Min(1, ctrlBound));
-        AppLogger.LogInfo($"{LOGGERHEADER} Setting Control Bound: {ctrlBound:F2}");
+        PlutoComLogger.LogInfo($"Setting Control Bound | ControlBound: {ctrlBound:F2}");
         byte _ctrlboundbyte = (byte)(ctrlBound * 255);
         JediComm.SendMessage(
             new byte[] {
@@ -459,12 +491,12 @@ public static class PlutoComm
 
     public static void setControlDir(sbyte ctrlDir)
     {
-        Debug.Log("CD running");
         // Limit the value to be between 0 and 1.
         if ((ctrlDir != 1) && (ctrlDir != -1))
         {
             ctrlDir = 0;
         }
+        PlutoComLogger.LogInfo($"Setting Control Bound | ControlDirection: {ctrlDir:F2}");
         JediComm.SendMessage(
             new byte[] {
                 (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "SET_CONTROL_DIR")],
@@ -475,6 +507,7 @@ public static class PlutoComm
 
     public static void resetPacketNo()
     {
+        PlutoComLogger.LogInfo($"Resetting Packet Number");
         JediComm.SendMessage(new byte[] { (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "RESET_PACKETNO")] });
     }
 
@@ -482,7 +515,6 @@ public static class PlutoComm
     {
         JediComm.SendMessage(new byte[] { (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "HEARTBEAT")] });
     }
-
 }
 
 public static class ConnectToRobot
@@ -517,5 +549,77 @@ public static class ConnectToRobot
     {
         ConnectToRobot.isPLUTO = false;
         JediComm.Disconnect();
+    }
+}
+
+public static class PlutoComLogger
+{
+    private static string logFilePath;
+    private static StreamWriter logWriter = null;
+    private static readonly object logLock = new object();
+
+    public static bool DEBUG = false;
+    public static string InBraces(string text) => $"[{text}]";
+
+    public static bool isLogging
+    {
+        get
+        {
+            return logFilePath != null;
+        }
+    }
+
+    public static void StartLogging(string dtstr)
+    {
+        // Start Log file only if we are not already logging.
+        if (isLogging) return;
+        if (!Directory.Exists(DataManager.logPath)) Directory.CreateDirectory(DataManager.logPath);
+        // Create the log file name.
+        logFilePath = Path.Combine(DataManager.logPath, $"{dtstr}-plutocomm.log");
+
+        // Create the log file writer.
+        logWriter = new StreamWriter(logFilePath, true);
+        LogInfo("Created PLUTO log file.");
+    }
+
+    public static void StopLogging()
+    {
+        if (logWriter != null)
+        {
+            LogInfo("Closing log file.");
+            logWriter.Close();
+            logWriter = null;
+            logFilePath = null;
+        }
+    }
+
+    public static void LogMessage(string message, LogMessageType logMsgType)
+    {
+        lock (logLock)
+        {
+            if (logWriter != null)
+            {
+                string _user = AppData.Instance.userData != null ? AppData.Instance.userData.hospNumber : "";
+                string _msg = $"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} {InBraces(_user), -10} {InBraces(AppLogger.currentScene), -12} {InBraces(AppLogger.currentMechanism), -8} {InBraces(AppLogger.currentGame), -8} >> {message}";
+                logWriter.WriteLine(_msg);
+                logWriter.Flush();
+                if (DEBUG) Debug.Log(_msg);
+            }
+        }
+    }
+
+    public static void LogInfo(string message)
+    {
+        LogMessage(message, LogMessageType.INFO);
+    }
+
+    public static void LogWarning(string message)
+    {
+        LogMessage(message, LogMessageType.WARNING);
+    }
+
+    public static void LogError(string message)
+    {
+        LogMessage(message, LogMessageType.ERROR);
     }
 }

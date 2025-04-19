@@ -39,8 +39,7 @@ public partial class AppData
                 $"TrialType: ({(int)tSrType.tType}){tSrType.tType}",
                 $"Desired SR: {tSrType.sRate}",
                 $"Current CB: {_currControlBound}",
-                $"TrialRawDataFile: {trialRawDataFile.Split('/').Last()}",
-                $"TrialAanExecFile: {trialAanExecDataFile.Split('/').Last()}",
+                $"TrialRawDataFile: {trialRawDataFile.Split('/').Last()}"
         });
         AppLogger.LogInfo($"StartNewTrial | {_tdetails}");
     }
@@ -77,14 +76,12 @@ public partial class AppData
                 $"Trial SR: {successRate}",
                 $"Current CB: {_currcb.Value:F3}",
                 $"Next CB: {aanController.currentCtrlBound:F3}",
-                $"TrialRawDataFile: {trialRawDataFile.Split('/').Last()}",
-                $"TrialAanExecFile: {trialAanExecDataFile.Split('/').Last()}"
+                $"TrialRawDataFile: {trialRawDataFile.Split('/').Last()}"
         });
         AppLogger.LogInfo($"StopTrial | {_tdetails}");
         // Stop Raw and AAN real-time data logging.
         WriteTrialDataToRawDataFile();
         trialRawDataFile = null;
-        trialAanExecDataFile = null;
     }
 
     private void WriteTrialToSessionsFile()
@@ -107,8 +104,6 @@ public partial class AppData
             trialStopTime?.ToString(DataManager.DATEFORMAT),
             // "TrialRawDataFile"
             trialRawDataFile.Split("/data/")[1],
-            // "TrialAanExecFile", 
-            trialAanExecDataFile.Split("/data/")[1],
             // "Mechanism"
             selectedMechanism.name, 
             // "GameName"
@@ -141,11 +136,6 @@ public partial class AppData
     {
         // Set the file name.
         trialRawDataFile = DataManager.GetTrialRawDataFileName(
-            currentSessionNumber,
-            selectedMechanism.trialNumberDay,
-            Instance.selectedGame,
-            Instance.selectedMechanism.name);
-        trialAanExecDataFile = DataManager.GetTrialAanExecDataFileName(
             currentSessionNumber,
             selectedMechanism.trialNumberDay,
             Instance.selectedGame,

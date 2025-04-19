@@ -35,7 +35,7 @@ public static class DataManager
     // Sessions file definitions.
     public static string[] SESSIONFILEHEADER = new string[] {
         "SessionNumber", "DateTime",
-        "TrialNumberDay", "TrialNumberSession", "TrialType", "TrialStartTime", "TrialStopTime", "TrialRawDataFile", "TrialAanExecFile", 
+        "TrialNumberDay", "TrialNumberSession", "TrialType", "TrialStartTime", "TrialStopTime", "TrialRawDataFile", 
         "Mechanism", 
         "GameName", "GameParameter", "GameSpeed",  
         "AssistMode", "DesiredSuccessRate", "SuccessRate", "CurrentControlBound", "NextControlBound"
@@ -190,28 +190,26 @@ public static class AppLogger
         }
     }
 
-    public static void StartLogging(string scene)
+    public static string StartLogging(string scene)
     {
         // Start Log file only if we are not already logging.
         if (isLogging)
         {
-            return;
+            return null;
         }
         if (!Directory.Exists(DataManager.logPath))
         {
             Directory.CreateDirectory(DataManager.logPath);
         }
-        logFilePath = Path.Combine(DataManager.logPath, $"log-{DateTime.Now:dd-MM-yyyy-HH-mm-ss}.log");
-        if (!File.Exists(logFilePath))
-        {
-            using (File.Create(logFilePath))
-            {
-                Debug.Log("created");
-            }
-        }
-        logWriter = new StreamWriter(logFilePath, true);
+        string _dtstr = DateTime.Now.ToString("dd-MM-yyyy-HH-mm-ss");
+        logFilePath = Path.Combine(DataManager.logPath, $"{_dtstr}-application.log");
+        // if (!File.Exists(logFilePath)) File.Create(logFilePath);
+
+        // Create the log file and write the header.
+        logWriter = new StreamWriter(logFilePath, true, Encoding.UTF8);
         currentScene = scene;
         LogInfo("Created PLUTO log file.");
+        return _dtstr;
     }
 
     public static void SetCurrentScene(string scene)
@@ -284,6 +282,3 @@ public static class AppLogger
         LogMessage(message, LogMessageType.ERROR);
     }
 }
-
-
-

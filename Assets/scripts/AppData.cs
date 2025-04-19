@@ -84,7 +84,6 @@ public partial class AppData
      * Logging file names.
      */
     public string trialRawDataFile { get; private set; } = null;
-    public string trialAanExecDataFile { get; private set; } = null;
     private StringBuilder rawDataString = null;
     private StringBuilder aanExecDataString = null;
 
@@ -138,10 +137,13 @@ public partial class AppData
         DataManager.CreateFileStructure();
 
         // Start logging.
-        AppLogger.StartLogging(scene);
+        string _dtstr = AppLogger.StartLogging(scene);
 
         // Connect and init robot.
-        InitializeRobotConnection(doNotResetMech);
+        InitializeRobotConnection(doNotResetMech, _dtstr);
+
+        // Intialize the PLUTO AAN logger.
+        PlutoAanLogger.StartLogging(_dtstr);
 
         // Initialize the session manager.
         //SessionManager.Initialize(DataManager.sessionPath);
@@ -159,8 +161,14 @@ public partial class AppData
         AppLogger.LogWarning($"Session number set to {currentSessionNumber}.");
     }
 
-    private void InitializeRobotConnection(bool doNotResetMech)
+    private void InitializeRobotConnection(bool doNotResetMech, string datetimestr = null)
     {
+        // Initialize the PLUTO Comm logger.
+        if (datetimestr != null)
+        {
+            PlutoComLogger.StartLogging(datetimestr);
+        }
+        
         ConnectToRobot.Connect(COMPort);
         // Check if the connection is successful.
         if (!ConnectToRobot.isConnected)

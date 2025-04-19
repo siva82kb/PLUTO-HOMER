@@ -23,6 +23,8 @@ public class PlutoAANController
     public static readonly float FORGETINGFACTOR = 0.9f;        // Forgetting factor for the control bound.
     public static readonly float ASSISTFACTOR = 0.01f;          // Assistance factor for the control bound.
     public static readonly float DEFAULTCONTROLBOUND = 0.5f;    // Default cotrol bound value.
+    public static readonly float MAXCONTROLBOUND = 1.0f;       // Maximum control bound value.
+    public static readonly float MINCONTROLBOUND = 0.16f;       // Minimum control bound value.
 
     public static readonly string[] ADAPTFILEHEADER = new string[] {
         "SessionNumber", "TrialNumberSession", "TrialNumberDay", 
@@ -134,26 +136,12 @@ public class PlutoAANController
 
     private void ReadUpdateAdaptionParameters(DataTable sessionData, int sessionNo)
     {
-        // Check if the AAN adaptation file exists.
-        // if (!File.Exists(adaptFileName))
-        // {
-        //     using (var writer = new StreamWriter(adaptFileName, false, System.Text.Encoding.UTF8))
-        //     {
-        //         // Preheader
-        //         writer.WriteLine($":mechanism: {mechanismName}");
-        //         // Header
-        //         writer.WriteLine(string.Join(",", ADAPTFILEHEADER));
-        //     }
-        // }
-        // Read the adaptation file, and get the last controlbound value.
-        // DataTable adaptData = DataManager.loadCSV(adaptFileName);
         // Get the rows for the current mechanism and session.
         var selRows = sessionData.AsEnumerable()?
             .Where(row => row.Field<string>("Mechanism") == mechanism.name)
             .OrderBy(row => Convert.ToInt32(row.Field<string>("SessionNumber")))
             .ThenBy(row => Convert.ToInt32(row.Field<string>("TrialNumberSession")));
         // Set default value if there are no rows.
-        UnityEngine.Debug.Log($"Selected rows: {selRows.Count()}");
         if (selRows.Count() == 0)
         {
             // Default adaptation parameters.
@@ -163,11 +151,9 @@ public class PlutoAANController
         {
             // Now order the selRows by the trailNumberDay in increasing order and get the last row.
             DataRow lastRow = selRows.LastOrDefault();
-            UnityEngine.Debug.Log($"Last row: {lastRow}");
             currentCtrlBound = Convert.ToSingle(lastRow.Field<string>("NextControlBound"));
-            UnityEngine.Debug.Log($"Next CB: {Convert.ToSingle(lastRow.Field<string>("NextControlBound"))}");
         }
-        UnityEngine.Debug.Log($"Currrent Control Bound: {currentCtrlBound}");
+        PlutoAanLogger.LogInfo($"Currrent Control Bound: {currentCtrlBound}");
     }
 
     public void Update(float actual, float delT, bool trialDone)
@@ -198,20 +184,20 @@ public class PlutoAANController
                     case TargetType.InAromFromArom:
                     case TargetType.InPromFromArom:
                         state = PlutoAANState.AromMoving;
-                        AppLogger.LogInfo($"AAN  Details (Update) | {_prevstate} -> {state} | {GetTargetType()}");
+                        PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | {GetTargetType()}");
                         break;
                     case TargetType.InAromFromProm:
                     case TargetType.InPromFromPromCrossArom:
                         state = PlutoAANState.RelaxToArom;
                         // Generate target to relax to AROM.
                         GenerateRelaxToAromAanTarget(actual);
-                        AppLogger.LogInfo($"AAN  Details (Update) | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
+                        PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
                         break;
                     case TargetType.InPromFromPromNoCrossArom:
                         state = PlutoAANState.AssistToTarget;
                         // Generate target to assist.
                         GenerateAssistToTargetAanTarget(actual, false);
-                        AppLogger.LogInfo($"AAN  Details (Update) | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
+                        PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
                         break;
                 }
                 break;
@@ -232,7 +218,7 @@ public class PlutoAANController
                     state = PlutoAANState.AssistToTarget;
                     // Generate target to assist.
                     GenerateAssistToTargetAanTarget(actual, true);
-                    AppLogger.LogInfo($"AAN  Details (Update) | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
+                    PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
                 }
                 break;
             case PlutoAANState.RelaxToArom:
@@ -243,7 +229,7 @@ public class PlutoAANController
                     state = PlutoAANState.AromMoving;
                     // Reset AAN target
                     _newAanTarget[0] = 999;
-                    AppLogger.LogInfo($"AAN  Details (Update) | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
+                    PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
                     return;
                 }
                 break;
@@ -255,7 +241,7 @@ public class PlutoAANController
                     // Generate target to relax to AROM.
                     GenerateRelaxToAromAanTarget(actual);
                     state = PlutoAANState.RelaxToArom;
-                    AppLogger.LogInfo($"AAN  Details (Update) | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
+                    PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
                 }
                 break;
         }
@@ -273,7 +259,7 @@ public class PlutoAANController
         positionQ.Clear();
         timeQ.Clear();
         trialTime = 0;
-        AppLogger.LogInfo($"AAN  Details (Reset) | {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
+        PlutoAanLogger.LogInfo($"Reset | {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
     }
 
     public void SetNewTrialDetails(float actual, float target, float maxDur)
@@ -288,6 +274,7 @@ public class PlutoAANController
         timeQ.Enqueue(trialTime);
         stateChange = true;
         state = PlutoAANState.NewTrialTargetSet;
+        PlutoAanLogger.LogInfo($"SetNewTrialDetails | {initialPosition} -> {targetPosition} in {maxDuration}");
     }
 
     public float[] GetNewAanTarget()
@@ -345,16 +332,15 @@ public class PlutoAANController
 
     public void AdaptControLBound(float desiredSuccessRate, float previousSuccessRate)
     {
+        string _logstr = $"AdaptControlBound | {currentCtrlBound}";
         // First do some forgetting
         currentCtrlBound *= FORGETINGFACTOR;
         // Now, do some learning or error correction.
         currentCtrlBound += ASSISTFACTOR * (desiredSuccessRate - previousSuccessRate);
+        // Limit the control bound to 0.0 and 1.0.
+        currentCtrlBound = Math.Max(MINCONTROLBOUND, Math.Min(MAXCONTROLBOUND, currentCtrlBound));
+        PlutoAanLogger.LogInfo($"{_logstr} -> {currentCtrlBound} | {desiredSuccessRate} | {previousSuccessRate}");
     }
-
-    //public sbyte getControlDirectionForTrial()
-    //{
-    //    return (sbyte)Math.Sign(targetPosition - initialPosition);
-    //}
 
     private void UpdatePositionTimeQueues(float actPos, float tTime)
     {
@@ -401,44 +387,78 @@ public class PlutoAANController
         // Target Time
         _newAanTarget[4] = _maxDur;
     }
-    //public void upateTrialResult(bool success)
-    //{
-    //    if (trialRunning == false) return;
+}
 
-    //    // Update success rate
-    //    if (success)
-    //    {
-    //        if (successRate < 0)
-    //        {
-    //            successRate = 1;
-    //        }
-    //        else
-    //        {
-    //            successRate += 1;
-    //        }
-    //    }
-    //    else
-    //    {
-    //        if (successRate >= 0)
-    //        {
-    //            successRate = -1;
-    //        }
-    //        else
-    //        {
-    //            successRate -= 1;
-    //        }
-    //    }
-    //    // Update control bound.
-    //    previousCtrlBound = currentCtrlBound;
-    //    if (successRate >= 3)
-    //    {
-    //        currentCtrlBound = forgetFactor * currentCtrlBound;
-    //    }
-    //    else if (successRate < 0)
-    //    {
-    //        currentCtrlBound = Math.Min(1.0f, assistFactor * currentCtrlBound);
-    //    }
-    //    // Trial done. No more update possible for this trial.
-    //    trialRunning = false;
-    //}
+
+public static class PlutoAanLogger
+{
+    private static string logFilePath;
+    private static StreamWriter logWriter = null;
+    private static readonly object logLock = new object();
+
+    public static bool DEBUG = false;
+    public static string InBraces(string text) => $"[{text}]";
+
+    public static bool isLogging
+    {
+        get
+        {
+            return logFilePath != null;
+        }
+    }
+
+    public static void StartLogging(string dtstr)
+    {
+        // Start Log file only if we are not already logging.
+        if (isLogging) return;
+        if (!Directory.Exists(DataManager.logPath)) Directory.CreateDirectory(DataManager.logPath);
+        // Create the log file name.
+        logFilePath = Path.Combine(DataManager.logPath, $"{dtstr}-plutoaan.log");
+
+        // Create the log file writer.
+        logWriter = new StreamWriter(logFilePath, true);
+        LogInfo("Created PLUTO AAN log file.");
+    }
+
+    public static void StopLogging()
+    {
+        if (logWriter != null)
+        {
+            LogInfo("Closing PLUTO AAN log file.");
+            logWriter.Close();
+            logWriter = null;
+            logFilePath = null;
+        }
+    }
+
+    public static void LogMessage(string message, LogMessageType logMsgType)
+    {
+        lock (logLock)
+        {
+            if (logWriter != null)
+            {
+                string _user = AppData.Instance.userData != null ? AppData.Instance.userData.hospNumber : "";
+                string _trialno = AppData.Instance.selectedMechanism != null ? AppData.Instance.selectedMechanism.trialNumberDay.ToString() : "";
+                string _msg = $"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} {InBraces(_user), -10} {InBraces(AppLogger.currentScene), -12} {InBraces(AppLogger.currentMechanism), -8} {InBraces(AppLogger.currentGame), -8} {InBraces(_trialno), -4} >> {message}";
+                logWriter.WriteLine(_msg);
+                logWriter.Flush();
+                if (DEBUG) UnityEngine.Debug.Log(_msg);
+            }
+        }
+    }
+
+    public static void LogInfo(string message)
+    {
+        LogMessage(message, LogMessageType.INFO);
+    }
+
+    public static void LogWarning(string message)
+    {
+        LogMessage(message, LogMessageType.WARNING);
+    }
+
+    public static void LogError(string message)
+    {
+        LogMessage(message, LogMessageType.ERROR);
+    }
 }

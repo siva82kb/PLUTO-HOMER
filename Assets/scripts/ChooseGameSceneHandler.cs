@@ -125,6 +125,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
 
     private void OnMechButtonClicked()
     {
+        AppData.Instance.aanController =null;
         SceneManager.LoadScene(changeScene);
     }
 

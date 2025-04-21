@@ -45,6 +45,12 @@ public class ChooseGameSceneHandler : MonoBehaviour
                 return;
             }
         }
+        //create a new AAN controller
+         AppData.Instance.aanController = new PlutoAANController(
+            mechanism: AppData.Instance.selectedMechanism,
+            sessionData: AppData.Instance.userData.dTableSession,
+            sessionNo: AppData.Instance.currentSessionNumber
+        );
 
         // Update App Logger
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);

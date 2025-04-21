@@ -61,9 +61,8 @@ public partial class AppData
         // Write trial information to the session details file.
         WriteTrialToSessionsFile();
         // Write trial details to the log file.
-        //float? _currcb = trialType == HomerTherapy.TrialType.SR85PCCATCH ? null : _currControlBound;
-        float? _currcb = trialType == HomerTherapy.TrialType.SR85PCCATCH ? 0f : _currControlBound;
-
+        float? _currcb = trialType == HomerTherapy.TrialType.SR85PCCATCH ? null : _currControlBound;
+        
         string _tdetails = string.Join(" | ",
             new string[] {
                 $"Start Time: {trialStartTime:yyyy-MM-ddTHH:mm:ss}",
@@ -76,7 +75,7 @@ public partial class AppData
                 $"NFailure: {nFailure}",
                 $"Desired SR: {desiredSuccessRate}",
                 $"Trial SR: {successRate}",
-                $"Current CB: {_currcb.Value:F3}",
+                $"Current CB: {_currcb?.ToString("F3")??"N/A"}",
                 $"Next CB: {aanController.currentCtrlBound:F3}",
                 $"TrialRawDataFile: {trialRawDataFile.Split('/').Last()}"
         });

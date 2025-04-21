@@ -1,6 +1,5 @@
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -57,13 +56,14 @@ public partial class AppData
         if (trialType  != HomerTherapy.TrialType.SR85PCCATCH)
         {
             aanController.AdaptControLBound(desiredSuccessRate, successRate);
-            UnityEngine.Debug.Log("Don't Know whats the error");
         }
 
         // Write trial information to the session details file.
         WriteTrialToSessionsFile();
         // Write trial details to the log file.
-        float? _currcb = trialType == HomerTherapy.TrialType.SR85PCCATCH ? null : _currControlBound;
+        //float? _currcb = trialType == HomerTherapy.TrialType.SR85PCCATCH ? null : _currControlBound;
+        float? _currcb = trialType == HomerTherapy.TrialType.SR85PCCATCH ? 0f : _currControlBound;
+
         string _tdetails = string.Join(" | ",
             new string[] {
                 $"Start Time: {trialStartTime:yyyy-MM-ddTHH:mm:ss}",

@@ -52,5 +52,6 @@ public class connectStatusHandler : MonoBehaviour
      private void CloseAppLogger()
     {
         AppLogger.StopLogging(); 
+        PlutoAanLogger.StopLogging();
     }
 }

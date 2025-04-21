@@ -24,7 +24,7 @@ public class HatGameController : MonoBehaviour
     public Text ScoreText;
     public Text timeLeftText;
     public GameObject GameOverObject;
-    public GameObject StartButton;
+    public GameObject StartButton, ExitButton;
     public GameObject PauseButton;
     public GameObject ResumeButton;
     public GameObject player;
@@ -35,7 +35,7 @@ public class HatGameController : MonoBehaviour
     private GameObject PlayerObj;
 
     public GameObject SuccessRateBanner;
-    public TextMeshProUGUI prevSR , currSR;
+    public Text prevSR , currSR;
     private GameObject[] pauseObjects, finishObjects;
     public AudioClip[] audioClips; // win, level complete, loose
     public AudioSource gameSound;
@@ -137,15 +137,6 @@ public class HatGameController : MonoBehaviour
     void Start()
     { 
         InitializeGame();
-//        Debug.Log($" pr 0: {AppData.Instance.previousSuccessRates[0]}, {AppData.Instance.previousSuccessRates[1]}");
-
-        //success Rate Banner
-        // if(AppData.Instance.previousSuccessRates!=null)
-        // {
-        //     SuccessRateBanner.SetActive(true);
-        //     prevSR.text = $" previous Success Rate : {AppData.Instance.previousSuccessRates[0]}";
-        //     currSR.text = $"Current Success Rate:{AppData.Instance.previousSuccessRates[1]}";
-        // }
         // Initialize the game objects.
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
         finishObjects = GameObject.FindGameObjectsWithTag("ShowOnFinish");
@@ -232,20 +223,24 @@ public class HatGameController : MonoBehaviour
     {
         _prevGameState = gameState;
         gameState = GameStates.PAUSED;
+        isGamePaused = true;
         Time.timeScale = 0;
         ShowPaused();
         PauseButton.SetActive(false);
         ResumeButton.SetActive(true);
+        ExitButton.SetActive(false);
     }
 
     public void ResumeGame()
     {
         HidePaused();
         Debug.Log($"prev GS :{_prevGameState}");
+        isGamePaused = false;
         gameState = _prevGameState;
         Time.timeScale = 1;
         PauseButton.SetActive(true);
         ResumeButton.SetActive(false);
+        ExitButton.SetActive(true);
     }
 
     public bool IsGamePlaying()
@@ -418,8 +413,19 @@ public class HatGameController : MonoBehaviour
 
     public void exitGame()
     {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(prevScene);
+        if(gameState == GameStates.DONE || gameState == GameStates.WAITING){
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(prevScene);
+        }
+        else
+        {
+            gameState = GameStates.STOP;
+            AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
+             AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+             gameState = GameStates.DONE;
+             Time.timeScale = 1f;
+             SceneManager.LoadScene(prevScene);
+        }
     }
 
     public void ShowPaused()
@@ -427,8 +433,8 @@ public class HatGameController : MonoBehaviour
           if(AppData.Instance.previousSuccessRates!=null)
         {
             SuccessRateBanner.SetActive(true);
-            prevSR.text = $" previous Success Rate : {AppData.Instance.previousSuccessRates[0]}";
-            currSR.text = $"Current Success Rate:{AppData.Instance.previousSuccessRates[1]}";
+            prevSR.text = $" previous SR : {AppData.Instance.previousSuccessRates[0]}%";
+            currSR.text = $"Current Success Rate : {AppData.Instance.previousSuccessRates[1]}%";
         }
         foreach (GameObject g in pauseObjects)
         {

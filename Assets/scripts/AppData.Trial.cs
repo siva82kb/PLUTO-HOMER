@@ -1,5 +1,6 @@
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -56,6 +57,7 @@ public partial class AppData
         if (trialType  != HomerTherapy.TrialType.SR85PCCATCH)
         {
             aanController.AdaptControLBound(desiredSuccessRate, successRate);
+            UnityEngine.Debug.Log("Don't Know whats the error");
         }
 
         // Write trial information to the session details file.

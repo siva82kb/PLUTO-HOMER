@@ -33,6 +33,9 @@ public class HatGameController : MonoBehaviour
     public GameObject aromLeft;
     public GameObject aromRight;
     private GameObject PlayerObj;
+
+    public GameObject SuccessRateBanner;
+    public TextMeshProUGUI prevSR , currSR;
     private GameObject[] pauseObjects, finishObjects;
     public AudioClip[] audioClips; // win, level complete, loose
     public AudioSource gameSound;
@@ -134,6 +137,15 @@ public class HatGameController : MonoBehaviour
     void Start()
     { 
         InitializeGame();
+//        Debug.Log($" pr 0: {AppData.Instance.previousSuccessRates[0]}, {AppData.Instance.previousSuccessRates[1]}");
+
+        //success Rate Banner
+        // if(AppData.Instance.previousSuccessRates!=null)
+        // {
+        //     SuccessRateBanner.SetActive(true);
+        //     prevSR.text = $" previous Success Rate : {AppData.Instance.previousSuccessRates[0]}";
+        //     currSR.text = $"Current Success Rate:{AppData.Instance.previousSuccessRates[1]}";
+        // }
         // Initialize the game objects.
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
         finishObjects = GameObject.FindGameObjectsWithTag("ShowOnFinish");
@@ -264,7 +276,7 @@ public class HatGameController : MonoBehaviour
                 break;
             case GameStates.START:
                 HidePaused();
-                HideFinished();
+               // HideFinished();
                 // Start the game.
                 StartGame();
                 gameState = GameStates.SPAWNBALL;
@@ -305,14 +317,22 @@ public class HatGameController : MonoBehaviour
                 // Update AANController.
                 AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
                 // Set AAN target if needed.
+
+                AppData.Instance.previousSuccessRates =null;
+
                 if (AppData.Instance.aanController.stateChange) UpdatePlutoAANTarget();
                 // Change to done only when the AAN Controller is AromMoving or Idle state.
                 if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AromMoving
                     || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.Idle) 
                 {
+
                     AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
                     gameState = GameStates.DONE;
+                   if(AppData.Instance.previousSuccessRates ==null)
+                   { 
+                    AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(AppData.Instance.selectedMechanism.name, AppData.Instance.selectedGame);
                     SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+                    }
                 }
                 break;
         }
@@ -362,6 +382,7 @@ public class HatGameController : MonoBehaviour
         timeLeftText = GameObject.FindGameObjectWithTag("TimeLeftText").GetComponent<Text>();
         ScoreText = GameObject.FindGameObjectWithTag("ScoreText").GetComponent<Text>();
 
+        
         // Enable the buttons
         StartButton.SetActive(true);
         PauseButton.SetActive(false);
@@ -403,6 +424,12 @@ public class HatGameController : MonoBehaviour
 
     public void ShowPaused()
     {
+          if(AppData.Instance.previousSuccessRates!=null)
+        {
+            SuccessRateBanner.SetActive(true);
+            prevSR.text = $" previous Success Rate : {AppData.Instance.previousSuccessRates[0]}";
+            currSR.text = $"Current Success Rate:{AppData.Instance.previousSuccessRates[1]}";
+        }
         foreach (GameObject g in pauseObjects)
         {
             g.SetActive(true);
@@ -415,6 +442,7 @@ public class HatGameController : MonoBehaviour
         {
             g.SetActive(false);
         }
+        SuccessRateBanner.SetActive(false);
     }
 
     public void ShowFinished()

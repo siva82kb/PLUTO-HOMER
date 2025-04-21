@@ -405,6 +405,74 @@ public class PlutoUserData
         }
         return daySummaries;
     }
+
+public List<float> GetLastTwoSuccessRates(string mechanism, string gameName)
+{
+    List<float> lastTwoSuccessRates = new List<float>();
+
+    dTableSession = DataManager.loadCSV(DataManager.sessionFile);
+
+    if (dTableSession == null || dTableSession.Rows.Count == 0)
+    {
+        return new List<float> { 0f, 0f };
+    }
+
+    var today = DateTime.Today;
+
+    var filteredRows = dTableSession.AsEnumerable()
+        .Where(row =>
+            row.Field<string>("Mechanism") == mechanism &&
+            row.Field<string>("GameName") == gameName)
+        .OrderByDescending(row => DateTime.ParseExact(row.Field<string>("TrialStartTime"), DataManager.DATEFORMAT, CultureInfo.InvariantCulture))
+        .ToList();
+
+    if (!filteredRows.Any())
+    {
+        return null;
+    }
+
+    // Get all success rates from today
+    var todayRates = filteredRows
+        .Where(row => DateTime.ParseExact(row.Field<string>("TrialStartTime"), DataManager.DATEFORMAT, CultureInfo.InvariantCulture).Date == today)
+        .Select(row => Convert.ToSingle(row["SuccessRate"]))
+        .ToList();
+
+    if (todayRates.Count >= 2)
+    {
+        lastTwoSuccessRates.Add(todayRates[1]);
+        lastTwoSuccessRates.Add(todayRates[0]);
+    }
+    else if (todayRates.Count == 1)
+    {
+
+        var previousDayRate = filteredRows
+            .Where(row => DateTime.ParseExact(row.Field<string>("TrialStartTime"), DataManager.DATEFORMAT, CultureInfo.InvariantCulture).Date < today)
+            .Select(row => Convert.ToSingle(row["SuccessRate"]))
+            .FirstOrDefault();
+
+        lastTwoSuccessRates.Add(previousDayRate);
+        lastTwoSuccessRates.Add(todayRates[0]);
+
+    }
+    else
+    {
+        var previousDayRate = filteredRows
+            .Where(row => DateTime.ParseExact(row.Field<string>("TrialStartTime"), DataManager.DATEFORMAT, CultureInfo.InvariantCulture).Date < today)
+            .Select(row => Convert.ToSingle(row["SuccessRate"]))
+            .FirstOrDefault();
+
+        lastTwoSuccessRates.Add(previousDayRate);
+        lastTwoSuccessRates.Add(0f);
+    }
+
+    while (lastTwoSuccessRates.Count < 2)
+        lastTwoSuccessRates.Add(0f);
+
+    return lastTwoSuccessRates;
+}
+
+
+
 }
 
 public static class Others

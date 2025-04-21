@@ -19,7 +19,7 @@ public partial class AppData
      * CONSTANT FIXED VARIABLES.
      */
     // COM Port for the device
-    public const string COMPort = "COM4";
+    public const string COMPort = "COM5";
 
     // Keeping track of time.
     private double nanosecPerTick = 1.0f / Stopwatch.Frequency;
@@ -213,6 +213,7 @@ public partial class AppData
     public void SetGame(string gameName)
     {
         selectedGame = gameName;
+        previousSuccessRates =AppData.Instance.userData.GetLastTwoSuccessRates(selectedMechanism.name , selectedGame);
         // // Cannot set game before selecting mechanism.
         // if (selectedMechanism == null) 
         // {

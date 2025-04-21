@@ -289,6 +289,7 @@ public class PlutoAANController
 
     public TargetType GetTargetType()
     {
+        UnityEngine.Debug.Log($"arom min : {aRom[0]}, max :{aRom[1]}");
         bool _initInArom = (initialPosition >= aRom[0] && initialPosition <= aRom[1]);
         if (trialRunning == false) return TargetType.None;
         // Check if target is in aRom

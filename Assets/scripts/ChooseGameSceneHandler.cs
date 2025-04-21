@@ -52,7 +52,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
         
         // Reset selected game.
         AppData.Instance.SetGame(null);
-
+        AppData.Instance.previousSuccessRates =null;
         // Attach callback.
         AttachCallbacks();
 
@@ -145,6 +145,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
                 $" | AROM: [{AppData.Instance.selectedMechanism.currRom.aromMin:F2}, {AppData.Instance.selectedMechanism.currRom.aromMax:F2}]");
             // Instantitate the game object and load the appropriate scene.
             AppData.Instance.SetGame(game);
+            
             SceneManager.LoadScene(sceneName);
         }
     }

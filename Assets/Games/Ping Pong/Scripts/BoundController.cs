@@ -1,16 +1,17 @@
 ﻿using UnityEngine;
+using System.Collections;
+using UnityEngine.SocialPlatforms;
 using System;
 
 public class BoundController : MonoBehaviour
 {
     public Transform enemy;
-    public int enemyScore;
-    public int playerScore;
     public AudioClip[] audioClips; // win ,loose
+    private PongGameController PGC;
+
     void Start()
     {
-        enemyScore = 0;
-        playerScore = 0;
+        PGC = GameObject.FindAnyObjectByType<PongGameController>();
     }
 
     void OnTriggerEnter2D(Collider2D other)
@@ -20,25 +21,17 @@ public class BoundController : MonoBehaviour
             if (other.gameObject.GetComponent<Rigidbody2D>().velocity.x > 0)
             {
                 playAudio(1);
-                enemyScore++;
-                gameData.enemyScore = enemyScore;
-                gameData.targetSpwan = false;
-                gameData.events = Array.IndexOf(gameData.pongEvents, "playerFail");
+                PGC.BallMissed();
+
+               // PGC.enemyScore++;
             }
             else
             {
-                playerScore++;
-                gameData.playerScore = playerScore;
-                gameData.gameScore++;
-                gameData.events = Array.IndexOf(gameData.pongEvents, "enemyFail");
+              //  PGC.playerScore++;
                 playAudio(0);
             }
             Destroy(other.gameObject);
             enemy.position = new Vector3(-6, 0, 0);
-            if (gameData.enemyScore== gameData.winningScore ||  gameData.playerScore == gameData.winningScore)
-            {
-                Time.timeScale = 0;
-            }
         }
     } 
     void playAudio(int clipNumber)
@@ -47,4 +40,5 @@ public class BoundController : MonoBehaviour
         audio.clip = audioClips[clipNumber];
         audio.Play();
     }
+    
 }

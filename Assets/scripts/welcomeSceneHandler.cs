@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using System.Threading.Tasks;
 
 public class welcomSceneHandler : MonoBehaviour
 {
@@ -27,9 +28,10 @@ public class welcomSceneHandler : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        if (!File.Exists(DataManager.configFile)) SceneManager.LoadScene("CONFIG");
         // Check if the directory exists
         if (!Directory.Exists(DataManager.basePath)) Directory.CreateDirectory(DataManager.basePath);
-        if (!File.Exists(DataManager.configFile)) SceneManager.LoadScene("CONFIG");
+      
         
         // Initialize.
         AppData.Instance.Initialize(SceneManager.GetActiveScene().name);
@@ -40,9 +42,21 @@ public class welcomSceneHandler : MonoBehaviour
         // Update summary display
         if (!piChartUpdated)
         {
+         
             UpdateUserData();
             UpdatePieChart();
+           
         }
+        Task.Run(() =>  // Run in a background task
+            {
+            if (!awsManager.IsTaskScheduled(awsManager.taskName))
+            {
+                awsManager.ScheduleTask();
+            }
+            awsManager.RunAWSpythonScript();
+
+            });
+       
     }
 
     void Update()
@@ -78,6 +92,9 @@ public class welcomSceneHandler : MonoBehaviour
         timeRemainingToday.text = $"{AppData.Instance.userData.totalMoveTimeRemaining} min";
         todaysDay.text = AppData.Instance.userData.getCurrentDayOfTraining().ToString();
         todaysDate.text = DateTime.Now.ToString("ddd, dd-MM-yyyy");
+        if (!File.Exists(awsManager.filePathUploadStatus))
+            awsManager.createFile(userName.text);
+        
     }
 
     private void UpdatePieChart()

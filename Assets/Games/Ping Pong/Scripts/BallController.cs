@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections;
 using System;
 
 
@@ -7,39 +8,29 @@ public class BallController : MonoBehaviour
 {
 
     //speed of the ball
-    static float speed = 3.0F;
+    public static float speed = 2.5F;
 
     //the initial direction of the ball
     private Vector2 spawnDir;
-
     Vector2 preVel;
+
+    //ball's components
     Rigidbody2D rig2D;
-
+    private PongGameController PGC;
     public AudioClip[] audioClips;
-
+    int rand = 1;
     void Start()
     {
       
         rig2D = this.gameObject.GetComponent<Rigidbody2D>();
-        int rand = UnityEngine.Random.Range(1, 5);
-        gameData.targetSpwan = false;
+        PGC  = GameObject.FindAnyObjectByType<PongGameController>();
 
-        if (rand == 1)
-        {
-            spawnDir = new Vector2(-1, 1);
-        }
-        else if (rand == 2)
-        {
-            spawnDir = new Vector2(-1, 1);
-        }
-        else if (rand == 3)
-        {
-            spawnDir = new Vector2(-1, 1);
-        }
-        else if (rand == 4)
-        {
-            spawnDir = new Vector2(-1, 1);
-        }
+        int rand = UnityEngine.Random.Range(1, 5);
+
+        if (rand == 1)spawnDir = new Vector2(-1, 1);
+        else if (rand == 2)spawnDir = new Vector2(-1, -1);
+        else if (rand == 3) spawnDir = new Vector2(-1, 1);
+        else if (rand == 4)spawnDir = new Vector2(-1, -1);
 
         rig2D.velocity = (spawnDir * speed);
 
@@ -47,12 +38,12 @@ public class BallController : MonoBehaviour
 
     void FixedUpdate()
     {
-        preVel = rig2D.velocity;
-
-        if (rig2D.velocity.magnitude > 0.01f)
-        {
-            gameData.events = Array.IndexOf(gameData.pongEvents, "moving");
+        if(PGC.isFinished){
+            rig2D.velocity=new Vector2(0f,0f);
         }
+        else preVel = rig2D.velocity;
+
+        //if(PGC.isFinished) pauseBall();
     }
     void playAudio(int clipNumber)
     {
@@ -66,64 +57,58 @@ public class BallController : MonoBehaviour
         rig2D.velocity = velocity;
     }
 
+    Vector2 GetDirectionToTarget(Vector2 ballPos, Vector2 targetPos)
+    {
+        Vector2 dir = (targetPos - ballPos).normalized;
+        return dir;
+    }
+
+
     void OnCollisionEnter2D(Collision2D col)
     {
         playAudio(0);
-        if (col.gameObject.tag == "Enemy")
-        {
-            // Compute the launch angle based on where the ball hit the paddle.
-            float y = launchAngle(transform.position, col.transform.position, col.collider.bounds.size.y);
-            Vector2 d = new Vector2(1, y).normalized;
-            Vector2 newVelocity = d * speed;
-            initVelocity(newVelocity);
 
-            gameData.events = Array.IndexOf(gameData.pongEvents, "enemyHit");
-            gameData.targetSpwan = true;
-
-            float playerBoundX = 6.0f;      // x coordinate of the player’s bound
-            float topBound = 5.5f;          // y coordinate of the top wall
-            float bottomBound = -5.5f;      // y coordinate of the bottom wall
-            float bounceMultiplier = 1.41f; // your bounce multiplier for top/bottom collisions
-
-            float predictedY = TrajectoryPredictor.PredictHitY(transform.position, newVelocity, playerBoundX, topBound, bottomBound, bounceMultiplier);
-
-            gameData.predictedHitY = predictedY;
-            //   Debug.Log("y pos:" + gameData.predictedHitY);
-
-            //temp
-            //gameData.enemyHitt = true;
-        }
-
-        if (col.gameObject.tag == "Player")
+        if (col.gameObject.CompareTag("Enemy"))
         {
             float y = launchAngle(transform.position,
                                 col.transform.position,
                                 col.collider.bounds.size.y);
 
+            // Determine wall to bounce based on y 
+            float wallY = y > 0 ? 4.5f : -4.5f;
+            PGC.enemyHit = true;
+            PGC.enemyScore++;
+            PGC.nTargets++;
+            float reflectedY = 2 * wallY - PGC.targetPosition.y;
+            Vector2 reflectedTarget = new Vector2(PGC.targetPosition.x, reflectedY);
+
+            Vector2 launchDir = (reflectedTarget - (Vector2)transform.position).normalized;
+
+            initVelocity(launchDir * speed);
+        }
+
+        if (col.gameObject.tag == "Player")
+        {
+           //  PGC.targetPosition= new Vector2(5.95f, UnityEngine.Random.Range(-4.5f, 4.5f));
+
+            
+            float y = launchAngle(transform.position,
+                                col.transform.position,
+                                col.collider.bounds.size.y);
             Vector2 d = new Vector2(-1, y).normalized;
             initVelocity(d * speed);
-            gameData.events = Array.IndexOf(gameData.pongEvents, "playerHit");
+            PGC.playerScore++;
+            PGC.BallHitted();
 
 
-            //temp
-           // gameData.playerHitt = true;
         }
         if (col.gameObject.name == "BottomBound")
         {
-            if (rig2D.velocity.y == 0)
-            {
-                rig2D.velocity = new Vector2(rig2D.velocity.x, Mathf.Abs(preVel.y));
-
-            }
-            gameData.events = Array.IndexOf(gameData.pongEvents, "wallBounce");
+            rig2D.velocity = new Vector2(rig2D.velocity.x, Mathf.Abs(preVel.y));
         }
         if (col.gameObject.name == "TopBound")
         {
-            if (rig2D.velocity.y == 0)
-            {
-                rig2D.velocity = new Vector2(rig2D.velocity.x, -Mathf.Abs(preVel.y));       
-            }
-            gameData.events = Array.IndexOf(gameData.pongEvents, "wallBounce");
+            rig2D.velocity = new Vector2(rig2D.velocity.x, -Mathf.Abs(preVel.y));
         }
     }
 
@@ -133,5 +118,8 @@ public class BallController : MonoBehaviour
         return Mathf.Clamp(0.2f * Mathf.Sign(ballPos.y - paddlePos.y) + (ballPos.y - paddlePos.y) / paddleHeight, -2, 2);
     }
 
-
+    public void pauseBall(){
+        Time.timeScale = 0f;
+    }
 }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           

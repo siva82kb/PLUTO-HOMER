@@ -1,60 +1,63 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class BirdControl : MonoBehaviour
 {
-    private bool isDead = false;
     public static Rigidbody2D rb2d;
-    Animator anime;
-    // player controls
+    public Image life;
+    public FlappyGameControl FGC;
 
-    public static float playSize;
+    public bool set = false;
+    private bool isDead = false;
+
     int totalLife = 5;
     int currentLife = 0;
     bool columnHit;
-    public Image life;
 
-    
-    float spriteBlinkingTimer = 0.0f;
-    
-    float spriteBlinkingMiniDuration = 0.1f;
-    
-    float spriteBlinkingTotalTimer = 0.0f;
-    
-    float spriteBlinkingTotalDuration = 2f;
-    
+    public float spriteBlinkingTimer = 0.0f;
+    public float spriteBlinkingMiniDuration = 0.1f;
+    public float spriteBlinkingTotalTimer = 0.0f;
+    public float spriteBlinkingTotalDuration = 2f;
     public bool startBlinking = false;
-
-    float startTime;
+float targetAngle;
+    float startTime, PLAYSIZE;
     float endTime;
 
-    float targetAngle;
-    Rigidbody2D rig2D;
-    public FlappyGameControl FGC;
+    private float[] arom;
+    private float[] prom;
+
+
     void Start()
     {
-        rig2D = this.gameObject.GetComponent<Rigidbody2D>();
-
+       // PLAYSIZE = Camera.main.orthographicSize * Camera.main.aspect;
+               float fullHeight = Camera.main.orthographicSize * 2f; // Full camera height in world units
+         PLAYSIZE  = fullHeight * 0.8f; // 80% of the camera height
         startTime = 0;
         endTime = 0;
         currentLife = 0;
-        anime = GetComponent<Animator>();
         rb2d = GetComponent<Rigidbody2D>();
+        MovementTracker.Initialize(this, this.transform.position);
 
-        playSize = 2.3f + 5.5f;
+        Time.timeScale=0f;
+         // Set current AROM and PROM.
+        arom = AppData.Instance.selectedMechanism.CurrentArom;
+        prom = AppData.Instance.selectedMechanism.CurrentProm;
+    }
+    void Update()
+    {
+        if(FGC.isGameStarted && !FGC.isGamePaused && !FGC.isGameFinished) Time.timeScale=1f;
 
+        Debug.Log($" min : {AngleToScreen(arom[0])}, max : { AngleToScreen( arom[1])}");
 
+        MovementTracker.UpdatePosition(this.transform.position);
 
 
     }
     void FixedUpdate()
     {
-       
-        gameData.events = Array.IndexOf(gameData.tukEvents, "moving");
-        //checkPlayerMovement();
-
-
         if (startTime < 2)
         {
             startTime += Time.deltaTime;
@@ -64,66 +67,17 @@ public class BirdControl : MonoBehaviour
             SpriteBlinkingEffect();
 
         }
-        if (!isDead && !FGC.gameOver)
-        {
-            if (columnHit)
-            {
-                anime.SetTrigger("Idle");
-                columnHit = false;
-            }
-            if (gameData.isAROMEnabled) { 
-            targetAngle = approxRollingAverage(targetAngle, playerMovementAreaAROM(PlutoComm.angle));
-            }
-            else { 
-            targetAngle = approxRollingAverage(targetAngle, Angle2Screen(PlutoComm.angle));
-            }
-            transform.position = new Vector2(Mathf.SmoothStep(-13, -7, startTime / 2), Mathf.Clamp(targetAngle, -2.5f, 7));
-        }
-        else if (FGC.gameOver)
-        {
-            endTime += Time.deltaTime;
+        if(FGC.isGameStarted){
+            targetAngle = approxRollingAverage(targetAngle, AngleToScreen(PlutoComm.angle));
+        transform.position = new Vector2(Mathf.SmoothStep(-13, -7, startTime / 2), Mathf.Clamp(targetAngle, -2.5f, 7));
 
-            float y = Mathf.Abs(2 * Mathf.Sin(2 * endTime));
-            transform.localPosition = new Vector3(transform.position.x + 3 * Time.deltaTime, transform.position.y, 0);
         }
-
-        anime.updateMode = AnimatorUpdateMode.UnscaledTime;
+            
 
     }
-    //private void checkPlayerMovement()
-    //{
-    //    Vector3 currentPlayerPosition = transform.position;
-    //    float playerDistanceMoved = Vector3.Distance(currentPlayerPosition, previousPlayerPosition); // Calculate the distance moved by the player
-    //    if (playerDistanceMoved > 0.001f)
-    //    {
-    //        if (movementCoroutine == null)
-    //        {
-    //            movementCoroutine = StartCoroutine(trackMovementTime());
-    //        }
-    //    }
-    //    else
-    //    {
-    //        if (movementCoroutine != null)
-    //        {
-    //            StopCoroutine(movementCoroutine);
-    //            movementCoroutine = null;
-    //        }
-    //    }
-    //    previousPlayerPosition = currentPlayerPosition;
-    //}
 
-    //private IEnumerator trackMovementTime()
-    //{
-    //    while (true)
-    //    {
-    //        playerMovementTime += Time.deltaTime;
-    //        gameData.moveTime = playerMovementTime;
-    //        yield return null;
-    //    }
-    //}
     float approxRollingAverage(float avg, float new_sample)
     {
-
         avg = avg * 0.9f + 0.1f * new_sample;
 
         return avg;
@@ -145,53 +99,32 @@ public class BirdControl : MonoBehaviour
             spriteBlinkingTimer = 0.0f;
             if (this.gameObject.GetComponent<SpriteRenderer>().enabled == true)
             {
-                this.gameObject.GetComponent<SpriteRenderer>().enabled = false;  
+                this.gameObject.GetComponent<SpriteRenderer>().enabled = false;  //make changes
             }
             else
             {
-                this.gameObject.GetComponent<SpriteRenderer>().enabled = true;   
+                this.gameObject.GetComponent<SpriteRenderer>().enabled = true;   //make changes
             }
         }
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-
-        //Debug.Log("Collion " + collision.gameObject.tag);
         if (collision.gameObject.tag == "TopCollider" || collision.gameObject.tag == "BottomCollider")
         {
-            gameData.events = Array.IndexOf(gameData.tukEvents, "collided");
-
             startBlinking = true;
             currentLife++;
             life.fillAmount = ((float)currentLife / totalLife);
-            // anime.SetTrigger("Die");
             columnHit = true;
             if (currentLife >= totalLife)
             {
-
-                FlappyGameControl.instance.gameduration = -1;
-                FlappyGameControl.instance.gameOver = true;
-                anime.SetTrigger("Die");
+                FlappyGameControl.Instance.gameOver = true;
                 isDead = true;
-                anime.SetTrigger("Die");
             }
-            //gameData.birdCollided = true;
         }
     }
+    public float AngleToScreen(float angle) =>  (-3f + (angle - prom[0]) * (PLAYSIZE) / (prom[1] - prom[0]));
 
-    public static float Angle2Screen(float angle)
-    {
-        float tmin = AppData.Instance.selectedMechanism.currRom.promMin;
-        float tmax = AppData.Instance.selectedMechanism.currRom.promMax;
-        return (-2.3f + (angle - tmin) * (playSize) / (tmax - tmin));
-    }
 
-    public static float playerMovementAreaAROM(float angle)
-    {
-        //ROM aromAng = new ROM(AppData.selectedMechanism);
-        float tmin = AppData.Instance.selectedMechanism.currRom.aromMin;
-        float tmax = AppData.Instance.selectedMechanism.currRom.aromMax;
-        return (-2.3f + (angle - tmin) * (playSize) / (tmax - tmin));
-    }
+
 }

@@ -1,5 +1,6 @@
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -15,6 +16,9 @@ public partial class AppData
     // Start a new trial.
     public void StartNewTrial()
     {
+         //set to upload the data to the AWS
+        awsManager.changeUploadStatus(awsManager.status[0]);
+        
         trialStartTime = DateTime.Now;
         trialStopTime = null;
         selectedMechanism.NextTrail();
@@ -50,6 +54,7 @@ public partial class AppData
         // PlutoComm.OnNewPlutoData -= OnNewPlutoDataDataLogging;
 
         trialStopTime = DateTime.Now;
+        nTargets =(nTargets == 0)? 1 : nTargets;
         successRate = 100 * nSuccess / nTargets;
 
         // Update the control bound if needed.
@@ -62,7 +67,7 @@ public partial class AppData
         WriteTrialToSessionsFile();
         // Write trial details to the log file.
         float? _currcb = trialType == HomerTherapy.TrialType.SR85PCCATCH ? null : _currControlBound;
-        
+
         string _tdetails = string.Join(" | ",
             new string[] {
                 $"Start Time: {trialStartTime:yyyy-MM-ddTHH:mm:ss}",
@@ -74,7 +79,7 @@ public partial class AppData
                 $"NSuccess: {nSuccess}",
                 $"NFailure: {nFailure}",
                 $"Desired SR: {desiredSuccessRate}",
-                $"Trial SR: {successRate}",
+                $"Trial SR: {successRate}", 
                 $"Current CB: {_currcb?.ToString("F3")??"N/A"}",
                 $"Next CB: {aanController.currentCtrlBound:F3}",
                 $"TrialRawDataFile: {trialRawDataFile.Split('/').Last()}"
@@ -82,6 +87,7 @@ public partial class AppData
         AppLogger.LogInfo($"StopTrial | {_tdetails}");
         // Stop Raw and AAN real-time data logging.
         WriteTrialDataToRawDataFile();
+        PlutoComm.OnNewPlutoData -= OnNewPlutoDataDataLogging;
         trialRawDataFile = null;
     }
 
@@ -122,7 +128,9 @@ public partial class AppData
             // "CurrentControlBound"
             trialType == HomerTherapy.TrialType.SR85PCCATCH ? null : $"{_currControlBound:F3}",
             // "NextControlBound"
-            trialType == HomerTherapy.TrialType.SR85PCCATCH ? null : $"{aanController.currentCtrlBound:F3}"
+            trialType == HomerTherapy.TrialType.SR85PCCATCH ? null : $"{aanController.currentCtrlBound:F3}",
+            //movement time of player
+            MovementTracker.PlayerMovementTime.ToString()
         };
 
         // Write the trial row to the session file.
@@ -164,84 +172,69 @@ public partial class AppData
 
     public void OnNewPlutoDataDataLogging()
     {
-        if (rawDataString == null) return;
+        lock (rawDataLock)
+        {
+            if (rawDataString == null)
+            {
+                UnityEngine.Debug.LogWarning("rawDataString is null, skipping logging.");
+                return;
+            }
 
-        // Device data
-        // "DeviceRunTime"
-        rawDataString.Append($"{PlutoComm.runTime:F6},");
-        // "PacketNumber"
-        rawDataString.Append($"{PlutoComm.packetNumber},");
-        // "Status"
-        rawDataString.Append($"{PlutoComm.status},");
-        // "DataType"
-        rawDataString.Append($"{PlutoComm.dataType},");
-        // "ErrorStatus"
-        rawDataString.Append($"{PlutoComm.errorStatus},");
-        // "ControlType"
-        rawDataString.Append($"{PlutoComm.controlType},");
-        // "Calibration"
-        rawDataString.Append($"{PlutoComm.calibration},");
-        // "Mechanism" 
-        rawDataString.Append($"{PlutoComm.MECHANISMS[PlutoComm.mechanism]},");
-        // "Button"
-        rawDataString.Append($"{PlutoComm.button},");
-        // "Angle"
-        rawDataString.Append($"{PlutoComm.angle},");
-        // "Torque"
-        rawDataString.Append($"{PlutoComm.torque},");
-        // "Desired"
-        rawDataString.Append($"{PlutoComm.desired},");
-        // "Control"
-        rawDataString.Append($"{PlutoComm.control},");
-        // "ControlBound"
-        rawDataString.Append($"{PlutoComm.controlBound},");
-        // "ControlDir"
-        rawDataString.Append($"{PlutoComm.controlDir},");
-        // "Target"
-        rawDataString.Append($"{PlutoComm.target},");
-        // "Error"
-        rawDataString.Append($"{PlutoComm.err},");
-        // "ErrorDiff"
-        rawDataString.Append($"{PlutoComm.errDiff},");
-        // "ErrorSum"
-        rawDataString.Append($"{PlutoComm.errSum},");
+            // Device data
+            rawDataString.Append($"{PlutoComm.runTime:F6},");
+            rawDataString.Append($"{PlutoComm.packetNumber},");
+            rawDataString.Append($"{PlutoComm.status},");
+            rawDataString.Append($"{PlutoComm.dataType},");
+            rawDataString.Append($"{PlutoComm.errorStatus},");
+            rawDataString.Append($"{PlutoComm.controlType},");
+            rawDataString.Append($"{PlutoComm.calibration},");
+            rawDataString.Append($"{PlutoComm.MECHANISMS[PlutoComm.mechanism]},");
+            rawDataString.Append($"{PlutoComm.button},");
+            rawDataString.Append($"{PlutoComm.angle},");
+            rawDataString.Append($"{PlutoComm.torque},");
+            rawDataString.Append($"{PlutoComm.desired},");
+            rawDataString.Append($"{PlutoComm.control},");
+            rawDataString.Append($"{PlutoComm.controlBound},");
+            rawDataString.Append($"{PlutoComm.controlDir},");
+            rawDataString.Append($"{PlutoComm.target},");
+            rawDataString.Append($"{PlutoComm.err},");
+            rawDataString.Append($"{PlutoComm.errDiff},");
+            rawDataString.Append($"{PlutoComm.errSum},");
 
-        // Game Data
-        // "GamePlayerX", "GamePlayerY"
-        rawDataString.Append($"{GetGamePlayerPosition()},");
-        // "GameTargetX", "GameTargetY"
-        rawDataString.Append($"{GetGameTargetPosition()},");
-        // "GameState"
-        rawDataString.Append($"{GetGameState()},");
-        
-        // AAN Data
-        // "AanTargetPosition"
-        rawDataString.Append($"{aanController.targetPosition:F3},");
-        // "AanInitialPosition"
-        rawDataString.Append($"{aanController.initialPosition:F3},");
-        // "AanState"
-        rawDataString.Append($"{aanController.state}");
+            // Game Data
+            rawDataString.Append($"{GetGamePlayerPosition()},");
+            rawDataString.Append($"{GetGameTargetPosition()},");
+            rawDataString.Append($"{GetGameState()},");
+            rawDataString.Append($"{aanController.targetPosition:F3},");
+            rawDataString.Append($"{aanController.initialPosition:F3},");
+            rawDataString.Append($"{aanController.state}");
 
-        // End of line.
-        rawDataString.Append("\n");
+            // End of line
+            rawDataString.Append("\n");
+        }
     }
 
     private void WriteTrialDataToRawDataFile()
     {
-        UnityEngine.Debug.Log($"Writing to: {trialRawDataFile}"); // Check if path changes unexpectedly
-        UnityEngine.Debug.Log($"File exists before write? {File.Exists(trialRawDataFile)}");
-
+        AppLogger.LogInfo($"Writing to: {trialRawDataFile}");
+        AppLogger.LogInfo($"File exists before write? {File.Exists(trialRawDataFile)}");
+        
         string _dir = Path.GetDirectoryName(trialRawDataFile);
         if (!Directory.Exists(_dir)) Directory.CreateDirectory(_dir);
-        
-        using (StreamWriter sw = new StreamWriter(trialRawDataFile, false, Encoding.UTF8))
+
+        lock (rawDataLock)  // locking
         {
-            sw.Write(rawDataString.ToString());
+            using (StreamWriter sw = new StreamWriter(trialRawDataFile, false, Encoding.UTF8))
+            {
+                sw.Write(rawDataString.ToString());
+            }
+            rawDataString.Clear();
+            rawDataString = null;
         }
-        UnityEngine.Debug.Log($"File exists after write? {File.Exists(trialRawDataFile)}");
-        rawDataString.Clear();
-        rawDataString = null;
+        AppLogger.LogInfo($"File exists before write? {File.Exists(trialRawDataFile)}");
+
     }
+
 
     private string GetGamePlayerPosition()
     {
@@ -249,6 +242,12 @@ public partial class AppData
         if (selectedGame == "HAT")
         {
             return $"{HatGameController.Instance.PlayerPosition.x:F3},{HatGameController.Instance.PlayerPosition.y:F3}";
+        }
+        else if(selectedGame == "PONG"){
+            return $"{PongGameController.Instance.PlayerPosition.x:F3},{PongGameController.Instance.PlayerPosition.y:F3}";
+        }
+         else if(selectedGame == "TUK"){
+            return $"{FlappyGameControl.Instance.PlayerPosition.x:F3},{FlappyGameControl.Instance.PlayerPosition.y:F3}";
         }
         return ",";
     }
@@ -258,10 +257,16 @@ public partial class AppData
         // Get the game target X position.
         if (selectedGame == "HAT")
         {
-            if (HatGameController.Instance.TargetPosition != null)
+            if (HatGameController.Instance.TargetPosition.HasValue)
             {
                 return $"{HatGameController.Instance.TargetPosition.Value.x:F3},{HatGameController.Instance.TargetPosition.Value.y:F3}";
             }   
+        }
+        else if(selectedGame == "PONG"){
+            if (PongGameController.Instance.TargetPosition.HasValue) return $"{PongGameController.Instance.TargetPosition.Value.x:F3},{PongGameController.Instance.TargetPosition.Value.y:F3}";
+        }
+        else if(selectedGame == "TUK"){
+           if (FlappyGameControl.Instance.TargetPosition.HasValue) return $"{FlappyGameControl.Instance.TargetPosition.Value.x:F3},{FlappyGameControl.Instance.TargetPosition.Value.y:F3}";
         }
         return ",";
     }
@@ -272,6 +277,12 @@ public partial class AppData
         if (selectedGame == "HAT")
         {
             return $"{HatGameController.Instance.gameState}";
+        }
+        else if(selectedGame == "PONG"){
+            return $"{PongGameController.Instance.gameState}";
+        }
+        else if(selectedGame == "TUK"){
+            return $"{FlappyGameControl.Instance.gameState}";
         }
         return "";
     }

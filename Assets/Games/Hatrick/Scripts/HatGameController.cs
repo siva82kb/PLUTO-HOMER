@@ -158,17 +158,17 @@ public class HatGameController : MonoBehaviour
     
     private void Update()
     {
-         // Send PLUTO heartbeat
-        PlutoComm.sendHeartbeat();
-        
+
         if (isGamePaused && gameState != GameStates.PAUSED) PauseGame();
         else if (!isGamePaused && gameState == GameStates.PAUSED) ResumeGame();
+
+        Debug.Log($"ControlType : {Time.timeScale}+{ PlutoComm.CONTROLTYPETEXT[PlutoComm.controlType]}");
     }
 
     void FixedUpdate()
     {
-        // // Send PLUTO heartbeat
-        // PlutoComm.sendHeartbeat();
+        // Send PLUTO heartbeat
+        PlutoComm.sendHeartbeat();
 
         // Handle the current game state.
         RunGameStateMachine();

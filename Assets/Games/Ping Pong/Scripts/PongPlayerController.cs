@@ -1,99 +1,40 @@
 ﻿using UnityEngine;
+using System.Collections;
 
 public class PongPlayerController : MonoBehaviour
 {
     public float speed = 10;
 
-    static float topBound = 5.5F;
-    static float bottomBound = -5.5F;
-    public float ballTrajetoryPrediction;
+    static float topBound = 4.5F;
+    static float bottomBound = -4.5F;
     public static float playSize;
-
-    //private Vector3 previousPlayerPosition;
-    //private float playerMovementTime = 0f;
-    //private Coroutine movementCoroutine;
+    private float[] arom, prom;
+    public PongGameController PGC;
 
     void Start()
     {
         playSize = Camera.main.orthographicSize;
-        gameData.reps = 0;
         Time.timeScale = 0;
         topBound = playSize - this.transform.localScale.y / 4;
+        MovementTracker.Initialize(this, this.transform.position);
         bottomBound = -topBound;
-       // gameData.positionY1 = playerMovementArea(AppData.aRomValue[0]);
-       // gameData.positionY2 = playerMovementArea(AppData.aRomValue[1]);
-       // Debug.Log($"y1_{gameData.positionY1},y2_{gameData.positionY2}");
-       // previousPlayerPosition = transform.position;
+         // Set current AROM and PROM.
+        arom = AppData.Instance.selectedMechanism.CurrentArom;
+        prom = AppData.Instance.selectedMechanism.CurrentProm;
     }
-    void Update()
+    void FixedUpdate()
     {
-        //checkPlayerMovement();
-        if (gameData.isAROMEnabled)
-        {
-            this.transform.position = new Vector2(this.transform.position.x, playerMovementAreaAROM(PlutoComm.angle));
-           // Debug.Log("arom exe");
-
-        }
-        else { 
-        this.transform.position = new Vector2(this.transform.position.x, playerMovementArea(PlutoComm.angle));
-           // Debug.Log($"player-y-pos-{playerMovementArea(PlutoComm.angle)}+ angle :{PlutoComm.angle}");
-        }
+        this.transform.position = new Vector2(this.transform.position.x, AngleToScreen(PlutoComm.angle));
+        MovementTracker.UpdatePosition(this.transform.position);
     }
 
-    public static float playerMovementArea(float angle)
-    {
-        //ROM promAng = new ROM(AppData.selectedMechanism);
-        float tmin = AppData.Instance.selectedMechanism.currRom.promMin;
-        float tmax = AppData.Instance.selectedMechanism.currRom.promMax;
-        return Mathf.Clamp(-playSize + (angle - tmin) * (2 * playSize) / (tmax - tmin), bottomBound, topBound);
-    }
 
-    public static float playerMovementAreaAROM(float angle)
-    {
-        //ROM aromAng = new ROM(AppData.selectedMechanism);
-        float tmin = AppData.Instance.selectedMechanism.currRom.aromMin;
-        float tmax = AppData.Instance.selectedMechanism.currRom.aromMax;
-        return Mathf.Clamp(-playSize + (angle - tmin) * (2 * playSize) / (tmax - tmin), bottomBound, topBound);
-    }
+    public float AngleToScreen(float angle) => Mathf.Clamp(-playSize + (angle - prom[0]) * (2 * playSize) / (prom[1] - prom[0]), bottomBound, topBound);
 
-    //private void checkPlayerMovement()
-    //{
-    //    Vector3 currentPlayerPosition = transform.position;        
-    //    float playerDistanceMoved = Vector3.Distance(currentPlayerPosition, previousPlayerPosition); // Calculate the distance moved by the player
-    //    if (playerDistanceMoved > 0.001f) 
-    //    {
-    //        if (movementCoroutine == null)
-    //        {
-    //            movementCoroutine = StartCoroutine(trackMovementTime());
-    //        }
-    //    }
-    //    else
-    //    {
-    //        if (movementCoroutine != null)
-    //        {
-    //            StopCoroutine(movementCoroutine);
-    //            movementCoroutine = null;
-    //        }
-    //    }
-    //    previousPlayerPosition = currentPlayerPosition;
-    //}
-
-    //private IEnumerator trackMovementTime()
-    //{
-    //    while (true)
-    //    {
-    //        playerMovementTime += Time.deltaTime;
-    //        gameData.moveTime = playerMovementTime;
-    //        yield return null;
-    //    }
-    //}
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.tag == "Target")
-        {
-            gameData.reps += 1;
-            //gameData.isBallReached = true;
-        }
+        //PP.targetPosition = new Vector2(6f, Random.Range(-5f, 6f));
     }
+
 }

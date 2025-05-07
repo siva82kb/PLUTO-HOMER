@@ -13,7 +13,7 @@ public class SessionDataHandler
     public string[] summaryDate;
     public string DATEFORMAT = "dd/MM";
     //Session file header format
-    public string DATEFORMAT_INFILE = "dd-MM-yyyy HH:mm:ss";
+    public string DATEFORMAT_INFILE = "yyyy-MM-dd HH:mm:ss";
     public string DATETIME = "DateTime";
     public string MOVETIME = "MoveTime";
     public string STARTTIME = "StartTime";
@@ -26,30 +26,44 @@ public class SessionDataHandler
         LoadSessionData();
     }
     //session file into dataTable
-    private void LoadSessionData()
+private void LoadSessionData()
+{
+    sessionTable = new DataTable();
+    if (File.Exists(filePath))
     {
-        sessionTable = new DataTable();
-        if (File.Exists(filePath))
+        var lines = File.ReadAllLines(filePath);
+
+        int headerLineIndex = -1;
+        // Find the first line that does NOT start with ':'
+        for (int i = 0; i < lines.Length; i++)
         {
-            var lines = File.ReadAllLines(filePath);
-
-            string[] headers = lines[0].Split(',');
-            foreach (var header in headers)
+            if (!lines[i].TrimStart().StartsWith(":"))
             {
-                sessionTable.Columns.Add(header.Trim());
-            }
-
-            for (int i = 1; i < lines.Length; i++)
-            {
-                string[] rowData = lines[i].Split(',');
-                sessionTable.Rows.Add(rowData);
+                headerLineIndex = i;
+                break;
             }
         }
-        else
+
+        // Read headers
+        string[] headers = lines[headerLineIndex].Split(',');
+        foreach (var header in headers)
         {
-           UnityEngine.Debug.Log("CSV file not found at: " + filePath);
+            sessionTable.Columns.Add(header.Trim());
+        }
+
+        // Read the data rows after the header
+        for (int i = headerLineIndex + 1; i < lines.Length; i++)
+        {
+            string[] rowData = lines[i].Split(',');
+            sessionTable.Rows.Add(rowData);
         }
     }
+    else
+    {
+        UnityEngine.Debug.Log("CSV file not found at: " + filePath);
+    }
+}
+
  
     public void summaryCalculateMovTimePerDayWithLinq()
     {
@@ -60,7 +74,7 @@ public class SessionDataHandler
             {
                 Date = group.Key,
                 DayOfWeek = group.Key.DayOfWeek,   
-                TotalMovTime = group.Sum(row => Convert.ToInt32(row[MOVETIME]))
+                TotalMovTime = group.Count() * 60
             })
             .ToList();
 
@@ -84,14 +98,13 @@ public class SessionDataHandler
             .Where(row => row.Field<string>(MECHANISM) == mechanism)
             .Select(row => new
             {
-                Date = DateTime.ParseExact(row.Field<string>(DATETIME), DATEFORMAT_INFILE , CultureInfo.InvariantCulture).Date,
-                MovTime = Convert.ToDouble(row[MOVETIME])
+                Date = DateTime.ParseExact(row.Field<string>(DATETIME), DATEFORMAT_INFILE , CultureInfo.InvariantCulture).Date
             })
             .GroupBy(entry => entry.Date)
             .Select(group => new
             {
                 Date = group.Key,
-                TotalMovTime = group.Sum(entry => entry.MovTime) / 60.0 
+                TotalMovTime = group.Count() 
             })
             .OrderBy(result => result.Date)
             .ToList();

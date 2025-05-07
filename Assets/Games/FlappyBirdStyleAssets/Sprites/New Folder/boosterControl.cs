@@ -1,9 +1,12 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class boosterControl : MonoBehaviour
 {
     float prevAng;
     float startAngle;
+    float angle = 2f;
     // Start is called before the first frame update
 
     float time = 0;
@@ -17,8 +20,8 @@ public class boosterControl : MonoBehaviour
     {
         //transform.eulerAngles = new Vector3(0, 0, -12);
         //rb.AddTorque(AppData.plutoData.angle*10.0f);
-        float currentAng = PlutoComm.angle;
-        float rotation = (PlutoComm.angle - prevAng);
+        float currentAng =angle;
+        float rotation = (angle - prevAng);
         if (Mathf.Abs(rotation) < 0.00011)
         {
             //Debug.Log(" smooth zero");

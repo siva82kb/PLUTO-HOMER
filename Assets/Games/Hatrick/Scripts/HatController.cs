@@ -18,6 +18,8 @@ public class HatController : MonoBehaviour
     {
         Vector3 UpperCorner = new Vector3(Screen.width, Screen.height, 0);
         float hatwidth = GameObject.Find("HatFrontSprite").GetComponent<Renderer>().bounds.extents.x;
+        MovementTracker.Initialize(this, this.transform.position);
+
         Vector3 targetWidth = cam.ScreenToWorldPoint(UpperCorner);
         maxwidth = targetWidth.x - hatwidth;
         playSize = maxwidth * 1f;
@@ -26,6 +28,8 @@ public class HatController : MonoBehaviour
     void Update()
     {
         position = HatGameController.Instance.AngleToScreen(PlutoComm.angle);
+        MovementTracker.UpdatePosition( this.transform.position);
+
         Vector2 targetPosition = new Vector2(position, this.transform.position.y);
         gameObject.GetComponent<Rigidbody2D>().MovePosition(targetPosition);
     }

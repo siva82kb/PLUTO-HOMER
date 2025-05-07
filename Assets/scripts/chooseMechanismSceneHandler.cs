@@ -156,6 +156,7 @@ public class MechanismSceneHandler : MonoBehaviour
 
     void LoadNextScene()
     {
+      
         AppLogger.LogInfo($"New AAN controller created for '{AppData.Instance.selectedMechanism.name}'.");
 
         // Set the mechanism.

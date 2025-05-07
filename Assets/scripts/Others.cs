@@ -15,6 +15,7 @@ using System.Linq;
 using System.Text;
 // using XCharts.Runtime;
 using UnityEngine;
+using System.Collections;
 
 public static class PlutoDefs
 {
@@ -29,7 +30,7 @@ public static class PlutoDefs
 public static class HomerTherapy
 {
     public static readonly float SuccessRateThForSpeedIncrement = 0.9f;
-    public static readonly float TrialDuration = 15.0f;
+    public static readonly float TrialDuration = 60.0f;
     public static readonly Dictionary<string, float> GameSpeedIncrements = new Dictionary<string, float>  {
         { "PING-PONG", 0.5f },
         { "TUK-TUK", 0.2f },
@@ -472,6 +473,53 @@ public List<float> GetLastTwoSuccessRates(string mechanism, string gameName)
 }
 
 
+
+}
+public static class MovementTracker
+{
+    private static Vector3 previousPlayerPosition;
+    private static Coroutine movementCoroutine;
+    private static float playerMovementTime = 0f;
+    private static MonoBehaviour coroutineRunner; // To run coroutines from a static class
+
+    public static float PlayerMovementTime => playerMovementTime; // Public getter
+
+    private static bool isInitialized = false;
+    private static bool isMoving = false;
+
+    public static void Initialize(MonoBehaviour runner, Vector3 startPosition)
+    {
+        if (!isInitialized)
+        {
+            coroutineRunner = runner;
+            playerMovementTime = 0f;
+            previousPlayerPosition = startPosition;
+            isInitialized = true;
+            movementCoroutine = coroutineRunner.StartCoroutine(TrackMovementTime()); // Start immediately
+        }
+    }
+
+    public static void UpdatePosition(Vector3 currentPosition)
+    {
+        if (!isInitialized)
+            return;
+
+        float playerDistanceMoved = Vector3.Distance(currentPosition, previousPlayerPosition);
+        isMoving = playerDistanceMoved > 0.001f;
+        previousPlayerPosition = currentPosition;
+    }
+
+    private static IEnumerator TrackMovementTime()
+    {
+        while (true)
+        {
+            if (isMoving)
+            {
+                playerMovementTime += Time.deltaTime;
+            }
+            yield return null;
+        }
+    }
 
 }
 

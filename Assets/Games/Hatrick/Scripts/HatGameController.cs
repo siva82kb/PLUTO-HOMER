@@ -161,8 +161,6 @@ public class HatGameController : MonoBehaviour
 
         if (isGamePaused && gameState != GameStates.PAUSED) PauseGame();
         else if (!isGamePaused && gameState == GameStates.PAUSED) ResumeGame();
-
-        Debug.Log($"ControlType : {Time.timeScale}+{ PlutoComm.CONTROLTYPETEXT[PlutoComm.controlType]}");
     }
 
     void FixedUpdate()

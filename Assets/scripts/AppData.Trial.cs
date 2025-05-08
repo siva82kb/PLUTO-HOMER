@@ -16,8 +16,7 @@ public partial class AppData
     // Start a new trial.
     public void StartNewTrial()
     {
-         //set to upload the data to the AWS
-        awsManager.changeUploadStatus(awsManager.status[0]);
+        
         
         trialStartTime = DateTime.Now;
         trialStopTime = null;
@@ -89,6 +88,9 @@ public partial class AppData
         WriteTrialDataToRawDataFile();
         PlutoComm.OnNewPlutoData -= OnNewPlutoDataDataLogging;
         trialRawDataFile = null;
+
+         //set to upload the data to the AWS
+        awsManager.changeUploadStatus(awsManager.status[0]);
     }
 
     private void WriteTrialToSessionsFile()

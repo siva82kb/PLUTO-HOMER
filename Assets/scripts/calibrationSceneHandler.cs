@@ -89,7 +89,7 @@ public class calibrationSceneHandler : MonoBehaviour
         {
             // Error in calibration
             PlutoComm.setControlType("NONE");
-            PlutoComm.calibrate("NOMECH");
+            // PlutoComm.calibrate("NOMECH");
             textMessage.text = $"Try Again.";
             textMessage.color = Color.red;
             AppLogger.LogError($"Calibration failed for {AppData.Instance.selectedMechanism.name}.");

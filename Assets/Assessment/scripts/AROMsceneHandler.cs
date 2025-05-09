@@ -38,6 +38,8 @@ public class AROMsceneHandler : MonoBehaviour
     private bool isRestarting = false;
     public bool isButtonPressed = false;
 
+    public bool runOnce = false;
+
     public assessmentSceneHandler panelControl;
 
     private List<string[]> DirectionText = new List<string[]>
@@ -126,7 +128,10 @@ public class AROMsceneHandler : MonoBehaviour
         {
             case AssessStates.INIT:
                 startButton.SetActive(true);
+                if(!runOnce){
                 InitializeAssessment();
+                runOnce = true;
+                }
                 if (isButtonPressed || Input.GetKeyDown(KeyCode.Return))
                 {
                     startAssessment();

@@ -324,6 +324,7 @@ public class PongGameController : MonoBehaviour
         // Run the game timer
         if (IsGamePlaying()) triaTimeLeft -= Time.deltaTime;
         Debug.Log(isGameStarted);
+        UpdateText();
         // Act according to the current game state.
         bool isTimeUp = triaTimeLeft <= 0;
         switch (gameState)
@@ -405,7 +406,7 @@ public class PongGameController : MonoBehaviour
                 }
                 break;
         }
-        UpdateText();
+        
     }
 
     private void UpdatePlutoAANTarget()

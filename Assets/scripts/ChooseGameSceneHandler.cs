@@ -131,6 +131,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
     private void OnMechButtonClicked()
     {
         AppData.Instance.aanController =null;
+        AppData.Instance.userData = new PlutoUserData(DataManager.configFile, DataManager.sessionFile);
         SceneManager.LoadScene(changeScene);
     }
 

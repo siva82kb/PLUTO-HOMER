@@ -79,6 +79,7 @@ public class OneTimeConfig : MonoBehaviour
         string name = nameField.text;
         string age = ageField.text;
         string hospitalId = hospitalIdField.text;
+        //AppData.Instance.userID= hospitalId;
         string startDate = startDateField.text;
         string endDate = endDateField.text;
         
@@ -99,9 +100,13 @@ public class OneTimeConfig : MonoBehaviour
         string data = $"{date},{name},{hospitalId},{startDate},{endDate},{age},{totalDuration},{wfe},{wurd},{fps},{hoc},{fme1},{fme2},{trainingSide},{Location}";
 
 
-        string directoryPath = Application.dataPath + "/data";
+        string directoryPath = Path.Combine(Application.dataPath,"data",AppData.Instance.userID,"data");
         string datapath = Path.Combine(directoryPath, "configdata.csv");
+        
+        // Ensure directory exists
+        if (!Directory.Exists(directoryPath))Directory.CreateDirectory(directoryPath);
 
+       // DataManager.CreateFileStructure();
         if (File.Exists(datapath))
         {
             Debug.Log("Configuration File Already Exists. you can't update Here");
@@ -113,6 +118,7 @@ public class OneTimeConfig : MonoBehaviour
                 Debug.Log("Data saved to CSV: " + datapath);
             }
             File.AppendAllText(datapath, data + Environment.NewLine);
+
 
             SceneManager.LoadScene("MAIN");
 

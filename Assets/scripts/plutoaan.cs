@@ -18,11 +18,11 @@ public class PlutoAANController
 {
     public static readonly float MIN_AVG_SPEED = 10.0f;         // 10 deg per second is the minimum speed.
     public static readonly float MAX_AVG_SPEED = 20.0f;         // 20 deg per second is the maximum speed.
-    public static readonly float MIN_REACH_TIME = 1.0f;         // Movement durations cannpt be shorter than 1 second.
-    public static readonly float BOUNDARY = 0.9f;               // Boundary where assistnace is to be enabled.
+    public static readonly float MIN_REACH_TIME = 1.0f;         // Movement durations cannot be shorter than 1 second.
+    public static readonly float BOUNDARY = 0.9f;               // Boundary where assistance is to be enabled.
     public static readonly float FORGETINGFACTOR = 0.9f;        // Forgetting factor for the control bound.
     public static readonly float ASSISTFACTOR = 0.01f;          // Assistance factor for the control bound.
-    public static readonly float DEFAULTCONTROLBOUND = 0.5f;    // Default cotrol bound value.
+    public static readonly float DEFAULTCONTROLBOUND = 0.5f;    // Default control bound value.
     public static readonly float MAXCONTROLBOUND = 1.0f;       // Maximum control bound value.
     public static readonly float MINCONTROLBOUND = 0.16f;       // Minimum control bound value.
 
@@ -149,9 +149,29 @@ public class PlutoAANController
         }
         else
         {
-            // Now order the selRows by the trailNumberDay in increasing order and get the last row.
-            DataRow lastRow = selRows.LastOrDefault();
-            currentCtrlBound = Convert.ToSingle(lastRow.Field<string>("NextControlBound"));
+            // // Now order the selRows by the trailNumberDay in increasing order and get the last row.
+             DataRow lastRow = selRows.LastOrDefault();
+
+            //     string nextBoundStr = lastRow?.Field<string>("NextControlBound");
+            //     if (string.IsNullOrWhiteSpace(nextBoundStr) || !float.TryParse(nextBoundStr, out currentCtrlBound))
+            //     {
+            //         currentCtrlBound = DEFAULTCONTROLBOUND;
+            //     }
+
+            // //currentCtrlBound = Convert.ToSingle(lastRow.Field<string>("NextControlBound"));
+        
+            float tempBound;
+            string nextBoundStr = lastRow?.Field<string>("NextControlBound");
+
+            if (string.IsNullOrWhiteSpace(nextBoundStr) || !float.TryParse(nextBoundStr, out tempBound))
+            {
+                currentCtrlBound = DEFAULTCONTROLBOUND;
+            }
+            else
+            {
+                currentCtrlBound = tempBound;
+            }
+
         }
         PlutoAanLogger.LogInfo($"Currrent Control Bound: {currentCtrlBound}");
     }
@@ -289,6 +309,7 @@ public class PlutoAANController
 
     public TargetType GetTargetType()
     {
+       // UnityEngine.Debug.Log($"arom min : {aRom[0]}, max :{aRom[1]}");
         bool _initInArom = (initialPosition >= aRom[0] && initialPosition <= aRom[1]);
         if (trialRunning == false) return TargetType.None;
         // Check if target is in aRom

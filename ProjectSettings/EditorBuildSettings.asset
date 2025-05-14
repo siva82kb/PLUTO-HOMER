@@ -5,9 +5,9 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
-    path: Assets/Scenes/plutodiagnostiocs_old.unity
-    guid: 2cda990e2423bbf4892e6590ba056729
+  - enabled: 1
+    path: Assets/Scenes/MAIN.unity
+    guid: 6ca3db99d91ceea4ca68eb55d0550929
   - enabled: 1
     path: Assets/Scenes/plutoDiagnostics.unity
     guid: ae638c7fbc692d246bd295bc93aab8a6
@@ -17,9 +17,6 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/CONFIG.unity
     guid: 5acedfc7e9c3b7248a5a88c47481d77e
-  - enabled: 1
-    path: Assets/Scenes/MAIN.unity
-    guid: 6ca3db99d91ceea4ca68eb55d0550929
   - enabled: 1
     path: Assets/Scenes/CHMECH.unity
     guid: 066c3fcbb81e1cc4f804ee26f774bb16
@@ -33,14 +30,14 @@ EditorBuildSettings:
     path: Assets/Scenes/ASSESS.unity
     guid: fb3e1b235c67ddb4d836b05585e9b29d
   - enabled: 1
-    path: Assets/Scenes/PONGMENU.unity
-    guid: 37b050a3a5de0d348b0db40266ed101c
+    path: Assets/Games/Ping Pong/Scenes/PONGMENU.unity
+    guid: 3638c2108d2f16d4882a47f92c783028
   - enabled: 1
-    path: Assets/Games/FlappyBirdStyleAssets/Scenes/FlappyGame.unity
+    path: Assets/Games/Ping Pong/Scenes/PONGGAME.unity
+    guid: 4b77c98744c57af4cb95daab049a8905
+  - enabled: 1
+    path: Assets/Games/FlappyBirdStyleAssets/Scenes/TUK.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
-  - enabled: 1
-    path: Assets/Scenes/PONGGAME.unity
-    guid: 843303f4dc513b749a4a0dd9991dbe92
   - enabled: 1
     path: Assets/Games/Hatrick/_Scenes/HAT.unity
     guid: 74449f2fed57eb24dbd6d02c5ed4b309

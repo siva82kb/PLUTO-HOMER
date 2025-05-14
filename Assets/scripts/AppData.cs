@@ -19,7 +19,7 @@ public partial class AppData
      * CONSTANT FIXED VARIABLES.
      */
     // COM Port for the device
-    public const string COMPort = "COM4";
+    public const string COMPort = "COM3";
 
     // Keeping track of time.
     private double nanosecPerTick = 1.0f / Stopwatch.Frequency;
@@ -44,6 +44,17 @@ public partial class AppData
 
     // What is this used for?
     public string _dataLogDir = null;
+
+    // Default folder name
+    private const string DefaultUserID = "userTest";
+    private string _userID = null;
+
+    public string userID
+    {
+        get => string.IsNullOrEmpty(_userID) ? DefaultUserID : _userID;
+        set => _userID = value;
+    }
+
     
     /*
      * USED AND THERAPY RELATED DATA.
@@ -55,26 +66,9 @@ public partial class AppData
     /*
      * SESSION DETAILS
      */
-    public string trialDataFileLocation1;
-    //private bool _sessionStarted;
-    //private DateTime _sessionDateTime;
-    //private GameSession _currentSession;
-    //private readonly string _sessionFilePath;
-    //private bool _loginCalled; // Track if login has been called once
-    //private readonly string csvFilePath;
     public int currentSessionNumber { get; set; }
     public DateTime startTime { get; private set; }
     public DateTime? stopTime { get; private set; }
-    public string trialDataFileLocation { get; set; }
-    public string deviceSetupLocation { get; set; }
-    public string assistMode { get; set; }
-    public string assistModeParameters { get; set; }
-    public string gameParameter { get; set; }
-    public string mechanism { get; set; }
-    public string moveTime { get; set; }
-    // public int trialNumberDay { get; set; }
-    // public int trialNumberSession { get; set; }
-    // public string trialType { get; set; }
     public DateTime trialStartTime { get; set; }
     public DateTime? trialStopTime { get; set; }
 
@@ -85,6 +79,7 @@ public partial class AppData
      */
     public string trialRawDataFile { get; private set; } = null;
     private StringBuilder rawDataString = null;
+    private readonly object rawDataLock = new object();
     private StringBuilder aanExecDataString = null;
 
     /*
@@ -159,6 +154,9 @@ public partial class AppData
         currentSessionNumber = userData.dTableSession.Rows.Count > 0 ? 
             Convert.ToInt32(userData.dTableSession.Rows[userData.dTableSession.Rows.Count - 1]["SessionNumber"]) + 1 : 1;        
         AppLogger.LogWarning($"Session number set to {currentSessionNumber}.");
+
+        //set to upload the data to the AWS
+       // awsManager.changeUploadStatus(awsManager.status[0]);
     }
 
     private void InitializeRobotConnection(bool doNotResetMech, string datetimestr = null)
@@ -169,7 +167,9 @@ public partial class AppData
             PlutoComLogger.StartLogging(datetimestr);
         }
         
-        ConnectToRobot.Connect(COMPort);
+        if(!ConnectToRobot.isPLUTO) {
+            ConnectToRobot.Connect(COMPort);
+        }
         // Check if the connection is successful.
         if (!ConnectToRobot.isConnected)
         {
@@ -213,6 +213,7 @@ public partial class AppData
     public void SetGame(string gameName)
     {
         selectedGame = gameName;
+        previousSuccessRates =AppData.Instance.userData.GetLastTwoSuccessRates(selectedMechanism.name , selectedGame);
         // // Cannot set game before selecting mechanism.
         // if (selectedMechanism == null) 
         // {

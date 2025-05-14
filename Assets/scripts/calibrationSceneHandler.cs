@@ -42,7 +42,7 @@ public class calibrationSceneHandler : MonoBehaviour
     void Update()
     {
         PlutoComm.sendHeartbeat();
-        angText.text = PlutoComm.angle.ToString("F3");
+        angText.text = $" {PlutoComm.angle.ToString("F3")}";
         // Check of calibration is started.
         if (!isCalibrating && startCalibration)
         {
@@ -89,7 +89,7 @@ public class calibrationSceneHandler : MonoBehaviour
         {
             // Error in calibration
             PlutoComm.setControlType("NONE");
-            PlutoComm.calibrate("NOMECH");
+            // PlutoComm.calibrate("NOMECH");
             textMessage.text = $"Try Again.";
             textMessage.color = Color.red;
             AppLogger.LogError($"Calibration failed for {AppData.Instance.selectedMechanism.name}.");
@@ -189,3 +189,4 @@ public class calibrationSceneHandler : MonoBehaviour
         }
     }
 }
+

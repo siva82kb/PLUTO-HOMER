@@ -8905,12 +8905,16 @@ MonoBehaviour:
     m_Show: 1
     m_SharedTheme: {fileID: 11400000, guid: e1dc23a10de1e4c5dbfbaf74c4dfd218, type: 2}
     m_TransparentBackground: 0
-    m_EnableCustomTheme: 0
+    m_EnableCustomTheme: 1
     m_CustomFont: {fileID: 0}
     m_CustomBackgroundColor:
       serializedVersion: 2
       rgba: 0
-    m_CustomColorPalette: []
+    m_CustomColorPalette:
+    - serializedVersion: 2
+      rgba: 4281679360
+    - serializedVersion: 2
+      rgba: 4281679360
   m_Settings:
     m_Show: 1
     m_MaxPainter: 10

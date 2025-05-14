@@ -1,11 +1,11 @@
-﻿
-using UnityEngine;
+﻿using UnityEngine;
+using System.Collections;
 
 public class EnemyController : MonoBehaviour
 {
 
     //Speed of the enemy
-    public static float speedDefault = 2.9F;
+    public static float speedDefault = 4F;
     public static float speed;
     //the ball
     Transform ball;
@@ -23,23 +23,22 @@ public class EnemyController : MonoBehaviour
     {
         stopWatch = 0;
     }
+
     void Start()
     {
-        speed = speedDefault + gameData.gameSpeedPP;
-        //Continously Invokes Move every x seconds (values may differ)
         InvokeRepeating("Move", .02F, .02F);
     }
+
     private void Update()
     {
         stopWatch += Time.deltaTime;
-
     }
 
     // Movement for the paddle
     void Move()
     {
 
-        float currSpeed = Mathf.Clamp(speed - (stopWatch / 90 * speed * 0.3f), 0.6f * speed, speed);
+        float currSpeed = Mathf.Clamp(speed - (stopWatch / 90 * speedDefault * 0.3f), 0.6f * speedDefault, speedDefault);
         //Debug.Log(currSpeed);
         //finding the ball
         if (ball == null)

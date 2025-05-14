@@ -31,7 +31,12 @@ public class ChooseGameSceneHandler : MonoBehaviour
             // Inialize the logger
             AppData.Instance.Initialize(SceneManager.GetActiveScene().name, doNotResetMech: false);
         }
-
+// Create a new AAN controller.
+        AppData.Instance.aanController = new PlutoAANController(
+            mechanism: AppData.Instance.selectedMechanism,
+            sessionData: AppData.Instance.userData.dTableSession,
+            sessionNo: AppData.Instance.currentSessionNumber
+        );
         // If no mechanism is selected, got to the scene to choose mechanism.
         if (AppData.Instance.selectedMechanism == null)
         {
@@ -52,7 +57,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
         
         // Reset selected game.
         AppData.Instance.SetGame(null);
-
+        AppData.Instance.previousSuccessRates =null;
         // Attach callback.
         AttachCallbacks();
 
@@ -125,6 +130,8 @@ public class ChooseGameSceneHandler : MonoBehaviour
 
     private void OnMechButtonClicked()
     {
+        AppData.Instance.aanController =null;
+        AppData.Instance.userData = new PlutoUserData(DataManager.configFile, DataManager.sessionFile);
         SceneManager.LoadScene(changeScene);
     }
 
@@ -145,6 +152,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
                 $" | AROM: [{AppData.Instance.selectedMechanism.currRom.aromMin:F2}, {AppData.Instance.selectedMechanism.currRom.aromMax:F2}]");
             // Instantitate the game object and load the appropriate scene.
             AppData.Instance.SetGame(game);
+            
             SceneManager.LoadScene(sceneName);
         }
     }

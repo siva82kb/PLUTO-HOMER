@@ -35,7 +35,7 @@ public class summarySceneHandler : MonoBehaviour
         title = button.gameObject.name.ToUpper();
         Debug.Log("button name:" + title);
         int n = Array.IndexOf(PlutoComm.MECHANISMS, title);
-        title = PlutoComm.MECHANISMSTEXT[n];
+        title = PlutoComm.MECHANISMSTEXT[n-1];
         sessionDataHandler.CalculateMovTimeForMechanism(button.gameObject.name.ToUpper());
         UpdateChartData();
        

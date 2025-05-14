@@ -24,7 +24,7 @@ public class HatGameController : MonoBehaviour
     public Text ScoreText;
     public Text timeLeftText;
     public GameObject GameOverObject;
-    public GameObject StartButton;
+    public GameObject StartButton, ExitButton;
     public GameObject PauseButton;
     public GameObject ResumeButton;
     public GameObject player;
@@ -33,6 +33,9 @@ public class HatGameController : MonoBehaviour
     public GameObject aromLeft;
     public GameObject aromRight;
     private GameObject PlayerObj;
+
+    public GameObject SuccessRateBanner;
+    public Text prevSR , currSR;
     private GameObject[] pauseObjects, finishObjects;
     public AudioClip[] audioClips; // win, level complete, loose
     public AudioSource gameSound;
@@ -155,6 +158,7 @@ public class HatGameController : MonoBehaviour
     
     private void Update()
     {
+
         if (isGamePaused && gameState != GameStates.PAUSED) PauseGame();
         else if (!isGamePaused && gameState == GameStates.PAUSED) ResumeGame();
     }
@@ -220,20 +224,24 @@ public class HatGameController : MonoBehaviour
     {
         _prevGameState = gameState;
         gameState = GameStates.PAUSED;
+        isGamePaused = true;
         Time.timeScale = 0;
         ShowPaused();
         PauseButton.SetActive(false);
         ResumeButton.SetActive(true);
+        ExitButton.SetActive(false);
     }
 
     public void ResumeGame()
     {
         HidePaused();
         Debug.Log($"prev GS :{_prevGameState}");
+        isGamePaused = false;
         gameState = _prevGameState;
         Time.timeScale = 1;
         PauseButton.SetActive(true);
         ResumeButton.SetActive(false);
+        ExitButton.SetActive(true);
     }
 
     public bool IsGamePlaying()
@@ -264,7 +272,7 @@ public class HatGameController : MonoBehaviour
                 break;
             case GameStates.START:
                 HidePaused();
-                HideFinished();
+               // HideFinished();
                 // Start the game.
                 StartGame();
                 gameState = GameStates.SPAWNBALL;
@@ -305,14 +313,22 @@ public class HatGameController : MonoBehaviour
                 // Update AANController.
                 AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
                 // Set AAN target if needed.
+
+                AppData.Instance.previousSuccessRates =null;
+
                 if (AppData.Instance.aanController.stateChange) UpdatePlutoAANTarget();
                 // Change to done only when the AAN Controller is AromMoving or Idle state.
                 if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AromMoving
                     || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.Idle) 
                 {
+
                     AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
                     gameState = GameStates.DONE;
+                   if(AppData.Instance.previousSuccessRates ==null)
+                   { 
+                    AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(AppData.Instance.selectedMechanism.name, AppData.Instance.selectedGame);
                     SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+                    }
                 }
                 break;
         }
@@ -362,6 +378,7 @@ public class HatGameController : MonoBehaviour
         timeLeftText = GameObject.FindGameObjectWithTag("TimeLeftText").GetComponent<Text>();
         ScoreText = GameObject.FindGameObjectWithTag("ScoreText").GetComponent<Text>();
 
+        
         // Enable the buttons
         StartButton.SetActive(true);
         PauseButton.SetActive(false);
@@ -397,12 +414,29 @@ public class HatGameController : MonoBehaviour
 
     public void exitGame()
     {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(prevScene);
+        if(gameState == GameStates.DONE || gameState == GameStates.WAITING){
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(prevScene);
+        }
+        else
+        {
+            gameState = GameStates.STOP;
+            AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
+             AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+             gameState = GameStates.DONE;
+             Time.timeScale = 1f;
+             SceneManager.LoadScene(prevScene);
+        }
     }
 
     public void ShowPaused()
     {
+          if(AppData.Instance.previousSuccessRates!=null)
+        {
+            SuccessRateBanner.SetActive(true);
+            prevSR.text = $" previous SR : {AppData.Instance.previousSuccessRates[0]}%";
+            currSR.text = $"Current Success Rate : {AppData.Instance.previousSuccessRates[1]}%";
+        }
         foreach (GameObject g in pauseObjects)
         {
             g.SetActive(true);
@@ -415,6 +449,7 @@ public class HatGameController : MonoBehaviour
         {
             g.SetActive(false);
         }
+        SuccessRateBanner.SetActive(false);
     }
 
     public void ShowFinished()

@@ -156,12 +156,7 @@ public class MechanismSceneHandler : MonoBehaviour
 
     void LoadNextScene()
     {
-        // Create a new AAN controller.
-        AppData.Instance.aanController = new PlutoAANController(
-            mechanism: AppData.Instance.selectedMechanism,
-            sessionData: AppData.Instance.userData.dTableSession,
-            sessionNo: AppData.Instance.currentSessionNumber
-        );
+      
         AppLogger.LogInfo($"New AAN controller created for '{AppData.Instance.selectedMechanism.name}'.");
 
         // Set the mechanism.

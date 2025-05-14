@@ -1,6 +1,11 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using System;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class connectStatusHandler : MonoBehaviour
 {
@@ -8,6 +13,16 @@ public class connectStatusHandler : MonoBehaviour
     private GameObject loading;
     private TextMeshProUGUI statusText;
 
+    void Awake()
+    {
+        // Subscribe to shutdown events once per instance
+        Application.quitting += CloseAppLogger; //for Exe file
+        AppDomain.CurrentDomain.ProcessExit += (_, __) => CloseAppLogger(); // for external crash like OS Crash
+
+        #if UNITY_EDITOR
+                EditorApplication.quitting += CloseAppLogger; //for editor
+        #endif
+    }
     // Start is called before the first frame update
     void Start()
     {
@@ -32,5 +47,12 @@ public class connectStatusHandler : MonoBehaviour
             loading.SetActive(true);
             statusText.text = "Not connected";
         }
+    }
+
+     private void CloseAppLogger()
+    {
+        AppLogger.StopLogging(); 
+        PlutoAanLogger.StopLogging();
+        PlutoComLogger.StopLogging();
     }
 }

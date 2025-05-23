@@ -23,6 +23,8 @@ public class Pluto_SceneHandler : MonoBehaviour
     public UnityEngine.UI.Slider sldrTarget;
     public TextMeshProUGUI textCtrlBound;
     public UnityEngine.UI.Slider sldrCtrlBound;
+    public TextMeshProUGUI textCtrlGain;
+    public UnityEngine.UI.Slider sldrCtrlGain;
     public TMP_InputField inputDuration;
     public UnityEngine.UI.Button btnNextRandomTarget;
 
@@ -42,6 +44,7 @@ public class Pluto_SceneHandler : MonoBehaviour
     private bool _changeSliderLimits = false;
     private float controlTarget = 0.0f;
     private float controlBound = 0.0f;
+    private float controlGain = 1.0f;
     private float tgtDuration = 2.0f;
     private float _currentTime = 0;
     private float _initialTarget = 0;
@@ -115,6 +118,7 @@ public class Pluto_SceneHandler : MonoBehaviour
         // Slider value change.
         sldrTarget.onValueChanged.AddListener(delegate { OnControlTargetChange(); });
         sldrCtrlBound.onValueChanged.AddListener(delegate { OnControlBoundChange(); });
+        sldrCtrlGain.onValueChanged.AddListener(delegate { OnControlGainChange(); });
 
         // Button click.
         btnNextRandomTarget.onClick.AddListener(delegate { OnNextRandomTarget(); });
@@ -204,6 +208,17 @@ public class Pluto_SceneHandler : MonoBehaviour
         {
             controlBound = sldrCtrlBound.value;
             PlutoComm.setControlBound(controlBound);
+        }
+    }
+
+    private void OnControlGainChange()
+    {
+        string _mech = PlutoComm.MECHANISMS[PlutoComm.mechanism];
+        string _ctrlType = PlutoComm.CONTROLTYPE[PlutoComm.controlType];
+        if ((_ctrlType == "POSITION") || (_ctrlType == "POSITIONAAN"))
+        {
+            controlGain = sldrCtrlGain.value;
+            PlutoComm.setControlGain(controlGain);
         }
     }
 
@@ -374,10 +389,11 @@ public class Pluto_SceneHandler : MonoBehaviour
         tglControlSelect.enabled = PlutoComm.MECHANISMS[PlutoComm.mechanism] != "NOMECH" && !isCalibrating;
         textTarget.SetText("Target: ");
         textCtrlBound.SetText("Control Bound: ");
+        textCtrlGain.SetText("Control Gain: ");
         // Enable/Disable control panel.
         string _mech = PlutoComm.MECHANISMS[PlutoComm.mechanism];
         string _ctrlType = PlutoComm.CONTROLTYPE[PlutoComm.controlType];
-        sldrTarget.enabled = (isControl && ((_ctrlType == "TORQUE") || (_ctrlType == "POSITION")) && !_changingTarget);
+        sldrTarget.enabled = isControl && ((_ctrlType == "TORQUE") || (_ctrlType == "POSITION")) && !_changingTarget;
         sldrCtrlBound.enabled = isControl && (_ctrlType == "POSITION");
         inputDuration.enabled = isControl && (_ctrlType == "POSITION");
         btnNextRandomTarget.enabled = isControl && (_ctrlType == "POSITION");
@@ -395,13 +411,23 @@ public class Pluto_SceneHandler : MonoBehaviour
         {
             if ((_ctrlType == "POSITION") || (_ctrlType == "POSITIONAAN"))
             {
-                sldrTarget.value = controlTarget;
+                if (_mech == "HOC")
+                {
+                    // Set the slider value to the current angle.
+                    sldrTarget.value = PlutoComm.getHOCDisplay(controlTarget);
+                }
+                else
+                {
+                    // Set the slider value to the current angle.
+                    sldrTarget.value = controlTarget;
+                }
             }
         }
         // Udpate target value.
         string _unit = (_ctrlType == "TORQUE") ? "Nm" : "deg";
         textTarget.SetText($"Target: {controlTarget,7:F2} {_unit}");
         textCtrlBound.SetText($"Control Bound: {controlBound,7:F2}");
+        textCtrlGain.SetText($"Control Gain: {controlGain,7:F2}");
     }
 
     private void ChangeControlSliderLimits(string controlType, string mechanism)
@@ -429,9 +455,10 @@ public class Pluto_SceneHandler : MonoBehaviour
             }
             else
             {
-                sldrTarget.minValue = PlutoComm.getHOCDisplay(0);
+                sldrTarget.minValue = PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
                 sldrTarget.maxValue = PlutoComm.getHOCDisplay(PlutoComm.CALIBANGLE[PlutoComm.mechanism]);
                 sldrTarget.value = PlutoComm.getHOCDisplay(PlutoComm.angle);
+                Debug.Log($"Control Type: {controlType} Mechanism: {mechanism} Position: {sldrTarget.value}");
             }
             // Control Bound slider.
             sldrCtrlBound.minValue = 0;
@@ -468,6 +495,7 @@ public class Pluto_SceneHandler : MonoBehaviour
         _dispstr += $"\nTorque        : {0f,6:F2} Nm";
         _dispstr += $"\nControl       : {PlutoComm.control,6:F2}";
         _dispstr += $"\nCtrl Bnd (Dir): {PlutoComm.controlBound,6:F2} ({PlutoComm.controlDir})";
+        _dispstr += $"\nCtrl Gain     : {PlutoComm.controlGain,6:F2}";
         _dispstr += $"\nTarget        : {PlutoComm.target,6:F2}";
         _dispstr += $"\nDesired       : {PlutoComm.desired,6:F2}";
         if (PlutoComm.OUTDATATYPE[PlutoComm.dataType] == "DIAGNOSTICS")

@@ -44,7 +44,7 @@ public static class PlutoComm
         8   // DIAGNOSTICS
     };
     public static readonly double MAXTORQUE = 1.0; // Nm
-    public static readonly int[] INDATATYPECODES = new int[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x80 };
+    public static readonly int[] INDATATYPECODES = new int[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x80 };
     public static readonly string[] INDATATYPE = new string[] {
         "GET_VERSION",
         "CALIBRATE",
@@ -58,7 +58,8 @@ public static class PlutoComm
         "SET_CONTROL_DIR",
         "SET_AAN_TARGET",
         "RESET_AAN_TARGET",
-        "HEARTBEAT"
+        "SET_CONTROL_GAIN",
+        "HEARTBEAT",
     };
     public static readonly string[] ERRORTYPES = new string[] {
         "ANGSENSERR",
@@ -79,6 +80,7 @@ public static class PlutoComm
     public static readonly double[] POSITION = new double[] { -135, 0 };
     public static readonly double HOCScale = 0.10752; // 3.97 * Math.PI / 180;
     public static readonly int INVALID_TARGET = 999;
+    public static readonly float MAX_CTRL_GAIN = 20f;
 
     // Button released event.
     public delegate void PlutoButtonReleasedEvent();
@@ -175,7 +177,7 @@ public static class PlutoComm
     {
         get
         {
-            return currentStateData[6];
+            return currentStateData[7];
         }
     }
     static public float angle
@@ -211,6 +213,13 @@ public static class PlutoComm
         get
         {
             return (sbyte)currentStateData[5];
+        }
+    }
+    static public float controlGain
+    {
+        get
+        {
+            return (MAX_CTRL_GAIN - 1) * (currentStateData[6] / 255.0f) + 1;
         }
     }
     static public float target
@@ -331,8 +340,10 @@ public static class PlutoComm
                 currentStateData[4] = rawBytes[(nSensors + 1) * 4 + 6 + 1];
                 // Update the control direction
                 currentStateData[5] = rawBytes[(nSensors + 1) * 4 + 6 + 2];
-                // Update the button state
+                // Update the control gain
                 currentStateData[6] = rawBytes[(nSensors + 1) * 4 + 6 + 3];
+                // Update the button state
+                currentStateData[7] = rawBytes[(nSensors + 1) * 4 + 6 + 4];
 
                 // Number of current state data
                 currentStateData[0] = 3;
@@ -341,7 +352,7 @@ public static class PlutoComm
                 frameRate = 1 / (runTime - prevRunTime);
 
                 // Check if the button has been released.
-                if (previousStateData[6] == 0 && currentStateData[6] == 1)
+                if (previousStateData[7] == 0 && currentStateData[7] == 1)
                 {
                     PlutoComLogger.LogInfo($"Pluto Button Released | Button: {currentStateData[6]} | Time: {runTime:F2}");
                     OnButtonReleased?.Invoke();
@@ -501,6 +512,26 @@ public static class PlutoComm
             new byte[] {
                 (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "SET_CONTROL_DIR")],
                 (byte) ctrlDir
+            }
+        );
+    }
+
+    public static void setControlGain(float ctrlGain)
+    {
+        // Limit the value to be between 0 and 1.
+        ctrlGain = Math.Max(1f, Math.Min(MAX_CTRL_GAIN, ctrlGain));
+        PlutoComLogger.LogInfo($"Setting Control Gain | ControlGain: {ctrlGain:F2}");
+        byte _ctrlgainbyte = (byte)((ctrlGain - 1) / (MAX_CTRL_GAIN - 1) * 255);
+        // Debug.Log($"Control Gain: {ctrlGain:F2} | Control Gain Byte: {_ctrlgainbyte}");
+        // Print the contents of the byte array.
+        Debug.Log(BitConverter.ToString(new byte[] {
+            (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "SET_CONTROL_GAIN")],
+            _ctrlgainbyte
+        }));
+        JediComm.SendMessage(
+            new byte[] {
+                (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "SET_CONTROL_GAIN")],
+                _ctrlgainbyte
             }
         );
     }

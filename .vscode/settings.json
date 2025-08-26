@@ -56,6 +56,6 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "PLUTO-HOMER.sln",
+    "dotnet.defaultSolution": "PLUTO.sln",
     "dotnet.preferCSharpExtension": true
 }

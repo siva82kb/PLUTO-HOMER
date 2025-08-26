@@ -22,16 +22,18 @@ public class PlutoAANController
     public static readonly float BOUNDARY = 0.9f;               // Boundary where assistance is to be enabled.
     public static readonly float FORGETINGFACTOR = 0.9f;        // Forgetting factor for the control bound.
     public static readonly float ASSISTFACTOR = 0.01f;          // Assistance factor for the control bound.
-    public static readonly float DEFAULTCONTROLBOUND = 0.5f;    // Default control bound value.
-    public static readonly float MAXCONTROLBOUND = 1.0f;       // Maximum control bound value.
+    public static readonly float DEFAULTCONTROLBOUND = 0.6f;    // Default control bound value.
+    public static readonly float MAXCONTROLBOUND = 1f;          // Maximum control bound value.
     public static readonly float MINCONTROLBOUND = 0.16f;       // Minimum control bound value.
+    public static float MAX_SPEED = 40.0f;
+    public float MECH_SPEED = 0f;
 
     public static readonly string[] ADAPTFILEHEADER = new string[] {
-        "SessionNumber", "TrialNumberSession", "TrialNumberDay", 
-        "SuccessRate", "DesiredSuccessRate", 
+        "SessionNumber", "TrialNumberSession", "TrialNumberDay",
+        "SuccessRate", "DesiredSuccessRate",
         "ControlBound", "AanExecFileName"
     };
-    
+
     public enum TargetType
     {
         InAromFromArom,
@@ -41,21 +43,23 @@ public class PlutoAANController
         InPromFromPromNoCrossArom,
         None
     }
-    
+
     public enum PlutoAANState
     {
-        None = 0,           // None state. The AAN is not engaged.
-        NewTrialTargetSet,  // Target set but not started moving.
-        AromMoving,         // Moving in the AROM.
-        RelaxToArom,        // Relax control to reach nearest AROM edge.
-        AssistToTarget,     // Assisting to reach target.
-        Idle                // Idle state. The AAN is engaged but doing nothing.
+        None = 0,                       // None state. The AAN is not engaged.
+        NewTrialTargetSet,              // Target set but not started moving.
+        AromMoving,                     // Moving in the AROM.
+        RelaxToArom,                    // Relax control to reach nearest AROM edge.
+        AssistToTargetInBoundary,       // Assisting to reach target.
+        AssistToTargetAtBoundary,       // Assisting to reach target.
+        Idle                            // Idle state. The AAN is engaged but doing nothing.
     }
 
     // Mechanism details
     private PlutoMechanism mechanism;
-    public string mechanismName { 
-        get => mechanism.name ;
+    public string mechanismName
+    {
+        get => mechanism.name;
     }
 
     // AAN real-time execution related variables.
@@ -65,6 +69,7 @@ public class PlutoAANController
     public bool trialRunning { private set; get; }
     public float[] aRom => mechanism.CurrentArom;
     public float[] pRom => mechanism.CurrentProm;
+    public float[] apRom => mechanism.CurrentAProm;
     // Setter will automatically change the stateChange variable to true/false
     // depending on whether a new state value has been set.
     private PlutoAANState _state;
@@ -82,17 +87,24 @@ public class PlutoAANController
     public Queue<float> timeQ { private set; get; }
     public float trialTime { private set; get; }
     private float[] _newAanTarget;
+    private float lastCheckedPosition = float.NaN;
+    private bool checkVolMov = false;         // voluntry movement check
+    private const float POS_TOLERANCE = 0.1f; 
+    private Stopwatch positionStopwatch = new Stopwatch();
+    private const int NO_MOVEMENT_THRESHOLD = 1500; // 1.5 seconds in ms
 
     // AAN control bound adaptation related variables.
     public float currentCtrlBound { private set; get; }
 
     // Logging variables
     private string _execFileName;
+    private bool setARInitPos = false;
+    private float activeRangeInitPos;
     private StreamWriter _execFileHandler = null;
     public string execFileName
-    { 
+    {
         get => _execFileName;
-        private set 
+        private set
         {
             _execFileName = value;
             _execFileHandler?.Dispose();
@@ -103,21 +115,21 @@ public class PlutoAANController
     }
 
     public string adaptFileName { private set; get; }
-    
+
     public PlutoAANController(PlutoMechanism mechanism, DataTable sessionData, int sessionNo)
     {
-        if (mechanism == null) 
+        if (mechanism == null)
         {
             // Throw null exception.
             throw new ArgumentNullException();
         }
         // Initialize controller
         this.mechanism = mechanism;
-        
+
         // Logging files
         execFileName = null;
         adaptFileName = DataManager.GetAanAdaptFileName(mechanismName);
-        
+
         // Execution related variables
         initialPosition = 0;
         targetPosition = 0;
@@ -129,7 +141,9 @@ public class PlutoAANController
         trialTime = 0;
         _newAanTarget = new float[5];
         _newAanTarget[0] = 999; // Invalid target.
-        
+        activeRangeInitPos = 0;
+        setARInitPos = false;
+
         // Adaptation related variables.
         ReadUpdateAdaptionParameters(sessionData, sessionNo);
     }
@@ -150,7 +164,7 @@ public class PlutoAANController
         else
         {
             // // Now order the selRows by the trailNumberDay in increasing order and get the last row.
-             DataRow lastRow = selRows.LastOrDefault();
+            DataRow lastRow = selRows.LastOrDefault();
 
             //     string nextBoundStr = lastRow?.Field<string>("NextControlBound");
             //     if (string.IsNullOrWhiteSpace(nextBoundStr) || !float.TryParse(nextBoundStr, out currentCtrlBound))
@@ -159,7 +173,7 @@ public class PlutoAANController
             //     }
 
             // //currentCtrlBound = Convert.ToSingle(lastRow.Field<string>("NextControlBound"));
-        
+
             float tempBound;
             string nextBoundStr = lastRow?.Field<string>("NextControlBound");
 
@@ -176,10 +190,73 @@ public class PlutoAANController
         PlutoAanLogger.LogInfo($"Currrent Control Bound: {currentCtrlBound}");
     }
 
+
+private bool CheckNoMovement(float actual, float aromInitPos)
+{
+    float aromRange = aRom[1] - aRom[0];
+
+    if (aromRange <= 0f) return false;
+
+    float gateDistance = 0.25f * aromRange;   
+    float movedFromInit = Math.Abs(actual - aromInitPos);
+
+    if (!checkVolMov)
+    {
+        if (movedFromInit + POS_TOLERANCE >= gateDistance)
+        {
+            checkVolMov = true;              
+            positionStopwatch.Reset();        
+            lastCheckedPosition = actual;
+        }
+        else
+        {
+
+            positionStopwatch.Reset();
+            lastCheckedPosition = actual;
+            return false;
+        }
+    }
+
+    if (float.IsNaN(lastCheckedPosition))
+        lastCheckedPosition = actual;
+
+    if (Math.Abs(actual - lastCheckedPosition) <= POS_TOLERANCE)
+    {
+        if (!positionStopwatch.IsRunning)
+            positionStopwatch.Start();
+
+        if (positionStopwatch.ElapsedMilliseconds >= NO_MOVEMENT_THRESHOLD)
+        {
+            state = PlutoAANState.AssistToTargetInBoundary;
+            GenerateAssistToTargetAanTarget(actual, true);
+            UnityEngine.Debug.Log("Assist triggered");
+            PlutoAanLogger.LogInfo(
+                $"Assist due to no movement in active range for 2 sec | {state} | " +
+                $"[{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]"
+            );
+            checkVolMov = false;
+            positionStopwatch.Reset();
+            return true;
+        }
+    }
+    else
+    {
+        // if there was movement,reset stall timer and update 
+        positionStopwatch.Reset();
+        lastCheckedPosition = actual;
+    }
+
+    return false;
+}
+
+
+
     public void Update(float actual, float delT, bool trialDone)
     {
         // Reset state change.
         stateChange = false;
+
+        // UnityEngine.Debug.Log($"state : {state}");
 
         // Do nothing if the state is None.
         if (state == PlutoAANState.None) return;
@@ -198,6 +275,13 @@ public class PlutoAANController
         switch (state)
         {
             case PlutoAANState.NewTrialTargetSet:
+                
+                //temp add
+                checkVolMov = false;
+                lastCheckedPosition = float.NaN;
+                positionStopwatch.Reset();
+
+
                 // Set the state of the AAN.
                 switch (GetTargetType())
                 {
@@ -214,7 +298,7 @@ public class PlutoAANController
                         PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
                         break;
                     case TargetType.InPromFromPromNoCrossArom:
-                        state = PlutoAANState.AssistToTarget;
+                        state = PlutoAANState.AssistToTargetAtBoundary;
                         // Generate target to assist.
                         GenerateAssistToTargetAanTarget(actual, false);
                         PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
@@ -222,27 +306,51 @@ public class PlutoAANController
                 }
                 break;
             case PlutoAANState.AromMoving:
+                // UnityEngine.Debug.Log($"y state : {state}");
+
                 // Check if the trial is done.
                 if (trialDone)
                 {
                     state = PlutoAANState.Idle;
                     return;
                 }
-                // Check if the target is reached.
-                if (IsTargetInArom()) return;
+                if (!setARInitPos)
+                {
+                    activeRangeInitPos = actual;
+                    checkVolMov = false;
+                    lastCheckedPosition = float.NaN;
+                    positionStopwatch.Reset();
+                    setARInitPos = true;
+                }
+                
+
+                if (CheckNoMovement(actual, activeRangeInitPos)) return;
+
+
                 // Check if the AROM boundary is reached.
                 int _dir = Math.Sign(targetPosition - initialPosition);
                 float _arompos = (actual - aRom[0]) / (aRom[1] - aRom[0]);
                 if ((_dir > 0 && _arompos >= BOUNDARY) || (_dir < 0 && _arompos <= (1 - BOUNDARY)))
                 {
-                    state = PlutoAANState.AssistToTarget;
+                    state = PlutoAANState.AssistToTargetAtBoundary;
                     // Generate target to assist.
                     GenerateAssistToTargetAanTarget(actual, true);
                     PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
                 }
                 break;
             case PlutoAANState.RelaxToArom:
+
                 // Check if AROM has not been reached.
+                //   if (CheckNoMovement(actual)) return;
+
+                if (setARInitPos)
+                {
+                    checkVolMov = false;
+                    positionStopwatch.Reset();
+                    lastCheckedPosition = float.NaN;
+                    setARInitPos = false;
+                }
+
                 if (IsActualInArom(actual))
                 {
                     // AROM reached.
@@ -253,7 +361,7 @@ public class PlutoAANController
                     return;
                 }
                 break;
-            case PlutoAANState.AssistToTarget:
+            case PlutoAANState.AssistToTargetAtBoundary:
                 // Check if the trial is done.
                 if (trialDone)
                 {
@@ -275,6 +383,11 @@ public class PlutoAANController
         trialRunning = false;
         state = PlutoAANState.None;
         _newAanTarget[0] = 999;
+        setARInitPos = false;
+        activeRangeInitPos = 0;
+        checkVolMov = false;
+        positionStopwatch.Reset();
+        lastCheckedPosition = float.NaN;
         // Empty the queues.
         positionQ.Clear();
         timeQ.Clear();
@@ -282,13 +395,14 @@ public class PlutoAANController
         PlutoAanLogger.LogInfo($"Reset | {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
     }
 
-    public void SetNewTrialDetails(float actual, float target, float maxDur)
+    public void SetNewTrialDetails(float actual, float target, float maxDur, float mechSpeed)
     {
         // Set the initial and target position for the trial.
         initialPosition = actual;
         targetPosition = target;
         maxDuration = maxDur;
         trialRunning = true;
+        MECH_SPEED = mechSpeed;
         // Initialize the queues to keep track of the recent movement trajectory.
         positionQ.Enqueue(actual);
         timeQ.Enqueue(trialTime);
@@ -309,7 +423,7 @@ public class PlutoAANController
 
     public TargetType GetTargetType()
     {
-       // UnityEngine.Debug.Log($"arom min : {aRom[0]}, max :{aRom[1]}");
+        // UnityEngine.Debug.Log($"arom min : {aRom[0]}, max :{aRom[1]}");
         bool _initInArom = (initialPosition >= aRom[0] && initialPosition <= aRom[1]);
         if (trialRunning == false) return TargetType.None;
         // Check if target is in aRom
@@ -375,8 +489,7 @@ public class PlutoAANController
         positionQ.Enqueue(actPos);
         timeQ.Enqueue(tTime);
     }
-
-    private void GenerateRelaxToAromAanTarget(float actual)
+     private void GenerateRelaxToAromAanTarget(float actual)
     {
         // Find the nearest AROM edge.
         float _nearestAromEdge = GetNearestAromEdge(actual);
@@ -389,13 +502,13 @@ public class PlutoAANController
         // Target Position
         _newAanTarget[3] = _nearestAromEdge;
         // Reach Duration
-        _newAanTarget[4] = Math.Min(maxDuration, Math.Max(MIN_REACH_TIME, Math.Abs(_nearestAromEdge - actual) / MAX_AVG_SPEED));
+        _newAanTarget[4] = Math.Min(maxDuration, Math.Max(MIN_REACH_TIME, Math.Abs(_nearestAromEdge - actual) / MECH_SPEED));
     }
 
     private void GenerateAssistToTargetAanTarget(float actual, bool fromArom)
     {
         // Reach Duration
-        float _maxAvgSpeed = Math.Max(MIN_AVG_SPEED, Math.Min(Math.Abs(actual - initialPosition) / trialTime, MAX_AVG_SPEED));
+        float _maxAvgSpeed =Math.Min(MAX_SPEED ,Math.Max(MIN_AVG_SPEED, Math.Min(Math.Abs(actual - initialPosition) / trialTime, MECH_SPEED)));
         float _maxDur = Math.Min(maxDuration, Math.Max(MIN_REACH_TIME, Math.Abs(targetPosition - actual) / _maxAvgSpeed));
         // There is a valid target
         _newAanTarget[0] = 0;

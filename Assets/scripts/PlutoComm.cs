@@ -66,15 +66,15 @@ public static class PlutoComm
         "MCURRSENSERR",
         "NOHEARTBEAT"
     };
-    public static readonly int[] CALIBANGLE = new int[] { 0, 136, 136, 180, 93 }; // The first zero value is a dummy value.
+    public static readonly int[] CALIBANGLE = new int[] { 0, 136, 136, 180, 93, 180, 180 }; // The first zero value is a dummy value.
     public static readonly float[] MECHOFFSETVALUE = new float[] {
         0,    // Dummy. No mechanism 
         68,   // Wrist Flexion/Extension     
         68,   // Wrist Ulnar/Radial Deviation
         90,   // Forearm Prono/Sunpination
         0,    // Hand Opening/Closing
-        0,    // Functional mechanism 1
-        0,    // Functional mechanism 2
+        90,    // Functional mechanism 1
+        90,    // Functional mechanism 2
     };
     public static readonly double[] TORQUE = new double[] { -MAXTORQUE, MAXTORQUE };
     public static readonly double[] POSITION = new double[] { -135, 0 };
@@ -446,6 +446,7 @@ public static class PlutoComm
     public static void setControlTarget(float target)
     {
         PlutoComLogger.LogInfo($"Setting Control Target | Target: {target:F2}");
+        Debug.Log($"Setting Control Target | Target: {target:F2}");
         byte[] targetBytes = BitConverter.GetBytes(target);
         JediComm.SendMessage(
             new byte[] {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using TMPro;
 using UnityEngine;
@@ -19,8 +20,10 @@ public class OneTimeConfig : MonoBehaviour
     public TMP_InputField fme1Field;
     public TMP_InputField fme2Field;
     public TMP_Dropdown affectedSideDropdown;
+    public TMP_Dropdown location;
 
     public TextMeshProUGUI totalDurationText;
+    public TMP_Text msg;
 
 
     private void Start()
@@ -65,36 +68,44 @@ public class OneTimeConfig : MonoBehaviour
 
     public void saveConfig()
     {
-        if (string.IsNullOrWhiteSpace(nameField.text) ||
-          string.IsNullOrWhiteSpace(ageField.text) ||
-          string.IsNullOrWhiteSpace(hospitalIdField.text) ||
-          string.IsNullOrWhiteSpace(startDateField.text) ||
-          string.IsNullOrWhiteSpace(endDateField.text))
+        List<string> emptyFields = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(nameField.text)) emptyFields.Add("Name");
+        if (string.IsNullOrWhiteSpace(ageField.text)) emptyFields.Add("Age");
+        if (string.IsNullOrWhiteSpace(hospitalIdField.text)) emptyFields.Add("Hospital ID");
+        if (string.IsNullOrWhiteSpace(startDateField.text)) emptyFields.Add("Start Date");
+        if (string.IsNullOrWhiteSpace(endDateField.text)) emptyFields.Add("End Date");
+
+        if (emptyFields.Count > 0)
         {
-            Debug.LogError("Name, Age, Hospital ID, Start Date, and End Date fields must not be empty.");
+            string missing = string.Join(", ", emptyFields);
+            string message = $"{missing} field{(emptyFields.Count > 1 ? "s are" : " is")} required!";
+            msg.text = message;
             return;
         }
+
 
         string date = DateTime.Now.ToString("dd-MM-yyyy");
         string name = nameField.text;
         string age = ageField.text;
         string hospitalId = hospitalIdField.text;
-        //AppData.Instance.userID= hospitalId;
+        AppData.Instance.setUser(hospitalId);
         string startDate = startDateField.text;
         string endDate = endDateField.text;
         
         // Set null to "0".
-        string wfe = string.IsNullOrEmpty(wfeField.text) ? "0" : wfeField.text;
-        string wurd = string.IsNullOrEmpty(wurdField.text) ? "0" : wurdField.text;
-        string fps = string.IsNullOrEmpty(fpsField.text) ? "0" : fpsField.text;
-        string hoc = string.IsNullOrEmpty(hocField.text) ? "0" : hocField.text;
-        string fme1 = string.IsNullOrEmpty(fme1Field.text) ? "0" : fme1Field.text;
-        string fme2 = string.IsNullOrEmpty(fme2Field.text) ? "0" : fme2Field.text;
+        string wfe = string.IsNullOrEmpty(wfeField.text) ? "10" : wfeField.text;
+        string wurd = string.IsNullOrEmpty(wurdField.text) ? "10" : wurdField.text;
+        string fps = string.IsNullOrEmpty(fpsField.text) ? "10" : fpsField.text;
+        string hoc = string.IsNullOrEmpty(hocField.text) ? "10" : hocField.text;
+        string fme1 = string.IsNullOrEmpty(fme1Field.text) ? "10" : fme1Field.text;
+        string fme2 = string.IsNullOrEmpty(fme2Field.text) ? "10" : fme2Field.text;
         //temp
         string Location = "CMC";
-        string totalDuration = totalDurationText.text;
-
+        //string totalDuration = totalDurationText.text;
+        string totalDuration = "60";
         string trainingSide = affectedSideDropdown.options[affectedSideDropdown.value].text;
+        Location = location.options[location.value].text;
 
         string headers = "Date,name,HospitalNumber,Startdate,end ,age,time,WFE,WURD,FPS,HOC,FME1,FME2,TrainingSide,Location";
         string data = $"{date},{name},{hospitalId},{startDate},{endDate},{age},{totalDuration},{wfe},{wurd},{fps},{hoc},{fme1},{fme2},{trainingSide},{Location}";
@@ -124,5 +135,9 @@ public class OneTimeConfig : MonoBehaviour
 
         }
         
+    }
+
+    public void LoginScreen(){
+        SceneManager.LoadScene("LOGIN");
     }
 }

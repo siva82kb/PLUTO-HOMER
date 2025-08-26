@@ -24,7 +24,7 @@ public static class DataManager
         ? Path.Combine(Application.dataPath, "data", AppData.Instance.userID) 
         : Application.dataPath;
 
-    public static readonly string basePath = FixPath(Path.Combine(userIdPath, "data"));
+    public static  string basePath = FixPath(Path.Combine(userIdPath, "data"));
 
     static string directoryPathConfig;
     public static string sessionPath { get; private set; }
@@ -35,9 +35,12 @@ public static class DataManager
     public static string rawPath { get; private set; }
     public static string romPath { get; private set; }
     public static string logPath { get; private set; }
+    public static string controlGainPath{ get; private set; }
 
-    public static readonly string configFile = basePath + "/configdata.csv";
+    public static string configFile = basePath + "/configdata.csv";
     public static string sessionFile { get; private set; }
+
+    
 
     // Sessions file definitions.
     public static string[] SESSIONFILEHEADER = new string[] {
@@ -66,6 +69,7 @@ public static class DataManager
     public static string GetAanExecFileName(string mechanism) => FixPath(Path.Combine(aanExecPath, $"{mechanism}-execaan.csv"));
     public static string GetGameFileName(string game) => FixPath(Path.Combine(gamePath, $"{game}-gameparams.csv"));
     public static string GetMechFileName(string mechanism) => FixPath(Path.Combine(mechPath, $"{mechanism}-mechparams.csv"));
+    public static string GetMechControlGainFileName(string mechanism) => FixPath(Path.Combine(controlGainPath, $"{mechanism}-controlgain.csv"));
     public static string GetRawFileName(
         string game,
         string mechanism,
@@ -86,7 +90,12 @@ public static class DataManager
 
     // Fix stupid Window's path separator issue.
     public static string FixPath(string path) => path.Replace("\\", "/");
-    
+
+    public static void setUserId(string userID){
+        basePath = FixPath(Path.Combine(Application.dataPath,"data", AppData.Instance.userID,"data"));
+        configFile = basePath + "/configdata.csv";
+    }
+
     public static void CreateFileStructure()
     {
         directoryPathConfig = FixPath(basePath + "/configuration");
@@ -98,6 +107,7 @@ public static class DataManager
         rawPath = FixPath(Path.Combine(basePath, "rawdata"));
         romPath = FixPath(Path.Combine(basePath, "rom"));
         logPath = FixPath(Path.Combine(basePath, "applog"));
+        controlGainPath = FixPath(Path.Combine(basePath, "controlgain"));
         sessionFile = FixPath(Path.Combine(sessionPath, "sessions.csv"));
         // Check if the directory exists
         Directory.CreateDirectory(sessionPath);
@@ -108,6 +118,7 @@ public static class DataManager
         Directory.CreateDirectory(rawPath);
         Directory.CreateDirectory(romPath);
         Directory.CreateDirectory(logPath);
+        Directory.CreateDirectory(controlGainPath);
     }
 
     public static DataTable loadCSV(string filePath)
@@ -153,6 +164,7 @@ public static class DataManager
     // Create session file
     public static void CreateSessionFile(string device, string location, string[] header = null)
     {
+       
         // Ensure the Sessions.csv file has headers if it doesn't exist
         if (!File.Exists(DataManager.sessionFile))
         {

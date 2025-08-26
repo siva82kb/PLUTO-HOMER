@@ -1,0 +1,664 @@
+fileFormatVersion: 2
+guid: 6b632b12be308fd4a99e2d33285a1904
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -7128450804926355440
+    second: celebrationPong_0
+  - first:
+      213: -3935298696200844493
+    second: celebrationPong_1
+  - first:
+      213: -8426467991778961608
+    second: celebrationPong_2
+  - first:
+      213: -6859417169257486441
+    second: celebrationPong_3
+  - first:
+      213: 1779064705532987743
+    second: celebrationPong_4
+  - first:
+      213: 5747502555730577108
+    second: celebrationPong_5
+  - first:
+      213: 5221273177576997723
+    second: celebrationPong_6
+  - first:
+      213: 2133584530427090262
+    second: celebrationPong_7
+  - first:
+      213: 6179608529966747291
+    second: celebrationPong_8
+  - first:
+      213: -5660215932716534147
+    second: celebrationPong_9
+  - first:
+      213: -5631536764185502297
+    second: celebrationPong_10
+  - first:
+      213: 4641969314631894972
+    second: celebrationPong_11
+  - first:
+      213: 4961017503659893900
+    second: celebrationPong_12
+  - first:
+      213: -8642154123452771719
+    second: celebrationPong_13
+  - first:
+      213: -207115573967261677
+    second: celebrationPong_14
+  - first:
+      213: -2119310572217205338
+    second: celebrationPong_15
+  - first:
+      213: -3003587136553550667
+    second: celebrationPong_16
+  - first:
+      213: 8373236829251990540
+    second: celebrationPong_17
+  - first:
+      213: -2706740174158942219
+    second: celebrationPong_18
+  - first:
+      213: 4470290711163634664
+    second: celebrationPong_19
+  - first:
+      213: -7992394000947523427
+    second: celebrationPong_20
+  - first:
+      213: -780032415859986670
+    second: celebrationPong_21
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 3
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: celebrationPong_0
+      rect:
+        serializedVersion: 2
+        x: 943
+        y: 2039
+        width: 310
+        height: 229
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0186485d2c7a21d90800000000000000
+      internalID: -7128450804926355440
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_1
+      rect:
+        serializedVersion: 2
+        x: 997
+        y: 283
+        width: 1601
+        height: 1898
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 33b04e79fa20369c0800000000000000
+      internalID: -3935298696200844493
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_2
+      rect:
+        serializedVersion: 2
+        x: 1544
+        y: 2115
+        width: 142
+        height: 220
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 837d0deb10c2f0b80800000000000000
+      internalID: -8426467991778961608
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_3
+      rect:
+        serializedVersion: 2
+        x: 2009
+        y: 2154
+        width: 158
+        height: 170
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 79721346d647ec0a0800000000000000
+      internalID: -6859417169257486441
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_4
+      rect:
+        serializedVersion: 2
+        x: 2453
+        y: 2002
+        width: 269
+        height: 252
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f598abd7ce180b810800000000000000
+      internalID: 1779064705532987743
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_5
+      rect:
+        serializedVersion: 2
+        x: 597
+        y: 1810
+        width: 114
+        height: 154
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4d688f37f1b33cf40800000000000000
+      internalID: 5747502555730577108
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_6
+      rect:
+        serializedVersion: 2
+        x: 286
+        y: 1630
+        width: 94
+        height: 159
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b5380c0aa40b57840800000000000000
+      internalID: 5221273177576997723
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_7
+      rect:
+        serializedVersion: 2
+        x: 489
+        y: 1675
+        width: 91
+        height: 87
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 655106283d30c9d10800000000000000
+      internalID: 2133584530427090262
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_8
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1153
+        width: 492
+        height: 442
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b9e44af873162c550800000000000000
+      internalID: 6179608529966747291
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_9
+      rect:
+        serializedVersion: 2
+        x: 551
+        y: 1393
+        width: 196
+        height: 172
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d76bc6a299fd271b0800000000000000
+      internalID: -5660215932716534147
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_10
+      rect:
+        serializedVersion: 2
+        x: 3072
+        y: 1440
+        width: 114
+        height: 163
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7ad9b2f6623c8d1b0800000000000000
+      internalID: -5631536764185502297
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_11
+      rect:
+        serializedVersion: 2
+        x: 2875
+        y: 1102
+        width: 192
+        height: 184
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cb7c5e85f769b6040800000000000000
+      internalID: 4641969314631894972
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_12
+      rect:
+        serializedVersion: 2
+        x: 3190
+        y: 1113
+        width: 88
+        height: 114
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c84a42e822319d440800000000000000
+      internalID: 4961017503659893900
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_13
+      rect:
+        serializedVersion: 2
+        x: 3302
+        y: 1189
+        width: 147
+        height: 245
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9729b61ec96e01880800000000000000
+      internalID: -8642154123452771719
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_14
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1108
+        width: 46
+        height: 76
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 310fa3a9b7d202df0800000000000000
+      internalID: -207115573967261677
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_15
+      rect:
+        serializedVersion: 2
+        x: 3254
+        y: 701
+        width: 346
+        height: 443
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6ad734e5342b692e0800000000000000
+      internalID: -2119310572217205338
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_16
+      rect:
+        serializedVersion: 2
+        x: 3015
+        y: 891
+        width: 157
+        height: 145
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5bcfac9b96d1156d0800000000000000
+      internalID: -3003587136553550667
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_17
+      rect:
+        serializedVersion: 2
+        x: 653
+        y: 323
+        width: 227
+        height: 146
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c0478cb6886b33470800000000000000
+      internalID: 8373236829251990540
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_18
+      rect:
+        serializedVersion: 2
+        x: 1035
+        y: 255
+        width: 153
+        height: 228
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5ff2afb072abf6ad0800000000000000
+      internalID: -2706740174158942219
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_19
+      rect:
+        serializedVersion: 2
+        x: 2327
+        y: 263
+        width: 73
+        height: 79
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8e303a997b9a90e30800000000000000
+      internalID: 4470290711163634664
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_20
+      rect:
+        serializedVersion: 2
+        x: 2496
+        y: 324
+        width: 162
+        height: 115
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d905f8c6000551190800000000000000
+      internalID: -7992394000947523427
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: celebrationPong_21
+      rect:
+        serializedVersion: 2
+        x: 2842
+        y: 278
+        width: 163
+        height: 110
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 21f206b86a4cc25f0800000000000000
+      internalID: -780032415859986670
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    nameFileIdTable:
+      celebrationPong_0: -7128450804926355440
+      celebrationPong_1: -3935298696200844493
+      celebrationPong_10: -5631536764185502297
+      celebrationPong_11: 4641969314631894972
+      celebrationPong_12: 4961017503659893900
+      celebrationPong_13: -8642154123452771719
+      celebrationPong_14: -207115573967261677
+      celebrationPong_15: -2119310572217205338
+      celebrationPong_16: -3003587136553550667
+      celebrationPong_17: 8373236829251990540
+      celebrationPong_18: -2706740174158942219
+      celebrationPong_19: 4470290711163634664
+      celebrationPong_2: -8426467991778961608
+      celebrationPong_20: -7992394000947523427
+      celebrationPong_21: -780032415859986670
+      celebrationPong_3: -6859417169257486441
+      celebrationPong_4: 1779064705532987743
+      celebrationPong_5: 5747502555730577108
+      celebrationPong_6: 5221273177576997723
+      celebrationPong_7: 2133584530427090262
+      celebrationPong_8: 6179608529966747291
+      celebrationPong_9: -5660215932716534147
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

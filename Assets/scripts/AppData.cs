@@ -19,47 +19,22 @@ public partial class AppData
      * CONSTANT FIXED VARIABLES.
      */
     // COM Port for the device
-    public const string COMPort = "COM16";
+    public const string COMPort = "COM21";
 
-    // Keeping track of time.
-    private double nanosecPerTick = 1.0f / Stopwatch.Frequency;
-    private Stopwatch stp_watch = new Stopwatch();
-    public double CurrentTime => stp_watch.ElapsedTicks * nanosecPerTick;
-
-    // Change true to run game from choosegamescene
-    public bool runIndividualGame = false;
-
-    // Old and new PROM used by assessment scene
-    //public static ROM oldROM;
-    //public static ROM newROM;
-    //public static ROM oldAROM;
-    //public static ROM newAROM;
-
-    //public static float[] aRomValue = new float[2];
-    //public static float[] pRomValue = new float[2];
-    //temp storage for PROM min and max
-
-    //public static float promMin = 0f;
-    //public static float promMax = 0f;
 
     // What is this used for?
     public string _dataLogDir = null;
 
-    // Default folder name
-    private const string DefaultUserID = "userTest";
-    private string _userID = null;
+    // Property with default fallback
+    // public string userID = null;
 
-    public string userID
-    {
-        get => string.IsNullOrEmpty(_userID) ? DefaultUserID : _userID;
-        set => _userID = value;
-    }
+    public string userID { get; private set; } = null;
 
-    
     /*
      * USED AND THERAPY RELATED DATA.
      */
     public PlutoUserData userData;
+    public MechanismSpeed speedData;
     public PlutoMechanism selectedMechanism { get; private set; }
     public string selectedGame { get; private set; } = null;
 
@@ -97,25 +72,6 @@ public partial class AppData
     public PlutoAANController aanController = null;
     private float _currControlBound;
     public float CurrentControlBound => _currControlBound;
-   // private float _prevSuccessRate;
-
-
-    //public static string aanDataFileLocation = null;
-    //// Options to drive 
-    //public static string trainingSide
-    //{
-    //    get => AppData.userData?.rightHand == true ? "RIGHT" : "LEFT";
-    //}
-
-    //// Selected Mechanism
-    //public static PlutoMechanism selectedMechanism = null;
-    ////public static string selectedMechanism;
-    //public static string selectedGame = null;
-
-    // Handling the data
-    //public static int currentSessionNumber;
-    //public static string trialDataFileLocation;
-    //public static string trialDataFileLocation1;
 
     private AppData()
     {
@@ -145,6 +101,9 @@ public partial class AppData
         //SessionManager.Instance.Login();
 
         // Initialize the user data.
+        UnityEngine.Debug.Log(DataManager.configFile);
+        UnityEngine.Debug.Log( DataManager.sessionFile);
+
         userData = new PlutoUserData(DataManager.configFile, DataManager.sessionFile);
         // Selected mechanism and game.
         selectedMechanism = null;
@@ -208,6 +167,11 @@ public partial class AppData
         AppLogger.LogInfo($"Selected mechanism '{selectedMechanism.name}'.");
         AppLogger.SetCurrentMechanism(selectedMechanism.name);
         AppLogger.LogInfo($"Trial numbers for ' {selectedMechanism.name}' updated. Day: {selectedMechanism.trialNumberDay}, Session: {selectedMechanism.trialNumberSession}.");
+    }
+
+    public void setUser(string user){
+        userID = user;
+        UnityEngine.Debug.Log($" id : {userID}");
     }
 
     public void SetGame(string gameName)

@@ -275,7 +275,7 @@ private bool CheckNoMovement(float actual, float aromInitPos)
         switch (state)
         {
             case PlutoAANState.NewTrialTargetSet:
-                
+
                 //temp add
                 checkVolMov = false;
                 lastCheckedPosition = float.NaN;
@@ -322,7 +322,7 @@ private bool CheckNoMovement(float actual, float aromInitPos)
                     positionStopwatch.Reset();
                     setARInitPos = true;
                 }
-                
+
 
                 if (CheckNoMovement(actual, activeRangeInitPos)) return;
 
@@ -370,6 +370,15 @@ private bool CheckNoMovement(float actual, float aromInitPos)
                     GenerateRelaxToAromAanTarget(actual);
                     state = PlutoAANState.RelaxToArom;
                     PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
+                }
+                break;
+            case PlutoAANState.AssistToTargetInBoundary:
+                // Check if the trial is done.
+                if (trialDone)
+                {
+                    GenerateRelaxToAromAanTarget(actual);
+                    state = PlutoAANState.RelaxToArom;
+                    PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");     
                 }
                 break;
         }

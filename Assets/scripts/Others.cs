@@ -174,11 +174,12 @@ public class MechanismSpeed
         var mechData = sessionTable.AsEnumerable()
             .Where(row => row.Field<string>("Mechanism") == mechanismToCheck)
             .ToList();
-
+        // Debug.Log($"mechData:{mechData.Count}");
         var groupedByDate = mechData
             .GroupBy(row => DateTime.ParseExact(row.Field<string>("DateTime"), "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture).Date)
             .OrderBy(g => g.Key)
             .ToList();
+        // Debug.Log($"mechData:{groupedByDate.Count}");
 
         if (groupedByDate.Count < 3)
         {
@@ -232,6 +233,7 @@ public class MechanismSpeed
         }
         else
         {
+            GetLastDateFromMechParams();
             Debug.Log("Conditions for game speed update not met.");
         }
     }

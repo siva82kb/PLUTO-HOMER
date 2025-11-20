@@ -16,7 +16,7 @@ public partial class AppData
     // Start a new trial.
     public void StartNewTrial()
     {
-        
+         
         
         trialStartTime = DateTime.Now;
         trialStopTime = null;
@@ -65,7 +65,7 @@ public partial class AppData
         // Write trial information to the session details file.
         WriteTrialToSessionsFile();
         // Write trial details to the log file.
-        float? _currcb = trialType == HomerTherapy.TrialType.SR85PCCATCH ? null : _currControlBound;
+        float? _currcb = trialType == HomerTherapy.TrialType.SR85PCCATCH ? 0.0f : _currControlBound;
 
         string _tdetails = string.Join(" | ",
             new string[] {
@@ -88,8 +88,7 @@ public partial class AppData
         WriteTrialDataToRawDataFile();
         PlutoComm.OnNewPlutoData -= OnNewPlutoDataDataLogging;
         trialRawDataFile = null;
-
-         //set to upload the data to the AWS
+        //set to upload the data to the AWS
         awsManager.changeUploadStatus(awsManager.status[0]);
     }
 
@@ -120,7 +119,7 @@ public partial class AppData
             // "GameParameter"
             null,
             // "GameSpeed"
-            selectedMechanism.currSpeed.ToString(),
+            speedData.gameSpeed.ToString(),
             // "AssistMode"
             trialType == HomerTherapy.TrialType.SR85PCCATCH ? "ACTIVE" : "AAN",
             // "DesiredSuccessRate"
@@ -128,11 +127,11 @@ public partial class AppData
             // "SuccessRate"
             $"{successRate:F3}",
             // "CurrentControlBound"
-            trialType == HomerTherapy.TrialType.SR85PCCATCH ? null : $"{_currControlBound:F3}",
+            trialType == HomerTherapy.TrialType.SR85PCCATCH ? "0" : $"{_currControlBound:F3}",
             // "NextControlBound"
-            trialType == HomerTherapy.TrialType.SR85PCCATCH ? null : $"{aanController.currentCtrlBound:F3}",
-            //movement time of player
-            MovementTracker.PlayerMovementTime.ToString()
+            trialType == HomerTherapy.TrialType.SR85PCCATCH ?  "0": $"{aanController.currentCtrlBound:F3}",
+            //gameTime
+            Others.gameTime.ToString()
         };
 
         // Write the trial row to the session file.
@@ -164,6 +163,7 @@ public partial class AppData
         rawDataString.AppendLine($":TrialNumberDay: {selectedMechanism.trialNumberDay}");
         rawDataString.AppendLine($":AROM: [{selectedMechanism.CurrentArom[0]:F3},{selectedMechanism.CurrentArom[1]:F3}]");        
         rawDataString.AppendLine($":PROM: [{selectedMechanism.CurrentProm[0]:F3},{selectedMechanism.CurrentProm[1]:F3}]");
+        rawDataString.AppendLine($":APROM: [{selectedMechanism.CurrentAProm[0]:F3},{selectedMechanism.CurrentAProm[1]:F3}]");
         rawDataString.AppendLine($":DesiredSuccessRate: {desiredSuccessRate:F3}");
         rawDataString.AppendLine($":ControlBound: {_currControlBound:F3}");
         rawDataString.AppendLine(string.Join(",", DataManager.RAWFILEHEADER));

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using XCharts.Runtime;
 
@@ -53,6 +54,13 @@ public class summarySceneHandler : MonoBehaviour
                     UnityEditor.EditorApplication.isPlaying = false; 
         #endif
         });
+    }
+    public void LoginScene(){
+    //     AppData.Instance.userData = null;
+    //    // PlutoComm.stopSensorStream();
+
+    //    AppData.Instance.setUser(null);
+    //     if(AppData.Instance.userData == null && AppData.Instance.userID == null) SceneManager.LoadScene("LOGIN");
     }
 
     //To initialize the barchart with whole data of moveTime per day

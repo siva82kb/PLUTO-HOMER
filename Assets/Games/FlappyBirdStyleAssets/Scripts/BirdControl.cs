@@ -22,29 +22,36 @@ public class BirdControl : MonoBehaviour
     public float spriteBlinkingTotalTimer = 0.0f;
     public float spriteBlinkingTotalDuration = 2f;
     public bool startBlinking = false;
-float targetAngle;
+    float targetAngle, position;
     float startTime, PLAYSIZE;
     float endTime;
 
     private float[] arom;
-    private float[] prom;
+    private float[] prom, aprom;
+    private bool side, mech;
 
 
     void Start()
     {
-       // PLAYSIZE = Camera.main.orthographicSize * Camera.main.aspect;
-               float fullHeight = Camera.main.orthographicSize * 2f; // Full camera height in world units
-         PLAYSIZE  = fullHeight * 0.8f; // 80% of the camera height
+        // PLAYSIZE = Camera.main.orthographicSize * Camera.main.aspect;
+        float fullHeight = Camera.main.orthographicSize * 2f; // Full camera height in world units
+        PLAYSIZE = fullHeight * 0.8f; // 80% of the camera height
         startTime = 0;
         endTime = 0;
         currentLife = 0;
         rb2d = GetComponent<Rigidbody2D>();
-        MovementTracker.Initialize(this, this.transform.position);
+        // MovementTracker.Initialize(this, this.transform.position);
 
-        Time.timeScale=0f;
-         // Set current AROM and PROM.
+        Time.timeScale = 0f;
+        // Set current AROM and PROM.
         arom = AppData.Instance.selectedMechanism.CurrentArom;
         prom = AppData.Instance.selectedMechanism.CurrentProm;
+        aprom = AppData.Instance.selectedMechanism.CurrentAProm;
+
+        
+        side = AppData.Instance.IsTrainingSide("RIGHT");
+        mech = AppData.Instance.selectedMechanism.IsMechanism("HOC");
+        
     }
     void Update()
     {
@@ -52,7 +59,7 @@ float targetAngle;
 
         Debug.Log($" min : {AngleToScreen(arom[0])}, max : { AngleToScreen( arom[1])}");
 
-        MovementTracker.UpdatePosition(this.transform.position);
+        // MovementTracker.UpdatePosition(this.transform.position);
 
 
     }
@@ -68,7 +75,8 @@ float targetAngle;
 
         }
         if(FGC.isGameStarted){
-            targetAngle = approxRollingAverage(targetAngle, AngleToScreen(PlutoComm.angle));
+            
+            targetAngle = approxRollingAverage(targetAngle, AngleToScreen((PlutoComm.angle)));
         transform.position = new Vector2(Mathf.SmoothStep(-13, -7, startTime / 2), Mathf.Clamp(targetAngle, -2.5f, 7));
 
         }
@@ -123,7 +131,7 @@ float targetAngle;
             }
         }
     }
-    public float AngleToScreen(float angle) =>  (-3f + (angle - prom[0]) * (PLAYSIZE) / (prom[1] - prom[0]));
+    public float AngleToScreen(float angle) =>  (-3f + (angle - aprom[0]) * (PLAYSIZE) / (aprom[1] - aprom[0]));
 
 
 

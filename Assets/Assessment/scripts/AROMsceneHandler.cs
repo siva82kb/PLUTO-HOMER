@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using TMPro;
 using TS.DoubleSlider;
 
@@ -9,84 +8,96 @@ public class AROMsceneHandler : MonoBehaviour
 {
     enum AssessStates
     {
-        INIT ,
+        INIT,
         ASSESS
     };
+    private bool isButtonPressed = false;
     public TMP_Text lText;
     public TMP_Text rText;
+    public TMP_Text insText;
     public TMP_Text cText;
     public TMP_Text relaxText;
-    public TMP_Text JointAngle;
-    public TMP_Text JointAngleHoc;
-    public TMP_Text warningText;
 
-    private float _tmin = 0f, _tmax = 0f ,angLimit = 0f;
+    public TMP_Text jointAngle;
+    public TMP_Text jointAngleHoc;
+
     private int _linx, _rinx;
+    private float _tmin = 0f, _tmax  =0f;
 
     public GameObject nextButton;
     public GameObject startButton;
-    public GameObject curreposition;
-    public GameObject currepositionHoc;
+    public GameObject CurrPositioncursor;
+    public GameObject CurrPositioncursorHoc;
 
     private AssessStates _state;
 
-    
+    private float angLimit;
     public DoubleSlider aromSlider;
-    public DoubleSlider promSlider;
-
+    public DoubleSlider aromSliderHOC;
     public bool isSelected = false;
-    private bool isRestarting = false;
-    public bool isButtonPressed = false;
-
-    public bool runOnce = false;
 
     public assessmentSceneHandler panelControl;
 
     private List<string[]> DirectionText = new List<string[]>
      {
          new string[] { "Flexion", "Extension" },
-         new string[] { "Ulnar Dev.", "Radial Dev."},
+         new string[] { "Ulnar Dev", "Radial Dev" },
          new string[] { "Pronation", "Supination" },
-         new string[]{ "Open", "Open"},
-         new string[] {"",""},
-         new string[] {"",""}
+         new string[] { "Open", "Open"},
+         new string[] { "", "" },
+         new string[] { "", "" }
      };
 
-    private string nextScene = "CHGAME";
-   
     void Start()
     {
-        // Attach callback for PLUTO button event.
-        PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
+        // Initialize the assessment data.
+        //AppData.assessData = new AssessmentData(AppData.selectedMechanism, AppData.trainingSide);
+        AppLogger.LogInfo(
+            $"ROM data loaded for mechanism {AppData.Instance.selectedMechanism.name}: "
+            + $"AROM [{AppData.Instance.selectedMechanism.oldRom.aromMin}, "
+            + $"{AppData.Instance.selectedMechanism.oldRom.aromMax}], "
+            + $"PROM [{AppData.Instance.selectedMechanism.oldRom.promMin}, " 
+            + $"  {AppData.Instance.selectedMechanism.oldRom.promMax}]"
+        );
+        InitializeAssessment();
     }
 
-    private void InitializeAssessment()
+    public void InitializeAssessment()
     {
-        // Set control to NONE.
+        // Disable control.
         PlutoComm.setControlType("NONE");
 
-        aromSlider.UpdateMinMaxvalues = false;
+        // Disble the button to move to the next assessment.
         nextButton.SetActive(false);
 
+        // Update the min and max values.
         angLimit = AppData.Instance.selectedMechanism.IsMechanism("HOC") ? PlutoComm.CALIBANGLE[PlutoComm.mechanism] : PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
         aromSlider.Setup(-angLimit, angLimit, AppData.Instance.selectedMechanism.oldRom.aromMin, AppData.Instance.selectedMechanism.oldRom.aromMax);
-        aromSlider.minAng = aromSlider.maxAng = 0;
+        aromSlider.minAng = 0;
+        aromSlider.maxAng = 0;
 
-        // Handle HOC and other mechanisms differently.
+        // Update central text.
         cText.gameObject.SetActive(AppData.Instance.selectedMechanism.IsMechanism("HOC"));
-        rText.gameObject.SetActive(true);
-        lText.gameObject.SetActive(true);
-        cText.text = AppData.Instance.selectedMechanism.IsMechanism("HOC")  ? "Closed" : "";
+        cText.text = AppData.Instance.selectedMechanism.IsMechanism("HOC") ? "Closed" : "";
 
-        // Handle the right and left sides differently.
-        (_rinx, _linx) = AppData.Instance.trainingSide == "right" ? (1, 0) : (0, 1);
+        // Update the left and right text.
+        (_rinx, _linx) = AppData.Instance.IsTrainingSide("RIGHT") ? (1, 0) : (0, 1);
         rText.text = DirectionText[PlutoComm.mechanism - 1][_rinx];
         lText.text = DirectionText[PlutoComm.mechanism - 1][_linx];
-        
-        // Set initial state.
+
+        // Set the state to INIT.
         _state = AssessStates.INIT;
+        
+        // Attach callback for PLUTO button release.
+        PlutoComm.OnButtonReleased += OnPlutoButtonReleased;
 
         UpdateStatusText();
+    }
+
+    private void DisablearomGameObjects()
+    {
+        startButton.SetActive(false);
+        nextButton.SetActive(false);
     }
 
     public void OnStartButtonClick()
@@ -96,18 +107,11 @@ public class AROMsceneHandler : MonoBehaviour
         nextButton.SetActive(true);
     }
 
-    private void RestartAssessment()
-    {
-        InitializeAssessment();
-    }
-
-    public void OnPlutoButtonReleased()
-    {
-        isButtonPressed = true;
-    }
-
     void Update()
     {
+        // jointAngle.text = ((int)PlutoComm.angle).ToString();
+        // jointAngleHoc.text = ((int)PlutoComm.getHOCDisplay(PlutoComm.angle)).ToString();
+
         if (isSelected)
         {
             runaAssessmentStateMachine();
@@ -115,134 +119,102 @@ public class AROMsceneHandler : MonoBehaviour
         }
         else
         {
-            _state = AssessStates.INIT;
-            isRestarting = false;
-            relaxText.color = Color.white;
+            if (AppData.Instance.selectedMechanism.IsMechanism("HOC"))
+            {
+                float currentMinCM = ConvertToCM(aromSlider.minAng);
+                float currentMaxCM = ConvertToCM(aromSlider.maxAng);
+                relaxText.text = "Assessment Completed \n"
+                                 + FormatRelaxText(AppData.Instance.selectedMechanism.oldRom.aromMin, AppData.Instance.selectedMechanism.oldRom.aromMax) 
+                                 + "Current AROM: " + currentMinCM.ToString("0.0") + "cm : " 
+                                 + currentMaxCM.ToString("0.0") + "cm (Aperture: "
+                                 + Mathf.Abs(currentMaxCM - currentMinCM).ToString("0.0") + "cm)\n";
+            }
+            else
+            {
+                relaxText.text = "Assessment Completed \n"
+                                 + FormatRelaxText(AppData.Instance.selectedMechanism.oldRom.aromMin, AppData.Instance.selectedMechanism.oldRom.aromMax)
+                                 + "|| " + "Current AROM: " + (int)aromSlider.minAng + " : "
+                                 + (int)aromSlider.maxAng + " (" + (int)(aromSlider.maxAng - aromSlider.minAng) + "°)\n";
+            }
         }
-      
     }
 
     void runaAssessmentStateMachine()
     {
+        CurrPositioncursor.SetActive(true);
+        CurrPositioncursorHoc.SetActive(AppData.Instance.selectedMechanism.IsMechanism("HOC"));
         switch (_state)
         {
             case AssessStates.INIT:
                 startButton.SetActive(true);
-                if(!runOnce){
-                InitializeAssessment();
-                runOnce = true;
-                }
+
                 if (isButtonPressed || Input.GetKeyDown(KeyCode.Return))
                 {
                     startAssessment();
                     isButtonPressed = false;
                 }
-                if (isRestarting)
-                {
-                    relaxText.color = Color.red;
-                    relaxText.text = "AROM Should not Exceed PROM \n " +
-                                     "Please REDO PROM AGAIN";
-                }
-                else relaxText.text = FormatRelaxText(AppData.Instance.selectedMechanism.oldRom.aromMin, AppData.Instance.selectedMechanism.oldRom.aromMax);
+                relaxText.text = FormatRelaxText(AppData.Instance.selectedMechanism.oldRom.promMin, AppData.Instance.selectedMechanism.oldRom.promMax);
                 break;
             case AssessStates.ASSESS:
                 startButton.SetActive(false);
                 _tmin = aromSlider.minAng;
                 _tmax = aromSlider.maxAng;
-                relaxText.color= Color.white;
-                relaxText.text = FormatRelaxText(AppData.Instance.selectedMechanism.oldRom.aromMin, AppData.Instance.selectedMechanism    .oldRom.aromMax);
+                relaxText.text = FormatRelaxText(AppData.Instance.selectedMechanism.oldRom.aromMin, AppData.Instance.selectedMechanism.oldRom.aromMax);
                 nextButton.SetActive(true);
                 if (isButtonPressed || Input.GetKeyDown(KeyCode.Return))
                 {
                     OnNextButtonClick();
+                    nextButton.SetActive(false);
+                    DisablearomGameObjects();
                     isButtonPressed = false;
                 }
-                checkAromLimits();
                 break;
         }
     }
-    private void checkAromLimits()
+
+    public void OnRedoAromClick()
     {
-        if (aromSlider._currePostion.value <= AppData.Instance.selectedMechanism.newRom.promMin || 
-            aromSlider._currePostion.value >= AppData.Instance.selectedMechanism.newRom.promMax)
-        {
-            aromSlider.UpdateMinMaxvalues = false;
-            RestartAssessment();
-            isButtonPressed = false;
-            isRestarting = true;
-            curreposition.SetActive(true);
-            currepositionHoc.SetActive(AppData.Instance.selectedMechanism.IsMechanism("HOC"));
-        }
-        else
-        {
-            aromSlider.UpdateMinMaxvalues = true;
-            curreposition.SetActive(true);
-            currepositionHoc.SetActive(AppData.Instance.selectedMechanism.IsMechanism("HOC"));
+        _state = AssessStates.INIT;
+        isButtonPressed = false;
 
-        }
-
-    }
-
-    public void OnRedoaromButtonClick()
-    {
+        // Reinitialize the assessment process
         InitializeAssessment();
-        Debug.Log("Assessment Restarted");
-        aromSlider.UpdateMinMaxvalues = false;
+
+        UpdateStatusText();
+        panelControl.SelectAROM();
+        AppData.Instance.selectedMechanism.ResetPromValues();
+        Debug.Log("Redo AROM: Reset to INIT state.");
     }
+
+    public void OnPlutoButtonReleased()
+    {
+        isButtonPressed = true;
+    }
+
+    private float ConvertToCM(float value) => Mathf.Abs(Mathf.Deg2Rad * value * 6f);
 
     public void OnNextButtonClick()
     {
-        checkAromLimits();
-        onSavePressed();
-        nextButton.SetActive(false);
-        aromSlider.UpdateMinMaxvalues = false;
+        OnSaveClick();
+        panelControl.SelectpROM();
+        DisablearomGameObjects();
+
+    }
+    public void OnrestartButtonClick()
+    {
+        Start();
     }
 
-    public void startAssessment()
+    public void OnSaveClick()
     {
-        _state = AssessStates.ASSESS;
-        nextButton.SetActive(false);
-        startButton.SetActive(false);
-        aromSlider.startAssessment(PlutoComm.angle);
-        aromSlider.UpdateMinMaxvalues = true;
-    }
-
-    public void onSavePressed()
-    {
-        // Set the new AROM values in the selected mechanism.
-        AppData.Instance.selectedMechanism.SetNewAromValues(aromSlider.minAng, aromSlider.maxAng);
-        AppData.Instance.selectedMechanism.SaveAssessmentData();
-
-        if (AppData.Instance.selectedMechanism.IsMechanism("HOC"))
-        {
-            float currentMinCM = ConvertToCM(_tmin);
-            float currentMaxCM = ConvertToCM(_tmax);
-
-            relaxText.text = " Assessment Completed \n" + FormatRelaxText(AppData.Instance.selectedMechanism.oldRom.aromMin, AppData.Instance.selectedMechanism.oldRom.aromMax)
-                             + "Current AROM: " + currentMinCM.ToString("0.0") + "cm : " + currentMaxCM.ToString("0.0")
-                             + "cm (Aperture: " + Mathf.Abs(currentMaxCM - currentMinCM).ToString("0.0") + "cm)\n";
-        }
-        else
-        {
-            relaxText.text = " Assessment Completed \n "
-                             + FormatRelaxText(AppData.Instance.selectedMechanism.oldRom.aromMin, AppData.Instance.selectedMechanism.oldRom.aromMax)
-                             + "Current AROM: " + (int)_tmin + " : " + (int)_tmax + " (" + (int)(_tmax - _tmin) + " °)\n";
-        }
-
+        _tmin = (aromSlider.minAng < -angLimit) ? -angLimit : aromSlider.minAng;
+        _tmax = (aromSlider.maxAng > angLimit) ? angLimit : aromSlider.maxAng;
+        // Update new PROM
+        AppData.Instance.selectedMechanism.SetNewAromValues(_tmin, _tmax);
         nextButton.SetActive(false);
         aromSlider.UpdateMinMaxvalues = false;
-
-        // Log full assessment detail in the log file.
-        string logMessage = $"Mechanism: {AppData.Instance.selectedMechanism.name}";
-        logMessage += $" | Old PROM: [{AppData.Instance.selectedMechanism.oldRom.promMin:F2}, {AppData.Instance.selectedMechanism.oldRom.promMax:F2}]";
-        logMessage += $" | New PROM: [{AppData.Instance.selectedMechanism.newRom.promMin:F2}, {AppData.Instance.selectedMechanism.newRom.promMax:F2}]";
-        logMessage += $" | Old AROM: [{AppData.Instance.selectedMechanism.oldRom.aromMin:F2} ,  {AppData.Instance.selectedMechanism.oldRom.aromMax:F2}]";
-        logMessage += $" | New AROM: [{AppData.Instance.selectedMechanism.newRom.aromMin:F2} ,  {AppData.Instance.selectedMechanism.newRom.aromMax:F2}]";
-        AppLogger.LogInfo(logMessage);
-
-        // Switch scene if assessment is complete.
-        if (AppData.Instance.selectedMechanism.promCompleted && AppData.Instance.selectedMechanism.aromCompleted) SceneManager.LoadScene(nextScene);
-        else Debug.Log("Complete your PROM and AROM");
+        CurrPositioncursor.SetActive(false);
+        CurrPositioncursorHoc.SetActive(false);
     }
 
     private string FormatRelaxText(float min, float max)
@@ -252,18 +224,25 @@ public class AROMsceneHandler : MonoBehaviour
             $"Prev AROM: {(int)min} : {(int)max} ({(int)(max - min)}°)";
     }
 
-    private float ConvertToCM(float value) => Mathf.Abs(Mathf.Deg2Rad * value * 6f);
-   
+    public void startAssessment()
+    {
+        _state = AssessStates.ASSESS;
+        aromSlider.minAng = 0;
+        aromSlider.maxAng = 0;
+        aromSlider.startAssessment(PlutoComm.angle);
+        aromSlider.UpdateMinMaxvalues = true;
+    }
+
     private void UpdateStatusText()
     {
         if (AppData.Instance.selectedMechanism.IsMechanism("HOC") == false)
         {
-            JointAngle.text = (PlutoComm.angle).ToString("0.0");
+            jointAngle.text = (PlutoComm.angle).ToString("0.0");
         }
         else
         {
-            JointAngle.text = "Aperture" + ConvertToCM(PlutoComm.angle).ToString("0.0") + "cm";
-            JointAngleHoc.text = "Aperture" + ConvertToCM(PlutoComm.angle).ToString("0.0") + "cm";
+            jointAngle.text = "Aperture" + ConvertToCM(PlutoComm.angle).ToString("0.0") + "cm";
+            jointAngleHoc.text = "Aperture" + ConvertToCM(PlutoComm.angle).ToString("0.0") + "cm";
         }
     }
 }

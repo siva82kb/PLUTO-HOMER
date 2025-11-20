@@ -39,7 +39,7 @@ public class BallTrajectoryPlotter : MonoBehaviour
 
         if (transform.position.x < 5 && ballVelocity.x > 0 && transform.position.x > -5)
         {
-            //drawTraj();
+            drawTraj();
         }
         else
         {

@@ -8,7 +8,7 @@ public class BallController : MonoBehaviour
 {
 
     //speed of the ball
-    public static float speed = 2.5F;
+    public  float speed = 1.5F;
 
     //the initial direction of the ball
     private Vector2 spawnDir;
@@ -21,18 +21,18 @@ public class BallController : MonoBehaviour
     int rand = 1;
     void Start()
     {
-      
         rig2D = this.gameObject.GetComponent<Rigidbody2D>();
-        PGC  = GameObject.FindAnyObjectByType<PongGameController>();
-
+        PGC = GameObject.FindAnyObjectByType<PongGameController>();
+        //speed = speed + (0.1f * AppData.Instance.speedData.gameSpeed);
         int rand = UnityEngine.Random.Range(1, 5);
 
-        if (rand == 1)spawnDir = new Vector2(-1, 1);
-        else if (rand == 2)spawnDir = new Vector2(-1, -1);
+        if (rand == 1) spawnDir = new Vector2(-1, 1);
+        else if (rand == 2) spawnDir = new Vector2(-1, -1);
         else if (rand == 3) spawnDir = new Vector2(-1, 1);
-        else if (rand == 4)spawnDir = new Vector2(-1, -1);
+        else if (rand == 4) spawnDir = new Vector2(-1, -1);
 
         rig2D.velocity = (spawnDir * speed);
+       
 
     }
 
@@ -43,7 +43,6 @@ public class BallController : MonoBehaviour
         }
         else preVel = rig2D.velocity;
 
-        //if(PGC.isFinished) pauseBall();
     }
     void playAudio(int clipNumber)
     {

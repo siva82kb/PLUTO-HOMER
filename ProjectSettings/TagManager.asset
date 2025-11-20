@@ -17,6 +17,8 @@ TagManager:
   - ShowOnFinish
   - ReminderPanel
   - detailViewer
+  - Rain
+  - Ground
   layers:
   - Default
   - TransparentFX

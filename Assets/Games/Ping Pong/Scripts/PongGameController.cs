@@ -63,7 +63,7 @@ public class PongGameController : MonoBehaviour
     public bool enemyHit = false;
     // Target and player positions.
     //scene
-    private static string prevScene = "PONGMENU";
+    private static string prevScene = "CHGAME";
     private float[] arom;
     private float[] prom, aprom;
     private float targetAngle;
@@ -72,6 +72,8 @@ public class PongGameController : MonoBehaviour
     private  GameObject targetTemp;
     public  GameObject SuccessRateBanner,ExitButton;
     public Text prevSR, currSR, HS, status;
+    public TextMeshProUGUI finalScore;
+
     public GameObject HSC; //HighScoreCanvas
     public TextMeshProUGUI score;
     private float lastHighScore;
@@ -85,6 +87,7 @@ public class PongGameController : MonoBehaviour
     public GameObject aromRight;
     private float triaTimeLeft;
     private float moveTimeLeft;
+    public float gs;
 
     // Game score related variables.
     public int nTargets = 0;
@@ -92,8 +95,10 @@ public class PongGameController : MonoBehaviour
     public int nFailure = 0;
 
     private float MOVEDURATION, eventDelayTimer = 0f, gameSpeed;
+     public GameObject gameSpeedControl, gameOverPanel;
+    private GameSpeedController gsc = null;
     public Image loadingImage;
-     public GameObject increaseSpeed, decreaseSpeed;
+   
     bool speedControlsVisible = false;
     private void Awake()
     {
@@ -111,11 +116,13 @@ public class PongGameController : MonoBehaviour
     void Start()
     {
         InitializeGame();
+        initializeGameSpeedController();
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
         finishObjects = GameObject.FindGameObjectsWithTag("ShowOnFinish");
         detailObjects = GameObject.FindGameObjectsWithTag("detailViewer");
         targetPosition = new Vector2(5.95f, 0f);
         hideFinished();
+        showPaused();
         SetVisibility(false);
         playSize = Camera.main.orthographicSize;
         GameObject ballClone;
@@ -133,11 +140,25 @@ public class PongGameController : MonoBehaviour
             AngleToScreen(AppData.Instance.selectedMechanism.currRom.aromMax),
             aromRight.transform.position.z
         );
-        HS.text = $" BEST :{ Others.highestSuccessRate:F0} %";
-         status.text = $"s.no: {AppData.Instance.currentSessionNumber}\n" +
-              $"trialNo: {AppData.Instance.selectedMechanism.trialNumberSession}\n" +
-              $"CB: {AppData.Instance.CurrentControlBound}";
+        HS.text = $"{ Others.highestSuccessRate:F0} %";
 
+    }
+    private void initializeGameSpeedController()
+    {
+        // Hide game speed control initially
+        // gameSpeedControl.SetActive(false);
+
+        gsc = gameSpeedControl.GetComponent<GameSpeedController>();
+        if (gsc == null) return;
+
+        // Attach the buttons
+        if (gsc.decreaseButton != null)
+            gsc.decreaseButton.onClick.AddListener(() => decreaseGameSpeed());
+        if (gsc.increaseButton != null)
+            gsc.increaseButton.onClick.AddListener(() => increaseGameSpeed());
+
+        // Set the initial game speed
+        gsc.gameSpeedText.text = $"{AppData.Instance.speedData.gameSpeed:F2}";
     }
     void Update()
     {
@@ -150,9 +171,6 @@ public class PongGameController : MonoBehaviour
         if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.G))
         {
             speedControlsVisible = !speedControlsVisible;
-
-            increaseSpeed.SetActive(speedControlsVisible);
-            decreaseSpeed.SetActive(speedControlsVisible);
         SetVisibility(speedControlsVisible);
 
         }
@@ -196,20 +214,17 @@ public class PongGameController : MonoBehaviour
         // else if (!isGamePaused && gameState == GameStates.PAUSED) resumeGame();
         if ((isFinished && Input.GetKeyDown(KeyCode.P)) || (isFinished && isButtonPressed))
         {
-
-            if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AromMoving
-                    || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.Idle)
-            {
                 Reload();
-            }
             isButtonPressed = false;
         }
+        Debug.Log($" gamestate : {gameState} + {isGameStarted}");
+
 
     }
 
-       void FixedUpdate()
+    void FixedUpdate()
     {
-        
+
         // Send PLUTO heartbeat
         PlutoComm.sendHeartbeat();
 
@@ -219,8 +234,9 @@ public class PongGameController : MonoBehaviour
         // Update player and target positions
         PlayerPosition = GameObject.FindGameObjectWithTag("Player").transform.position;
         targetTemp = GameObject.FindGameObjectWithTag("Target");
-        TargetPosition = targetTemp != null ? targetTemp.transform.position : null;   
+        TargetPosition = targetTemp != null ? targetTemp.transform.position : null;
     }
+    
 
     private void SetVisibility(bool state)
     {
@@ -234,16 +250,7 @@ public class PongGameController : MonoBehaviour
     private void gameEnd()
     {
         Camera.main.GetComponent<AudioSource>().Stop();
-        if (AppData.Instance.selectedMechanism.trialNumberDay >= AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
-        {
-              reminderPanel.SetActive(true);
-            
-        }
-        else
-        {
-            reminderPanel.SetActive(false);
 
-        }
         playAudio(enemyScore>playerScore ? 1 : 0);
         //showFinished();
         Time.timeScale = 0;
@@ -254,6 +261,11 @@ public class PongGameController : MonoBehaviour
         if (gameSpeed >= 40.0f) return;
 
         gameSpeed += 1.0f;
+        gsc.gameSpeedText.text = $"{(int)gameSpeed}";
+
+        AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s game speed increased to {gameSpeed}, Ball speed is {ballSpeed.speed}, Enemy Speed is {enemy.speedDefault}");
+
+
         UpdateGameSpeeds();
     }
     public void decreaseGameSpeed()
@@ -264,7 +276,11 @@ public class PongGameController : MonoBehaviour
         if (!isFME && gameSpeed <= 10.0f) return;
 
         gameSpeed -= 1.0f;
+        gsc.gameSpeedText.text = $"{(int)gameSpeed}";
+
         UpdateGameSpeeds();
+        AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s game speed decreased to {gameSpeed}, Ball speed is {ballSpeed.speed}, Enemy Speed is {enemy.speedDefault}");
+
 
     }
     private void UpdateGameSpeeds()
@@ -276,6 +292,7 @@ public class PongGameController : MonoBehaviour
 
         enemy.speedDefault = Mathf.Clamp(speed, isFME ? 2.0f : 3.0f, 6.0f);
         ballSpeed.speed = Mathf.Clamp(ballSpd, isFME ? 0.9f : 1.5f, 5.0f);
+        gs = ballSpeed.speed;
     }
 
     private void pauseGame()
@@ -286,7 +303,7 @@ public class PongGameController : MonoBehaviour
         isGamePaused = true;
         isPaused = true;
         showPaused();
-        ExitButton.SetActive(false);
+        // ExitButton.SetActive(false);
     }
 
     private void resumeGame()
@@ -300,16 +317,18 @@ public class PongGameController : MonoBehaviour
         hidePaused();
         ExitButton.SetActive(true);
         PlutoComm.sendHeartbeat();
-         if ((PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME1") && (PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME2"))
+        if ((PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME1") && (PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME2"))
         {
             PlutoComm.setControlType("POSITIONAAN");
             PlutoComm.setControlBound(AppData.Instance.CurrentControlBound);
             PlutoComm.setControlDir(0);
         }
+        AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- game resumed");
+        
     }
 
     private float timeToReach(){
-          if (targetTemp != null)
+        if (targetTemp != null)
         {
             Rigidbody2D ballRB = targetTemp.GetComponent<Rigidbody2D>();
 
@@ -335,16 +354,19 @@ public class PongGameController : MonoBehaviour
             float gameTime = HomerTherapy.TrialDuration - triaTimeLeft;
             Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
             AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
+            if (AppData.Instance.speedData.gameSpeed != gameSpeed)  AppData.Instance.speedData.setGameSpeed(gameSpeed);
             AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
             gameState = GameStates.DONE;
             Time.timeScale = 1f;
             SceneManager.LoadScene(prevScene);
+            AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- Exit from game");
+            
         }
     }
 
     private IEnumerator ShowForSeconds(GameObject obj, float seconds)
     {
-          obj.SetActive(true);
+        obj.SetActive(true);
         loadingImage.gameObject.SetActive(true);
         loadingImage.fillAmount = 0f;
 
@@ -358,14 +380,22 @@ public class PongGameController : MonoBehaviour
 
         obj.SetActive(false);
         loadingImage.gameObject.SetActive(false);
-        AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(AppData.Instance.selectedMechanism.name, AppData.Instance.selectedGame);
-        showFinished();
-        gameEnd();
+        AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(AppData.Instance.selectedMechanism.name, AppData.Instance.selectedGameName);
+        // showFinished();
+        AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- game's highest score recorded");
+        
+        // gameEnd();
+                        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        
     }
     public void Reload()
     {
-        playerScore = enemyScore = 0;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        // playerScore = enemyScore = 0;
+        // hideFinished();
+        string currentSceneName = SceneManager.GetActiveScene().name;
+        AppLogger.LogInfo($"The Game is restarted {currentSceneName}");
+        SceneManager.LoadScene(currentSceneName);
+
     }
 
     void playAudio(int clipNumber)
@@ -377,11 +407,15 @@ public class PongGameController : MonoBehaviour
 
     public void showPaused()
     {
-          if(AppData.Instance.previousSuccessRates!=null)
+        if(AppData.Instance.previousSuccessRates!=null)
         {
             SuccessRateBanner.SetActive(true);
             prevSR.text = $" previous SR : {AppData.Instance.previousSuccessRates[0]}%";
             currSR.text = $"Current Success Rate : {AppData.Instance.previousSuccessRates[1]}%";
+        }
+        else
+        {
+            Debug.Log("Hello gamestate");
         }
         foreach (GameObject g in pauseObjects)
         {
@@ -400,17 +434,23 @@ public class PongGameController : MonoBehaviour
 
     public void showFinished()
     {
+        // finalScore.text = $"{nSuccess:D3}";
+        finalScore.text = $"{AppData.Instance.selectedGame.cummulativeHits:D4}";
+
         foreach (GameObject g in finishObjects)
         {
             g.SetActive(true);
         }
-        if(AppData.Instance.previousSuccessRates!=null)
-        {
-            SuccessRateBanner.SetActive(true);
-            prevSR.text = $" previous SR : {AppData.Instance.previousSuccessRates[0]}%";
-            currSR.text = $"Current Success Rate : {AppData.Instance.previousSuccessRates[1]}%";
-        }
-         gameOverText.text = (playerScore >= enemyScore) ? "GAME OVER!\nPLAYER WON!" : "GAME OVER!\nENEMY WON!";
+        
+        // if(AppData.Instance.previousSuccessRates!=null)
+        // {
+        //     SuccessRateBanner.SetActive(true);
+        //     prevSR.text = $" previous SR : {AppData.Instance.previousSuccessRates[0]}%";
+        //     currSR.text = $"Current Success Rate : {AppData.Instance.previousSuccessRates[1]}%";
+        // }
+        gameOverText.text = (playerScore >= enemyScore) ? "GAME OVER!\nPLAYER WON!" : "GAME OVER!\nENEMY WON!";
+        AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- game finished");
+         
     }
 
     public void hideFinished()
@@ -443,6 +483,8 @@ public class PongGameController : MonoBehaviour
                 showPaused();
                 // Check of game has been started.
                 if (isGameStarted) gameState = GameStates.START;
+                Debug.Log($" gamestate x1: {gameState} + {isGameStarted}");
+
                 break;
             case GameStates.START:
                 hidePaused();
@@ -502,6 +544,8 @@ public class PongGameController : MonoBehaviour
                 
                 break;
             case GameStates.PAUSED:
+                AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- game paused");
+
                 //Debug.Log(isGamePaused);
                 break;
             case GameStates.STOP:
@@ -514,15 +558,14 @@ public class PongGameController : MonoBehaviour
                 AppData.Instance.previousSuccessRates =null;
                 if (AppData.Instance.speedData.gameSpeed != gameSpeed)
                 {
-                    AppData.Instance.speedData.updateGameSpeedfromGame(gameSpeed);
                     AppData.Instance.speedData.setGameSpeed(gameSpeed);
                 }
                 
 
                 if (AppData.Instance.aanController.stateChange) UpdatePlutoAANTarget();
                 // Change to done only when the AAN Controller is AromMoving or Idle state.
-                if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AromMoving
-                    || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.Idle) 
+                if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AROMMOVING
+                    || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.IDLE) 
                 {
                     float gameTime = HomerTherapy.TrialDuration - triaTimeLeft;
                     Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
@@ -531,6 +574,7 @@ public class PongGameController : MonoBehaviour
                     lastHighScore = AppData.Instance.successRate * (PlutoAANController.MAXCONTROLBOUND - AppData.Instance.CurrentControlBound);
                      if (AppData.Instance.selectedMechanism.trialNumberDay == AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
                     {
+                        AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game finished and changed to Choose Mechanism scene due to allocated trials has over.");
                         SceneManager.LoadScene("CHMECH");
                     }
                     
@@ -543,7 +587,7 @@ public class PongGameController : MonoBehaviour
                         }
                         else
                         {
-                            AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(AppData.Instance.selectedMechanism.name, AppData.Instance.selectedGame);
+                            AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(AppData.Instance.selectedMechanism.name, AppData.Instance.selectedGameName);
                             showFinished();
                             gameEnd();
                         }
@@ -560,13 +604,13 @@ public class PongGameController : MonoBehaviour
     {
         switch(AppData.Instance.aanController.state)
         {
-            case PlutoAANController.PlutoAANState.AromMoving:
+            case PlutoAANController.PlutoAANState.AROMMOVING:
                 // Reset AAN Target
                 PlutoComm.ResetAANTarget();
                 break;
-            case PlutoAANController.PlutoAANState.RelaxToArom:
-            case PlutoAANController.PlutoAANState.AssistToTargetAtBoundary:
-            case PlutoAANController.PlutoAANState.AssistToTargetInBoundary:
+            case PlutoAANController.PlutoAANState.RELAXTOAROM:
+            case PlutoAANController.PlutoAANState.ASSISTTOTARGETATBOUNDARY:
+            case PlutoAANController.PlutoAANState.ASSISTTOTARGETINBOUNDARY:
                 // Set AAN Target to the nearest AROM edge.
                 float[] _newAanTarget = AppData.Instance.aanController.GetNewAanTarget();
                 PlutoComm.setAANTarget(_newAanTarget[0], _newAanTarget[1], _newAanTarget[2], _newAanTarget[3]);
@@ -602,12 +646,23 @@ public class PongGameController : MonoBehaviour
         // gameSpeed = 20.0f; //temp
         // Attach PLUTO button event.
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
-        reminderPanel.SetActive(false);
+        // reminderPanel.SetActive(false);
+        if (AppData.Instance.selectedMechanism.trialNumberDay >= AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
+        {
+            reminderPanel.SetActive(true);
+
+        }
+        else
+        {
+            reminderPanel.SetActive(false);
+        }
         
     }
     private void onPlutoButtonReleased()
     {
         isButtonPressed = true;
+        AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- pluto button pressed");
+
     }
 
     public float AngleToScreen(float angle) => Mathf.Clamp(-playSize + (angle - aprom[0]) * (2 * playSize) / (aprom[1] - aprom[0]), bottomBound, topBound);
@@ -617,9 +672,12 @@ public class PongGameController : MonoBehaviour
         // Start new trial.
         AppData.Instance.StartNewTrial();
 
-         status.text = $"s.no: {AppData.Instance.currentSessionNumber}\n" +
-              $"trialNo: {AppData.Instance.selectedMechanism.trialNumberSession}\n" +
-              $"CB: {AppData.Instance.CurrentControlBound}";
+        gsc.sessionDetailsText.text = $"sessionNo: {AppData.Instance.currentSessionNumber}\n" +
+            $"trialNo: {AppData.Instance.selectedMechanism.trialNumberSession}\n" +
+            $"CB: {AppData.Instance.CurrentControlBound}";
+              
+        reminderPanel.SetActive(false);
+        
         // Put PLUTO in the AAN mode.
         if ((PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME1") && (PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME2"))
         {
@@ -665,8 +723,8 @@ public class PongGameController : MonoBehaviour
     }
     private void UpdateText()
     {
-        timeLeftText.text = $"Time Left: {(int)triaTimeLeft}";
-        gameSpeedViewer.text = $"GS :{(int)gameSpeed}";
+        timeLeftText.text = $"TIME: {(int)triaTimeLeft}";
+        // gameSpeedViewer.text = $"GS :{(int)gameSpeed}";
         //core.text = $"Score: {nSuccess}";
     }
 }

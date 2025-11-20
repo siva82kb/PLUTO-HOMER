@@ -71,7 +71,7 @@ public class AROMsceneHandler : MonoBehaviour
         nextButton.SetActive(false);
 
         // Update the min and max values.
-        angLimit = AppData.Instance.selectedMechanism.IsMechanism("HOC") ? PlutoComm.CALIBANGLE[PlutoComm.mechanism] : PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism];
+        angLimit = AppData.Instance.selectedMechanism.IsMechanism("HOC") ? PlutoComm.CALIBANGLE[PlutoComm.mechanism] +10.0f: PlutoComm.MECHOFFSETVALUE[PlutoComm.mechanism]+10.0f;
         aromSlider.Setup(-angLimit, angLimit, AppData.Instance.selectedMechanism.oldRom.aromMin, AppData.Instance.selectedMechanism.oldRom.aromMax);
         aromSlider.minAng = 0;
         aromSlider.maxAng = 0;
@@ -241,8 +241,8 @@ public class AROMsceneHandler : MonoBehaviour
         }
         else
         {
-            jointAngle.text = "Aperture" + ConvertToCM(PlutoComm.angle).ToString("0.0") + "cm";
-            jointAngleHoc.text = "Aperture" + ConvertToCM(PlutoComm.angle).ToString("0.0") + "cm";
+            // jointAngle.text = "Aperture" + ConvertToCM(PlutoComm.angle).ToString("0.0") + "cm";
+            // jointAngleHoc.text = "Aperture" + ConvertToCM(PlutoComm.angle).ToString("0.0") + "cm";
         }
     }
 }

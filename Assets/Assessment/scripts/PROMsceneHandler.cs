@@ -151,7 +151,7 @@ public class PROMsceneHandler : MonoBehaviour
                 startButton.SetActive(false);
                 _tmin = promSlider.minAng;
                 _tmax = promSlider.maxAng;
-                //Debug.Log("max angle :" + _tmax);
+                Debug.Log("max angle :" + _tmax);
                 relaxText.color= Color.white;
                 relaxText.text = FormatRelaxText(AppData.Instance.selectedMechanism.oldRom.promMin, AppData.Instance.selectedMechanism.oldRom.promMax);
                 nextButton.SetActive(true);
@@ -164,7 +164,8 @@ public class PROMsceneHandler : MonoBehaviour
                 break;
         }
     }
-    
+
+
     private void checkPromLimits()
     {
         bool isHOC=AppData.Instance.selectedMechanism.IsMechanism("HOC");
@@ -174,26 +175,23 @@ public class PROMsceneHandler : MonoBehaviour
         if (isHOC)
         {
             Debug.Log($"prom min: {_tmin},{_tmax},  arom :{AppData.Instance.selectedMechanism.newRom.aromMin}, {AppData.Instance.selectedMechanism.newRom.aromMax}");
-            condition = _tmax > AppData.Instance.selectedMechanism.newRom.aromMax;
-        }
-        else if (FME)
-        {
-            // Debug.Log($"prom :{_tmin}, {_tmax}, arom :{AppData.Instance.selectedMechanism.newRom.aromMin}, {AppData.Instance.selectedMechanism.newRom.aromMax}");
-            // Debug.Log(_tmin <= (AppData.Instance.selectedMechanism.newRom.aromMin + 5.0f));
-            // Debug.Log(_tmax >= (AppData.Instance.selectedMechanism.newRom.aromMax - 5.0f));
+            Debug.Log($"condition : {_tmin}, {AppData.Instance.selectedMechanism.newRom.aromMin},{_tmin > AppData.Instance.selectedMechanism.newRom.aromMin},{_tmin< AppData.Instance.selectedMechanism.newRom.aromMin}");
 
-            condition = (_tmin > (AppData.Instance.selectedMechanism.newRom.aromMin + 5.0f)) || (_tmax < (AppData.Instance.selectedMechanism.newRom.aromMax - 5.0f));
-            Debug.Log($"cnd: {condition}");
+            condition = _tmin > AppData.Instance.selectedMechanism.newRom.aromMin;
+            Debug.Log($"condition : {condition}");
         }
         else
         {
-            condition = _tmin >= AppData.Instance.selectedMechanism.newRom.aromMin || _tmax <= AppData.Instance.selectedMechanism.newRom.aromMax;
+            Debug.Log(_tmin > (AppData.Instance.selectedMechanism.newRom.aromMin + 5.0f));
+            Debug.Log(_tmax < (AppData.Instance.selectedMechanism.newRom.aromMax - 5.0f));
+            Debug.Log($"condition : {_tmin},{_tmax}, {AppData.Instance.selectedMechanism.newRom.aromMin},{AppData.Instance.selectedMechanism.newRom.aromMax},{_tmin > AppData.Instance.selectedMechanism.newRom.aromMin + 5.0f},{_tmax < AppData.Instance.selectedMechanism.newRom.aromMax - 5.0f}");
+            condition = _tmin > (AppData.Instance.selectedMechanism.newRom.aromMin + 5.0f) || _tmax < (AppData.Instance.selectedMechanism.newRom.aromMax - 5.0f);
+            Debug.Log(condition);
         }
-        
         if (condition)
         {
-            // Debug.Log($"prom min :{_tmin}, arom {AppData.Instance.selectedMechanism.newRom.aromMin},,{_tmin < AppData.Instance.selectedMechanism.newRom.aromMin}");
-            // Debug.Log($" prom max :{_tmax}, arom {AppData.Instance.selectedMechanism.newRom.aromMax},,{_tmax > AppData.Instance.selectedMechanism.newRom.aromMax}");
+            Debug.Log($"prom min :{_tmin}, arom { AppData.Instance.selectedMechanism.newRom.aromMin},,{_tmin < AppData.Instance.selectedMechanism.newRom.aromMin}");
+            Debug.Log($" prom max :{_tmax}, arom { AppData.Instance.selectedMechanism.newRom.aromMax},,{_tmax> AppData.Instance.selectedMechanism.newRom.aromMax}");
 
             promSlider.UpdateMinMaxvalues = false;
             RestartAssessment();
@@ -204,8 +202,8 @@ public class PROMsceneHandler : MonoBehaviour
         }
         else
         {
-            Debug.Log($" min :{promSlider._currePostion.value}, arom {AppData.Instance.selectedMechanism.newRom.aromMin},,{promSlider._currePostion.value <= AppData.Instance.selectedMechanism.newRom.aromMin}");
-            Debug.Log($" min :{promSlider._currePostion.value}, arom {AppData.Instance.selectedMechanism.newRom.aromMax},,{promSlider._currePostion.value <= AppData.Instance.selectedMechanism.newRom.aromMax}");
+            Debug.Log($" min :{promSlider._currePostion.value}, arom { AppData.Instance.selectedMechanism.newRom.aromMin},,{promSlider._currePostion.value <= AppData.Instance.selectedMechanism.newRom.aromMin}");
+            Debug.Log($" min :{promSlider._currePostion.value}, arom { AppData.Instance.selectedMechanism.newRom.aromMax},,{promSlider._currePostion.value <= AppData.Instance.selectedMechanism.newRom.aromMax}");
             promSlider.UpdateMinMaxvalues = true;
             curreposition.SetActive(true);
             currepositionHoc.SetActive(AppData.Instance.selectedMechanism.IsMechanism("HOC"));
@@ -298,8 +296,8 @@ public class PROMsceneHandler : MonoBehaviour
         }
         else
         {
-            JointAngle.text = "Aperture" + ConvertToCM(PlutoComm.angle).ToString("0.0") + "cm";
-            JointAngleHoc.text = "Aperture" + ConvertToCM(PlutoComm.angle).ToString("0.0") + "cm";
+            // JointAngle.text = "Aperture" + ConvertToCM(PlutoComm.angle).ToString("0.0") + "cm";
+            // JointAngleHoc.text = "Aperture" + ConvertToCM(PlutoComm.angle).ToString("0.0") + "cm";
         }
     }
 }

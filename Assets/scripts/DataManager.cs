@@ -39,16 +39,21 @@ public static class DataManager
 
     public static string configFile = basePath + "/configdata.csv";
     public static string sessionFile { get; private set; }
+    
+    public static string GetUploadStatusFile= @"C:/DeviceSetups/Pluto/uploadStatus.txt";
+    public static string status{ get; private set; }
 
     
 
     // Sessions file definitions.
     public static string[] SESSIONFILEHEADER = new string[] {
         "SessionNumber", "DateTime",
-        "TrialNumberDay", "TrialNumberSession", "TrialType", "TrialStartTime", "TrialStopTime", "TrialRawDataFile", 
-        "Mechanism", 
-        "GameName", "GameParameter", "GameSpeed",  
-        "AssistMode", "DesiredSuccessRate", "SuccessRate", "CurrentControlBound", "NextControlBound","MoveTime"
+        "TrialNumberDay", "TrialNumberSession", "TrialType", "TrialStartTime", "TrialStopTime", "TrialRawDataFile",
+        "Mechanism",
+        "GameName", "GameParameter", "GameSpeed",
+        "AssistMode", "DesiredSuccessRate", "SuccessRate", "CurrentControlBound", "NextControlBound","MoveTime",
+        "CurrentTargets", "CurrentHits", "CurrentMisses",
+        "CummulativeTargets", "CummulativeHits", "CummulativeMisses",
     };
 
     // Raw data header.    
@@ -90,9 +95,11 @@ public static class DataManager
 
     // Fix stupid Window's path separator issue.
     public static string FixPath(string path) => path.Replace("\\", "/");
+    public static string setStatus(string state) => status = state;
 
-    public static void setUserId(string userID){
-        basePath = FixPath(Path.Combine(Application.dataPath,"data", AppData.Instance.userID,"data"));
+    public static void setUserId(string userID)
+    {
+        basePath = FixPath(Path.Combine(Application.dataPath, "data", AppData.Instance.userID, "data"));
         configFile = basePath + "/configdata.csv";
     }
 

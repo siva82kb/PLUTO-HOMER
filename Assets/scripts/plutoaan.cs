@@ -46,13 +46,13 @@ public class PlutoAANController
 
     public enum PlutoAANState
     {
-        None = 0,                       // None state. The AAN is not engaged.
-        NewTrialTargetSet,              // Target set but not started moving.
-        AromMoving,                     // Moving in the AROM.
-        RelaxToArom,                    // Relax control to reach nearest AROM edge.
-        AssistToTargetInBoundary,       // Assisting to reach target.
-        AssistToTargetAtBoundary,       // Assisting to reach target.
-        Idle                            // Idle state. The AAN is engaged but doing nothing.
+        NONE = 0,                       // None state. The AAN is not engaged.
+        NEWTRAILTARGETSET,              // Target set but not started moving.
+        AROMMOVING,                     // Moving in the AROM.
+        RELAXTOAROM,                    // Relax control to reach nearest AROM edge.
+        ASSISTTOTARGETINBOUNDARY,       // Assisting to reach target.
+        ASSISTTOTARGETATBOUNDARY,       // Assisting to reach target.
+        IDLE                            // Idle state. The AAN is engaged but doing nothing.
     }
 
     // Mechanism details
@@ -135,7 +135,7 @@ public class PlutoAANController
         targetPosition = 0;
         maxDuration = 0;
         trialRunning = false;
-        state = PlutoAANState.None;
+        state = PlutoAANState.NONE;
         positionQ = new Queue<float>();
         timeQ = new Queue<float>();
         trialTime = 0;
@@ -227,7 +227,7 @@ private bool CheckNoMovement(float actual, float aromInitPos)
 
         if (positionStopwatch.ElapsedMilliseconds >= NO_MOVEMENT_THRESHOLD)
         {
-            state = PlutoAANState.AssistToTargetInBoundary;
+            state = PlutoAANState.ASSISTTOTARGETINBOUNDARY;
             GenerateAssistToTargetAanTarget(actual, true);
             UnityEngine.Debug.Log("Assist triggered");
             PlutoAanLogger.LogInfo(
@@ -259,7 +259,7 @@ private bool CheckNoMovement(float actual, float aromInitPos)
         // UnityEngine.Debug.Log($"state : {state}");
 
         // Do nothing if the state is None.
-        if (state == PlutoAANState.None) return;
+        if (state == PlutoAANState.NONE) return;
 
         // Update trial time
         trialTime += delT;
@@ -274,7 +274,7 @@ private bool CheckNoMovement(float actual, float aromInitPos)
         PlutoAANState _prevstate = state;
         switch (state)
         {
-            case PlutoAANState.NewTrialTargetSet:
+            case PlutoAANState.NEWTRAILTARGETSET:
 
                 //temp add
                 checkVolMov = false;
@@ -287,31 +287,31 @@ private bool CheckNoMovement(float actual, float aromInitPos)
                 {
                     case TargetType.InAromFromArom:
                     case TargetType.InPromFromArom:
-                        state = PlutoAANState.AromMoving;
+                        state = PlutoAANState.AROMMOVING;
                         PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | {GetTargetType()}");
                         break;
                     case TargetType.InAromFromProm:
                     case TargetType.InPromFromPromCrossArom:
-                        state = PlutoAANState.RelaxToArom;
+                        state = PlutoAANState.RELAXTOAROM;
                         // Generate target to relax to AROM.
                         GenerateRelaxToAromAanTarget(actual);
                         PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
                         break;
                     case TargetType.InPromFromPromNoCrossArom:
-                        state = PlutoAANState.AssistToTargetAtBoundary;
+                        state = PlutoAANState.ASSISTTOTARGETATBOUNDARY;
                         // Generate target to assist.
                         GenerateAssistToTargetAanTarget(actual, false);
                         PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
                         break;
                 }
                 break;
-            case PlutoAANState.AromMoving:
+            case PlutoAANState.AROMMOVING:
                 // UnityEngine.Debug.Log($"y state : {state}");
 
                 // Check if the trial is done.
                 if (trialDone)
                 {
-                    state = PlutoAANState.Idle;
+                    state = PlutoAANState.IDLE;
                     return;
                 }
                 if (!setARInitPos)
@@ -332,13 +332,13 @@ private bool CheckNoMovement(float actual, float aromInitPos)
                 float _arompos = (actual - aRom[0]) / (aRom[1] - aRom[0]);
                 if ((_dir > 0 && _arompos >= BOUNDARY) || (_dir < 0 && _arompos <= (1 - BOUNDARY)))
                 {
-                    state = PlutoAANState.AssistToTargetAtBoundary;
+                    state = PlutoAANState.ASSISTTOTARGETATBOUNDARY;
                     // Generate target to assist.
                     GenerateAssistToTargetAanTarget(actual, true);
                     PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
                 }
                 break;
-            case PlutoAANState.RelaxToArom:
+            case PlutoAANState.RELAXTOAROM:
 
                 // Check if AROM has not been reached.
                 //   if (CheckNoMovement(actual)) return;
@@ -354,30 +354,30 @@ private bool CheckNoMovement(float actual, float aromInitPos)
                 if (IsActualInArom(actual))
                 {
                     // AROM reached.
-                    state = PlutoAANState.AromMoving;
+                    state = PlutoAANState.AROMMOVING;
                     // Reset AAN target
                     _newAanTarget[0] = 999;
                     PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
                     return;
                 }
                 break;
-            case PlutoAANState.AssistToTargetAtBoundary:
+            case PlutoAANState.ASSISTTOTARGETATBOUNDARY:
                 // Check if the trial is done.
                 if (trialDone)
                 {
                     // We need to relax to the AroM.
                     // Generate target to relax to AROM.
                     GenerateRelaxToAromAanTarget(actual);
-                    state = PlutoAANState.RelaxToArom;
+                    state = PlutoAANState.RELAXTOAROM;
                     PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
                 }
                 break;
-            case PlutoAANState.AssistToTargetInBoundary:
+            case PlutoAANState.ASSISTTOTARGETINBOUNDARY:
                 // Check if the trial is done.
                 if (trialDone)
                 {
                     GenerateRelaxToAromAanTarget(actual);
-                    state = PlutoAANState.RelaxToArom;
+                    state = PlutoAANState.RELAXTOAROM;
                     PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");     
                 }
                 break;
@@ -390,7 +390,7 @@ private bool CheckNoMovement(float actual, float aromInitPos)
         targetPosition = 0;
         maxDuration = 0;
         trialRunning = false;
-        state = PlutoAANState.None;
+        state = PlutoAANState.NONE;
         _newAanTarget[0] = 999;
         setARInitPos = false;
         activeRangeInitPos = 0;
@@ -416,7 +416,7 @@ private bool CheckNoMovement(float actual, float aromInitPos)
         positionQ.Enqueue(actual);
         timeQ.Enqueue(trialTime);
         stateChange = true;
-        state = PlutoAANState.NewTrialTargetSet;
+        state = PlutoAANState.NEWTRAILTARGETSET;
         PlutoAanLogger.LogInfo($"SetNewTrialDetails | {initialPosition} -> {targetPosition} in {maxDuration}");
     }
 

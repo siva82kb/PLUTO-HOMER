@@ -19,7 +19,7 @@ public partial class AppData
      * CONSTANT FIXED VARIABLES.
      */
     // COM Port for the device
-    public const string COMPort = "COM21";
+    public const string COMPort = "COM47";
 
 
     // What is this used for?
@@ -36,7 +36,8 @@ public partial class AppData
     public PlutoUserData userData;
     public MechanismSpeed speedData;
     public PlutoMechanism selectedMechanism { get; private set; }
-    public string selectedGame { get; private set; } = null;
+    public string selectedGameName { get; private set; } = null;
+    public PlutoGame selectedGame;
 
     /*
      * SESSION DETAILS
@@ -107,7 +108,7 @@ public partial class AppData
         userData = new PlutoUserData(DataManager.configFile, DataManager.sessionFile);
         // Selected mechanism and game.
         selectedMechanism = null;
-        selectedGame = null;
+        selectedGameName = null;
 
         // Get current session number.
         currentSessionNumber = userData.dTableSession.Rows.Count > 0 ? 
@@ -143,7 +144,7 @@ public partial class AppData
         // without having to go through the calibration scene.
         if (!doNotResetMech)
         {
-            PlutoComm.calibrate("NOMECH");
+            PlutoComm.calibrateStart("NOMECH");
         }
         PlutoComm.getVersion();
         // Start sensorstream.
@@ -164,6 +165,7 @@ public partial class AppData
         }
         // Set the mechanism name.
         selectedMechanism = new PlutoMechanism(name: name, side: trainingSide, sessno: currentSessionNumber);
+        speedData = new MechanismSpeed();
         AppLogger.LogInfo($"Selected mechanism '{selectedMechanism.name}'.");
         AppLogger.SetCurrentMechanism(selectedMechanism.name);
         AppLogger.LogInfo($"Trial numbers for ' {selectedMechanism.name}' updated. Day: {selectedMechanism.trialNumberDay}, Session: {selectedMechanism.trialNumberSession}.");
@@ -176,8 +178,16 @@ public partial class AppData
 
     public void SetGame(string gameName)
     {
-        selectedGame = gameName;
-        previousSuccessRates =AppData.Instance.userData.GetLastTwoSuccessRates(selectedMechanism.name , selectedGame);
+        selectedGameName = gameName;
+        previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(selectedMechanism.name, selectedGameName);
+        int[] cuScores = Instance.userData.readCummulativeHitsMissesForGameMovement(selectedGameName, selectedMechanism?.name);
+        // Set the selected game.
+        selectedGame = new PlutoGame(gName: selectedGameName,
+                                    mName: selectedMechanism?.name,
+                                    gCuTargets: cuScores[0],
+                                    gCuHits: cuScores[1],
+                                    gCuMisses: cuScores[2]);
+        
         // // Cannot set game before selecting mechanism.
         // if (selectedMechanism == null) 
         // {
@@ -192,7 +202,7 @@ public partial class AppData
         //     selectedGame = null;
         //     return;
         // }
-        
+
         // // Set the game object appropriately.
         // switch (gameName)
         // {
@@ -206,8 +216,8 @@ public partial class AppData
         //         return;
         // }
         // Set selected game.
-        AppLogger.LogInfo($"Selected game '{selectedGame}'.");
-        AppLogger.SetCurrentGame(selectedGame);
+        AppLogger.LogInfo($"Selected game '{selectedGameName}'.");
+        AppLogger.SetCurrentGame(selectedGameName);
     }
 
     public string trainingSide => userData?.rightHand == true ? "RIGHT" : "LEFT";

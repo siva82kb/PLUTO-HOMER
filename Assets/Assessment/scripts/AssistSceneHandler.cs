@@ -113,6 +113,7 @@ public class AssistsceneHandler : MonoBehaviour
         apromSlider.maxAng = 0;
         inst.text = "";
         inst1.text = "";
+        shadow.color = new Color(1f, 0.5f, 0f, 0.7f); // Orange with 70% opacity
 
         redoButton.SetActive(false);
         runOnce = false;
@@ -141,6 +142,7 @@ public class AssistsceneHandler : MonoBehaviour
         // Update central text.
         cText.gameObject.SetActive(AppData.Instance.selectedMechanism.IsMechanism("HOC"));
         cText.text = AppData.Instance.selectedMechanism.IsMechanism("HOC") ? "Closed" : "";
+        inst1.text = "Press PLUTO button to start the AAN";
 
         // Update the left and right text.
         (_rinx, _linx) = AppData.Instance.IsTrainingSide("RIGHT") ? (1, 0) : (0, 1);
@@ -150,7 +152,7 @@ public class AssistsceneHandler : MonoBehaviour
         // Set the state to INIT.
         _state = AssessStates.INIT;
         inst.text = "";
-        inst1.text = "";
+        // inst1.text = "";
 
         // Attach callback for PLUTO button release.
         PlutoComm.OnButtonReleased +=    OnPlutoButtonReleased;
@@ -329,6 +331,8 @@ public class AssistsceneHandler : MonoBehaviour
                         redoButton.SetActive(true);
                         inst.text = $"APROM Reached both ends min : {_tmin},max :{_tmax}.";
                         inst1.text = "Press PLUTO button to move next scene";
+                        // shadow.color = new Color(1f, 0.5f, 0f, 0.5f);
+                     shadow.color = new Color(0.2f, 0.85f, 0.4f, 0.8f); 
 
                         yield return null;
                         continue;
@@ -338,7 +342,7 @@ public class AssistsceneHandler : MonoBehaviour
                         torque += 0.1f;
 
                     torque = Mathf.Clamp(torque, -1.0f, 0.0f);
-                   // torque = Mathf.Min(0.0f, Mathf.Clamp(torque, -1.0f, 0.0f));
+                    // torque = Mathf.Min(0.0f, Mathf.Clamp(torque, -1.0f, 0.0f));
 
                     PlutoComm.setControlTarget(torque);
                 }
@@ -351,7 +355,9 @@ public class AssistsceneHandler : MonoBehaviour
                     torque = 0f;
                     redoButton.SetActive(true);
                     inst.text = $"APROM Reached both ends min : {_tmin},max :{_tmax}.";
-                    inst1.text ="Press PLUTO button to move next scene";
+                    inst1.text = "Press PLUTO button to move next scene";
+                    //  shadow.color = new Color(0f, 240f, 240f, 1f); 
+                     shadow.color = new Color(0.2f, 0.85f, 0.4f, 0.8f); 
                     
                 }
             }
@@ -370,7 +376,7 @@ public class AssistsceneHandler : MonoBehaviour
     public void OnExit()
     {
         PlutoComm.setControlType("NONE");
-        SceneManager.LoadScene("CHGAME");
+        SceneManager.LoadScene("ASSESS");
     }
 
     void Update()
@@ -378,7 +384,8 @@ public class AssistsceneHandler : MonoBehaviour
         PlutoComm.sendHeartbeat();
 
         currentAngle = PlutoComm.angle;
-        jointAngle.text = $"{((int)PlutoComm.angle).ToString()} + Torque :{PlutoComm.target}";
+        // jointAngle.text = $"{((int)PlutoComm.angle).ToString()} + Torque :{PlutoComm.target}";
+        jointAngle.text = $"Angle: {((int)PlutoComm.angle).ToString()}";
         jointAngleHoc.text = ((int)PlutoComm.getHOCDisplay(PlutoComm.angle)).ToString();
         runAssessmentStateMachine();
         // Debug.Log($" ct: {PlutoComm.CONTROLTYPE[PlutoComm.controlType]} + tor :{PlutoComm.target}");
@@ -406,7 +413,7 @@ public class AssistsceneHandler : MonoBehaviour
                 // runAssessment();
                 if (!runOnce1)
                 {
-                    shadow.color = new Color(1f, 0.5f, 0f, 0.5f); // Orange with 70% opacity
+                    shadow.color = new Color(0f, 255f, 79f, 0.7f); // Orange with 70% opacity
                StartCoroutine(RunAssessment());
                     runOnce1 = true;
                 }
@@ -475,6 +482,7 @@ public class AssistsceneHandler : MonoBehaviour
         Debug.Log("Assessment started");
         apromSlider.startAssessment(PlutoComm.angle);
         apromSlider.UpdateMinMaxvalues = true;
+        inst1.text = "";
     }
 
     private void UpdateStatusText()

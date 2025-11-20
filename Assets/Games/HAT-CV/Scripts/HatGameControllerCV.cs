@@ -386,8 +386,8 @@ public class HatGameControllerCV : MonoBehaviour
 
                 if (AppData.Instance.aanController.stateChange) UpdatePlutoAANTarget();
                 // Change to done only when the AAN Controller is AromMoving or Idle state.
-                if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AromMoving
-                    || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.Idle)
+                if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AROMMOVING
+                    || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.IDLE)
                 {
                     float gameTime = HomerTherapy.TrialDuration - triaTimeLeft;
                     Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
@@ -395,7 +395,7 @@ public class HatGameControllerCV : MonoBehaviour
                     gameState = GameStates.DONE;
                     if (AppData.Instance.previousSuccessRates == null)
                     {
-                        AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(AppData.Instance.selectedMechanism.name, AppData.Instance.selectedGame);
+                        AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(AppData.Instance.selectedMechanism.name, AppData.Instance.selectedGameName);
                         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
                     }
                 }
@@ -408,13 +408,13 @@ public class HatGameControllerCV : MonoBehaviour
     {
         switch (AppData.Instance.aanController.state)
         {
-            case PlutoAANController.PlutoAANState.AromMoving:
+            case PlutoAANController.PlutoAANState.AROMMOVING:
                 // Reset AAN Target
                 PlutoComm.ResetAANTarget();
                 break;
-            case PlutoAANController.PlutoAANState.RelaxToArom:
-            case PlutoAANController.PlutoAANState.AssistToTargetAtBoundary:
-            case PlutoAANController.PlutoAANState.AssistToTargetInBoundary:
+            case PlutoAANController.PlutoAANState.RELAXTOAROM:
+            case PlutoAANController.PlutoAANState.ASSISTTOTARGETATBOUNDARY:
+            case PlutoAANController.PlutoAANState.ASSISTTOTARGETINBOUNDARY:
                 // Set AAN Target to the nearest AROM edge.
                 float[] _newAanTarget = AppData.Instance.aanController.GetNewAanTarget();
                 PlutoComm.setAANTarget(_newAanTarget[0], _newAanTarget[1], _newAanTarget[2], _newAanTarget[3]);

@@ -101,13 +101,10 @@ public static class JediComm
                     ConnectToRobot.isPLUTO = true;
                     PlutoComm.parseByteArray(rawBytes, plCount, plTime);
                 }
-                else
-                {
-                    ConnectToRobot.isPLUTO = false;
-                }
             }
             catch (TimeoutException)
             {
+                ConnectToRobot.isPLUTO = false;
                 continue;
             }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Collections.Concurrent;
 using System.Linq;
 using UnityEngine;
@@ -34,7 +35,7 @@ public class summarySceneHandler : MonoBehaviour
     public void mechanismClicked(Button button)
     {
         title = button.gameObject.name.ToUpper();
-        Debug.Log("button name:" + title);
+        // Debug.Log("button name:" + title);
         int n = Array.IndexOf(PlutoComm.MECHANISMS, title);
         title = PlutoComm.MECHANISMSTEXT[n-1];
         sessionDataHandler.CalculateMovTimeForMechanism(button.gameObject.name.ToUpper());
@@ -44,15 +45,19 @@ public class summarySceneHandler : MonoBehaviour
     //To disconnect the Robot 
     public void onPlutoButtonReleased()
     {
+            // SceneManager.LoadScene("DATAUPLOAD");
+
         _actionQueue.Enqueue(() =>
         {
             PlutoComm.stopSensorStream();
 
             ConnectToRobot.disconnect();
-            Application.Quit();
-        #if UNITY_EDITOR
-                    UnityEditor.EditorApplication.isPlaying = false; 
-        #endif
+            SceneManager.LoadScene("DATAUPLOAD");
+            // Application.Quit();
+            // Process.Start("shutdown", "/s /t 0");
+            // #if UNITY_EDITOR
+            //     UnityEditor.EditorApplication.isPlaying = false; 
+            // #endif
         });
     }
     public void LoginScene(){
@@ -66,7 +71,7 @@ public class summarySceneHandler : MonoBehaviour
     //To initialize the barchart with whole data of moveTime per day
     public void initializeChart()
     {
-        Debug.Log("Is bar chart active: " + barchart.gameObject.activeSelf);
+        // Debug.Log("Is bar chart active: " + barchart.gameObject.activeSelf);
 
         sessionDataHandler = new SessionDataHandler(DataManager.sessionFile);
 
@@ -111,7 +116,7 @@ public class summarySceneHandler : MonoBehaviour
     {
         if (barchart == null)
         {
-            Debug.LogWarning("BarChart is null. Make sure it is initialized.");
+            // Debug.LogWarning("BarChart is null. Make sure it is initialized.");
             return;
         }
 

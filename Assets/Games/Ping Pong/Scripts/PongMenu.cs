@@ -22,6 +22,8 @@ public class PongMenu : MonoBehaviour
         isButtonPressed = false;
         playButton.onClick.AddListener(LoadNextScene);
         exitButton.onClick.AddListener(onExitButtonClicked);
+        StartCoroutine(AutoPlayAfterDelay());
+
     }
 
     // Update is called once per frame
@@ -45,12 +47,12 @@ public class PongMenu : MonoBehaviour
     }
     public void onPlutoButtonReleased()
     {
-            isButtonPressed = true;
+        isButtonPressed = true;
     }
     void LoadNextScene()
     {
         SceneManager.LoadScene(gameScene);
-        AppLogger.LogInfo("Switching scene to pong_game."); 
+        AppLogger.LogInfo("Switching scene to pong_game.");
 
     }
     private void OnDestroy()
@@ -59,6 +61,12 @@ public class PongMenu : MonoBehaviour
         {
             PlutoComm.OnButtonReleased -= onPlutoButtonReleased;
         }
+    }
+    private IEnumerator AutoPlayAfterDelay()
+    {
+        yield return new WaitForSeconds(0.75f);
+        SceneManager.LoadScene(gameScene);
+        AppLogger.LogInfo("Switching scene to pong_game.");
     }
 
 }

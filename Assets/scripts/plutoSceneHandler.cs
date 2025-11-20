@@ -286,7 +286,7 @@ public class Pluto_SceneHandler : MonoBehaviour
         isCalibrating = tglCalibSelect.isOn;
         if (isCalibrating)
         {
-            PlutoComm.calibrate("NOMECH");
+            PlutoComm.calibrateStart("NOMECH");
             calibState = CalibrationState.WAIT_FOR_ZERO_SET;
         }
     }
@@ -522,7 +522,7 @@ public class Pluto_SceneHandler : MonoBehaviour
                 {
                     calibState = CalibrationState.ZERO_SET;
                     // Get the current mechanism for calibration.
-                    PlutoComm.calibrate(PlutoComm.MECHANISMS[_mechInx]);
+                    PlutoComm.calibrateStart(PlutoComm.MECHANISMS[_mechInx]);
                 }
                 break;
             case CalibrationState.ZERO_SET:
@@ -531,11 +531,12 @@ public class Pluto_SceneHandler : MonoBehaviour
                     && Math.Abs(_angval) <= 1.1 * PlutoComm.CALIBANGLE[_mechInx])
                 {
                     calibState = CalibrationState.ROM_SET;
+                     PlutoComm.calibrateEnd(PlutoComm.MECHANISMS[_mechInx]);
                 }
                 else
                 {
                     calibState = CalibrationState.ERROR;
-                    PlutoComm.calibrate("NOMECH");
+                    PlutoComm.calibrateStart("NOMECH");
                 }
                 break;
             case CalibrationState.ROM_SET:

@@ -21,7 +21,9 @@ public class ChooseGameSceneHandler : MonoBehaviour
     {
         { "PONG", "PONGMENU" },
         { "TUK", "TUK" },
-        { "HAT", "HAT" }
+        { "HAT", "HAT" },
+        {"RNR","RNRMENU"},
+        {"FRUITCH","FRUITBASKETS"}
     };
     private bool loadgame = false;
 
@@ -34,17 +36,15 @@ public class ChooseGameSceneHandler : MonoBehaviour
             // Inialize the logger
             AppData.Instance.Initialize(SceneManager.GetActiveScene().name, doNotResetMech: false);
         }
+
+        if (Time.timeScale == 0) Time.timeScale = 1;
         // Create a new AAN controller.
         AppData.Instance.aanController = new PlutoAANController(
             mechanism: AppData.Instance.selectedMechanism,
             sessionData: AppData.Instance.userData.dTableSession,
             sessionNo: AppData.Instance.currentSessionNumber
         );
-        Debug.Log(AppData.Instance.selectedMechanism.IsMechanism("FME1") || AppData.Instance.selectedMechanism.IsMechanism("FME2"));
-        Debug.Log(!AppData.Instance.selectedMechanism.IsMechanism("FME1"));
-        Debug.Log(!AppData.Instance.selectedMechanism.IsMechanism("FME2"));
         bool isFME = AppData.Instance.selectedMechanism.IsMechanism("FME1") || AppData.Instance.selectedMechanism.IsMechanism("FME2");
-        Debug.Log($" isFME :{isFME}");
 
         ImgBanner1.SetActive(!isFME);
         ImgBanner2.SetActive(!isFME);
@@ -82,6 +82,13 @@ public class ChooseGameSceneHandler : MonoBehaviour
                     PlutoComm.setControlGain(parsedGain);
                 }
             }
+
+            if (AppData.Instance.selectedMechanism.currRom == null && AppData.Instance.selectedMechanism.name != "FME1" && AppData.Instance.selectedMechanism.name != "FME2" )
+            {
+                AppLogger.LogInfo("Current ROM is null. Going to assessment scene.");
+                SceneManager.LoadScene("ASSESS");
+                return;
+            }
         }
 
         // Update App Logger
@@ -96,7 +103,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
 
         // Make sure No control is set
         PlutoComm.setControlType("NONE");
-
+        Debug.Log(Time.timeScale);
         Debug.Log($"Curr APROM: {AppData.Instance.selectedMechanism.currRom.apromMin:F2}, {AppData.Instance.selectedMechanism.currRom.apromMax:F2}, Curr ROM: {AppData.Instance.selectedMechanism.currRom.promMin:F2}, {AppData.Instance.selectedMechanism.currRom.promMax:F2},{AppData.Instance.selectedMechanism.currRom.aromMin:F2}, {AppData.Instance.selectedMechanism.currRom.aromMax:F2}");
     }
 
@@ -109,6 +116,12 @@ public class ChooseGameSceneHandler : MonoBehaviour
             LoadSelectedGameScene(gameSelected);
             loadgame = false;
         }
+    //    if( Input.GetKeyDown(KeyCode.S))
+    //         {
+    //         AppData.Instance.SetGame("RNR");
+
+    //             SceneManager.LoadScene("RNRMENU");
+    //         }
 
         // if (AppData.Instance.selectedMechanism.trialNumberSession >= AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
         // {
@@ -117,7 +130,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
         //     // AppData.Instance.SetMechanism(null);
         //     return;
         // }
-        
+
         if ((PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME1") && (PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME2"))
         {
             // Magic key cobmination for doing the assessment.

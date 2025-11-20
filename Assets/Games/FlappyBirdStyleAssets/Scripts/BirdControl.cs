@@ -46,9 +46,7 @@ public class BirdControl : MonoBehaviour
         // Set current AROM and PROM.
         arom = AppData.Instance.selectedMechanism.CurrentArom;
         prom = AppData.Instance.selectedMechanism.CurrentProm;
-        aprom = AppData.Instance.selectedMechanism.CurrentAProm;
-
-        
+        aprom = AppData.Instance.selectedMechanism.CurrentAProm;        
         side = AppData.Instance.IsTrainingSide("RIGHT");
         mech = AppData.Instance.selectedMechanism.IsMechanism("HOC");
         
@@ -58,10 +56,7 @@ public class BirdControl : MonoBehaviour
         if(FGC.isGameStarted && !FGC.isGamePaused && !FGC.isGameFinished) Time.timeScale=1f;
 
         Debug.Log($" min : {AngleToScreen(arom[0])}, max : { AngleToScreen( arom[1])}");
-
         // MovementTracker.UpdatePosition(this.transform.position);
-
-
     }
     void FixedUpdate()
     {
@@ -72,22 +67,17 @@ public class BirdControl : MonoBehaviour
         if (startBlinking == true)
         {
             SpriteBlinkingEffect();
-
         }
-        if(FGC.isGameStarted){
-            
+        if(FGC.isGameStarted)
+        {   
             targetAngle = approxRollingAverage(targetAngle, AngleToScreen((PlutoComm.angle)));
-        transform.position = new Vector2(Mathf.SmoothStep(-13, -7, startTime / 2), Mathf.Clamp(targetAngle, -2.5f, 7));
-
+            transform.position = new Vector2(Mathf.SmoothStep(-13, -7, startTime / 2), Mathf.Clamp(targetAngle, -2.5f, 7));
         }
-            
-
     }
 
     float approxRollingAverage(float avg, float new_sample)
     {
         avg = avg * 0.9f + 0.1f * new_sample;
-
         return avg;
     }
     public void SpriteBlinkingEffect()
@@ -121,7 +111,7 @@ public class BirdControl : MonoBehaviour
         if (collision.gameObject.tag == "TopCollider" || collision.gameObject.tag == "BottomCollider")
         {
             startBlinking = true;
-            currentLife++;
+            // currentLife++;
             life.fillAmount = ((float)currentLife / totalLife);
             columnHit = true;
             if (currentLife >= totalLife)

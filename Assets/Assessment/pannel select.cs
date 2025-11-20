@@ -18,8 +18,9 @@ public class assessmentSceneHandler : MonoBehaviour
     public Image aromImage;
     public Image promImagedisabled, aromImageDisabled;
     public TMP_Text Ins;
-    public GameObject[] aromSelected; 
+    public GameObject[] aromSelected;
     public GameObject[] promSelected;
+    public GameObject exitButton;
     private string mechScene = "CHMECH";
     private string chooseGameScene = "CHGAME";
 
@@ -39,6 +40,8 @@ public class assessmentSceneHandler : MonoBehaviour
 
         // Set mechanism name
         mechName.text = PlutoComm.MECHANISMSTEXT[PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, AppData.Instance.selectedMechanism.name)];
+
+        if (AppData.Instance.selectedMechanism.currRom == null) exitButton.SetActive(false);
     }
 
     void Update()

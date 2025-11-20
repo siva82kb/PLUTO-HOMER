@@ -107,7 +107,7 @@ public class OneTimeConfig : MonoBehaviour
         string trainingSide = affectedSideDropdown.options[affectedSideDropdown.value].text;
         Location = location.options[location.value].text;
 
-        string headers = "Date,name,HospitalNumber,Startdate,end ,age,time,WFE,WURD,FPS,HOC,FME1,FME2,TrainingSide,Location";
+        string headers = "Date,Name,HospitalNumber,StartDate,EndDate,Age,Time,WFE,WURD,FPS,HOC,FME1,FME2,TrainingSide,Location";
         string data = $"{date},{name},{hospitalId},{startDate},{endDate},{age},{totalDuration},{wfe},{wurd},{fps},{hoc},{fme1},{fme2},{trainingSide},{Location}";
 
 

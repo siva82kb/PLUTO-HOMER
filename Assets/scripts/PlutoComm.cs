@@ -44,10 +44,10 @@ public static class PlutoComm
         8   // DIAGNOSTICS
     };
     public static readonly double MAXTORQUE = 1.0; // Nm
-    public static readonly int[] INDATATYPECODES = new int[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x80 };
+    public static readonly int[] INDATATYPECODES = new int[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x80 };
     public static readonly string[] INDATATYPE = new string[] {
         "GET_VERSION",
-        "CALIBRATE",
+        "CALIBRATE_START",
         "START_STREAM",
         "STOP_STREAM",
         "SET_CONTROL_TYPE",
@@ -59,6 +59,7 @@ public static class PlutoComm
         "SET_AAN_TARGET",
         "RESET_AAN_TARGET",
         "SET_CONTROL_GAIN",
+        "CALIBRATE_END",
         "HEARTBEAT",
     };
     public static readonly string[] ERRORTYPES = new string[] {
@@ -420,17 +421,31 @@ public static class PlutoComm
         JediComm.SendMessage(new byte[] { (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "GET_VERSION")] });
     }
 
-    public static void calibrate(string mech)
+   
+    public static void calibrateStart(string mech)
     {
-        PlutoComLogger.LogInfo("Calibrating Mechanism | Mechanism: " + mech);
+        PlutoComLogger.LogInfo("Calibration Start | Mechanism: " + mech);
         JediComm.SendMessage(
             new byte[] {
-                (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "CALIBRATE")],
+                (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "CALIBRATE_START")],
                 (byte)Array.IndexOf(MECHANISMS, mech)
             }
         );
-        Debug.Log($"Calibrate {mech}");
+        Debug.Log($"Calibrate Start {mech}");
     }
+
+    public static void calibrateEnd(string mech)
+    {
+        PlutoComLogger.LogInfo("Calibration End | Mechanism: " + mech);
+        JediComm.SendMessage(
+            new byte[] {
+                (byte)INDATATYPECODES[Array.IndexOf(INDATATYPE, "CALIBRATE_END")],
+                (byte)Array.IndexOf(MECHANISMS, mech)
+            }
+        );
+        Debug.Log($"Calibrate End {mech}");
+    }
+
 
     public static void setControlType(string controlType)
     {

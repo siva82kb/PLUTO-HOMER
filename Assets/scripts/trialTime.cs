@@ -8,7 +8,6 @@ public class trialTime : MonoBehaviour
     void Start()
     {
          trialNo= transform.Find("trialNumber").GetComponent<TextMeshProUGUI>();
-        
     }
 
     // Update is called once per frame

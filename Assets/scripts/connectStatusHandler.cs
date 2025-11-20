@@ -2,6 +2,8 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using System;
+using System.Diagnostics;
+using UnityEngine.SceneManagement;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -12,7 +14,9 @@ public class connectStatusHandler : MonoBehaviour
     private Image connectStatus;
     private GameObject loading;
     private TextMeshProUGUI statusText;
-
+    
+    private float disconnectTimer = 0f;
+    private const float shutdownDelay = 5f;
     void Awake()
     {
         // Subscribe to shutdown events once per instance
@@ -40,19 +44,43 @@ public class connectStatusHandler : MonoBehaviour
             connectStatus.color = Color.green;
             loading.SetActive(false);
             statusText.text = $"{PlutoComm.version}\n[{PlutoComm.frameRate:F1}Hz]";
+
+             disconnectTimer = 0f; //reset when connected
         }
         else
         {
             connectStatus.color = Color.red;
             loading.SetActive(true);
             statusText.text = "Not connected";
+
+            disconnectTimer += Time.deltaTime;
+
+            if (disconnectTimer >= shutdownDelay)
+            {
+                string currentScene = SceneManager.GetActiveScene().name;
+                if (currentScene == "MAIN") // replace with your scene name
+                {
+                    // Direct shutdown
+                    CloseAppLogger();
+                //    Process.Start("shutdown", "/s /t 0");
+                }
+                else
+                {
+                    // Normal flow: load DataUpload
+                    SceneManager.LoadScene("DATAUPLOAD");
+                }
+                // CloseAppLogger();
+                // SceneManager.LoadScene("DATAUPLOAD");
+            }
         }
     }
 
-     private void CloseAppLogger()
+    private void CloseAppLogger()
     {
-        AppLogger.StopLogging(); 
+        AppLogger.StopLogging();
         PlutoAanLogger.StopLogging();
         PlutoComLogger.StopLogging();
+        // Process.Start("shutdown", "/s /t 0");
+        
     }
 }

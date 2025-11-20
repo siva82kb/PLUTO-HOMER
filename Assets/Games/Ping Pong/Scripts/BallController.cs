@@ -82,6 +82,7 @@ public class BallController : MonoBehaviour
             Vector2 reflectedTarget = new Vector2(PGC.targetPosition.x, reflectedY);
 
             Vector2 launchDir = (reflectedTarget - (Vector2)transform.position).normalized;
+            speed = (PGC.gs <= 0) ? speed : PGC.gs;
 
             initVelocity(launchDir * speed);
         }

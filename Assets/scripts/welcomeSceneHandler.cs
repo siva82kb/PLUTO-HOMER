@@ -54,12 +54,16 @@ public class welcomSceneHandler : MonoBehaviour
             SceneManager.LoadScene("GETCONFIG");
             return;
         }
+
         
         // Initialize.
         AppData.Instance.Initialize(SceneManager.GetActiveScene().name);
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");
         daySummaries = AppData.Instance.userData.CalculateMoveTimePerDay();
+        AppData.Instance.userData.ReadFile();
+        Debug.Log($"status : {DataManager.status}");
+
         
         // Update summary display
         if (!piChartUpdated)
@@ -69,10 +73,10 @@ public class welcomSceneHandler : MonoBehaviour
         }
         Task.Run(() =>  // Run in a background task
             {
-            if (!awsManager.IsTaskScheduled(awsManager.taskName))
-            {
-                awsManager.ScheduleTask();
-            }
+            // if (!awsManager.IsTaskScheduled(awsManager.taskName))
+            // {
+            //     awsManager.ScheduleTask();
+            // }
             awsManager.RunAWSpythonScript();
 
             });
@@ -81,6 +85,7 @@ public class welcomSceneHandler : MonoBehaviour
 
     void Update()
     {
+        // PlutoComm.sendHeartbeat();
         if (!attachPlutoButtonEvent && Time.timeSinceLevelLoad > 1)
         {
             attachPlutoButtonEvent = true;
@@ -109,7 +114,19 @@ public class welcomSceneHandler : MonoBehaviour
     private void UpdateUserData()
     {
         userName.text = AppData.Instance.userData.hospNumber;
-        timeRemainingToday.text = $"{AppData.Instance.userData.totalMoveTimeRemaining} min";
+        // timeRemainingToday.text = $"{AppData.Instance.userData.totalMoveTimeRemaining} min";
+        
+        int movetime = AppData.Instance.userData.totalMoveTimeRemaining;
+        if (AppData.Instance.userData.isExceeded)
+        {
+            timeRemainingToday.text = $"Done +{movetime}[min]";
+            timeRemainingToday.color = Color.green;
+        }
+        else
+        {
+            timeRemainingToday.text = $"{movetime} min";
+        }
+        
         todaysDay.text = AppData.Instance.userData.getCurrentDayOfTraining().ToString();
         todaysDate.text = DateTime.Now.ToString("ddd, dd-MM-yyyy");
         if (!File.Exists(awsManager.filePathUploadStatus))

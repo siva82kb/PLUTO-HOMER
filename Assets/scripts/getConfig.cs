@@ -36,9 +36,7 @@ public class getConfig : MonoBehaviour
         awsManager.AppSetups(hospitalID,Location);
         Task.Run(() =>  // Run in a background task
         {
-           
             awsManager.RunAWSpythonScript();
-            
         });
     
     }

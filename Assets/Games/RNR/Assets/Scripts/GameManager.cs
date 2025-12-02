@@ -95,6 +95,15 @@ public class GameManager : MonoBehaviour
     private bool isButtonPressed = false, isPaused = true, isFinished = false;
     public Vector3? TargetPosition { get; private set; }
     public Vector3 PlayerPosition { get; private set; }
+        public GameObject celebrationPanel;
+    public TextMeshProUGUI scoreComparisonTxt;
+    public TextMeshProUGUI yesterdayScoreTxt;
+    public TextMeshProUGUI todayScoreTxt;
+    public TextMeshProUGUI starCount;
+    public GameObject GameOverStar;
+    public int _starCount;
+    private int[] scores;
+
 
 
      private void Awake()
@@ -127,6 +136,11 @@ public class GameManager : MonoBehaviour
         HideFinished();
         // HidePaused();
         SetVisibility(false);
+        updateStarCount();
+        
+        scores = GameFuncs.GetScores();
+        Debug.Log($"{scores[0]}/{scores[1]}");
+        AppLogger.LogInfo($"scores - yesterDayScore:{scores[1]} | TodayScore{scores[0]}");
 
         //arom
         aromLeft.transform.position = new Vector3(
@@ -149,6 +163,10 @@ public class GameManager : MonoBehaviour
             reminderPanel.SetActive(false);
         }
             
+    }
+    public void updateStarCount()
+    {
+        starCount.text = $"{AppData.Instance.selectedGame.cummulativeStars.ToString("D2")}";
     }
 
     public void StartGame()
@@ -185,7 +203,7 @@ public class GameManager : MonoBehaviour
         rainDurationToGrow = 1.0f + slope * (mechanismSpeed - 10f);
 
         // Clamp to safe range
-        rainDurationToGrow = Mathf.Clamp(rainDurationToGrow, 0.2f, 1.0f);
+        rainDurationToGrow = Mathf.Clamp(rainDurationToGrow, 0.2f, 0.5f);
         // Linear relation between speed (10 → 40) and duration (7s → 4.5s)
         float duration = -0.0833f * mechanismSpeed + 7.833f;
 
@@ -291,7 +309,7 @@ public class GameManager : MonoBehaviour
             if (currentHighlighted.IsBeingRainedOn)
             {
                 rainTimer += Time.deltaTime;
-                
+                Debug.Log($" raintimer :{rainTimer}");
                 if (rainTimer >= rainDurationToGrow)
                 {
                     currentHighlighted.Grow();
@@ -376,6 +394,8 @@ public class GameManager : MonoBehaviour
         // Attach PLUTO button event.
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
         reminderPanel.SetActive(false);
+        celebrationPanel.SetActive(false);
+
         initializeGameSpeedController();
 
     }
@@ -544,24 +564,49 @@ public class GameManager : MonoBehaviour
                     || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.IDLE)
                 {
                     float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
+                    Debug.Log($" Scores : {scores[0]}  + {nSuccess} + {scores[1]} ++ ");
+                    Debug.Log($" scor : {AppData.Instance.selectedGame.isAchievedToday()}");
+                                  
                     Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
+
+                      // Stop the current game trial
+                    if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
+                    {
+                        AppData.Instance.selectedGame.updateCummulativeStars();
+                        celebrationPanel.SetActive(true);
+                    }
                     AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+                    
+                    gameOverPanel.SetActive(!celebrationPanel.gameObject.activeSelf);
+                    
+                    if (gameOverPanel.gameObject.activeSelf)
+                    {
+                        GameOverStar.SetActive(AppData.Instance.selectedGame.isAchievedToday());
+                        yesterdayScoreTxt.text = $"{scores[1]:D4}";
+                        todayScoreTxt.text = $"{(scores[0]+nSuccess):D4}";
+                    }
+                    if (celebrationPanel.gameObject.activeSelf)
+                    {
+                        updateStarCount();
+                        scoreComparisonTxt.text = $"{(scores[0] + nSuccess).ToString("D3")}";
+                    }
+                    // AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
                     gameState = GameStates.DONE;
                     lastHighScore = AppData.Instance.successRate * (PlutoAANController.MAXCONTROLBOUND - AppData.Instance.CurrentControlBound);
                     if (AppData.Instance.previousSuccessRates == null)
                     {
                         scorex.text = $"{(int)lastHighScore}";
                         Debug.Log($" Others.highestSuccessRate :{Others.highestSuccessRate} + {lastHighScore}");
-                        if (lastHighScore > Others.highestSuccessRate)
-                        {
-                            StartCoroutine(ShowForSeconds(HSC, 1.3f));
-                        }
-                        else
-                        {
+                        // if (lastHighScore > Others.highestSuccessRate)
+                        // {
+                        //     StartCoroutine(ShowForSeconds(HSC, 1.3f));
+                        // }
+                        // else
+                        // {
                             AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(AppData.Instance.selectedMechanism.name, AppData.Instance.selectedGameName);
                             // SceneManager.LoadScene(SceneManager.GetActiveScene().name);
                             ShowFinished();
-                        }
+                        // }
 
 
                     }
@@ -662,7 +707,7 @@ float GetXPositionFromAngle(float targetAngle)
     {
          if(AppData.Instance.previousSuccessRates!=null)
         {
-            SuccessRateBanner.SetActive(true);
+            // SuccessRateBanner.SetActive(true);
             Debug.Log($" previous SR : {AppData.Instance.previousSuccessRates[0]}%");
             Debug.Log($"Current Success Rate : {AppData.Instance.previousSuccessRates[1]}%");
             prevSR.text = $" previous SR : {AppData.Instance.previousSuccessRates[0]}%";
@@ -838,10 +883,32 @@ float GetXPositionFromAngle(float targetAngle)
         {
             gameState = GameStates.STOP;
             float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
+            
             Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
             AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
             if (AppData.Instance.speedData.gameSpeed != gameSpeed)  AppData.Instance.speedData.setGameSpeed(gameSpeed);
-            AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+              // Stop the current game trial
+                    if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
+                    {
+                        AppData.Instance.selectedGame.updateCummulativeStars();
+                        celebrationPanel.SetActive(true);
+                    }
+                    AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+                    
+                    gameOverPanel.SetActive(!celebrationPanel.gameObject.activeSelf);
+                    
+                    if (gameOverPanel.gameObject.activeSelf)
+                    {
+                        GameOverStar.SetActive(AppData.Instance.selectedGame.isAchievedToday());
+                        yesterdayScoreTxt.text = $"{scores[1]:D4}";
+                        todayScoreTxt.text = $"{(scores[0]+nSuccess):D4}";
+                    }
+                    if (celebrationPanel.gameObject.activeSelf)
+                    {
+                        updateStarCount();
+                        scoreComparisonTxt.text = $"{(scores[0] + nSuccess).ToString("D3")}";
+                    }
+            // AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
             gameState = GameStates.DONE;
             Time.timeScale = 1f;
             SceneManager.LoadScene(exitScene);

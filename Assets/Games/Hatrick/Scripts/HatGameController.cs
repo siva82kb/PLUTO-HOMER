@@ -76,6 +76,7 @@ public class HatGameController : MonoBehaviour
     public int nTargets = 0;
     public int nSuccess = 0;
     public int nFailure = 0;
+    private int[] scores;
     public float currSuccessRate => nTargets == 0 ? 0f : 100f * nSuccess / nTargets; 
 
     private float ballFallingTime = 0f;
@@ -133,6 +134,15 @@ public class HatGameController : MonoBehaviour
     private bool runOnce = false;
     bool speedControlsVisible = false, changeScene = false;
 
+    
+    public GameObject celebrationPanel;
+    public TextMeshProUGUI scoreComparisonTxt;
+    public TextMeshProUGUI yesterdayScoreTxt;
+    public TextMeshProUGUI todayScoreTxt;
+    public TextMeshProUGUI starCount;
+    public GameObject GameOverStar,gameOverPanel;
+    public int _starCount;
+
     private void Awake()
     {
         if (Instance == null)
@@ -158,6 +168,11 @@ public class HatGameController : MonoBehaviour
         // Do not show the paused and finished objects at the start.
         HidePaused();
         HideFinished();
+        updateStarCount();
+        
+        scores = GameFuncs.GetScores();
+        Debug.Log($"{scores[0]}/{scores[1]}");
+        AppLogger.LogInfo($"scores - yesterDayScore:{scores[1]} | TodayScore{scores[0]}");
         // Set the position of the AROM lines.
         aromLeft.transform.position = new Vector3(
             AngleToScreen(AppData.Instance.selectedMechanism.currRom.aromMin),
@@ -202,6 +217,10 @@ public class HatGameController : MonoBehaviour
 
         // Set the initial game speed
         gsc.gameSpeedText.text = $"{AppData.Instance.speedData.gameSpeed:F2}";
+    }
+    public void updateStarCount()
+    {
+        starCount.text = $"{AppData.Instance.selectedGame.cummulativeStars.ToString("D2")}";
     }
     private void Update()
     {
@@ -503,23 +522,47 @@ public class HatGameController : MonoBehaviour
                     || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.IDLE)
                 {
                     float gameTime = HomerTherapy.TrialDuration - triaTimeLeft;
+                    Debug.Log($" Scores : {scores[0]}  + {nSuccess} + {scores[1]} ++ ");
+                    Debug.Log($" scor : {AppData.Instance.selectedGame.isAchievedToday()}");
+             
                     Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
+                    // AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+                      // Stop the current game trial
+                    if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
+                    {
+                        AppData.Instance.selectedGame.updateCummulativeStars();
+                        celebrationPanel.SetActive(true);
+                    }
                     AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+                    
+                    gameOverPanel.SetActive(!celebrationPanel.gameObject.activeSelf);
+                    
+                    if (gameOverPanel.gameObject.activeSelf)
+                    {
+                        GameOverStar.SetActive(AppData.Instance.selectedGame.isAchievedToday());
+                        yesterdayScoreTxt.text = $"{scores[1]:D4}";
+                        todayScoreTxt.text = $"{(scores[0]+nSuccess):D4}";
+                    }
+                    if (celebrationPanel.gameObject.activeSelf)
+                    {
+                        updateStarCount();
+                        scoreComparisonTxt.text = $"{(scores[0] + nSuccess).ToString("D3")}";
+                    }
                     gameState = GameStates.DONE;
                     lastHighScore = AppData.Instance.successRate * (PlutoAANController.MAXCONTROLBOUND - AppData.Instance.CurrentControlBound);
                     if (AppData.Instance.previousSuccessRates == null)
                     {
                         score.text = $"{(int)lastHighScore}";
-                        if (lastHighScore > Others.highestSuccessRate)
-                        {
-                            StartCoroutine(ShowForSeconds(HSC, 1.3f));
-                        }
-                        else
-                        {
+                        // if (lastHighScore > Others.highestSuccessRate)
+                        // {
+                        //     StartCoroutine(ShowForSeconds(HSC, 1.3f));
+                        // }
+                        // else
+                        // {
                             AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(AppData.Instance.selectedMechanism.name, AppData.Instance.selectedGameName);
                             // SceneManager.LoadScene(SceneManager.GetActiveScene().name);
                             ShowFinished();
-                        }
+                        // }
                     }
                     if (AppData.Instance.selectedMechanism.trialNumberDay == AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
                     {
@@ -635,6 +678,8 @@ public class HatGameController : MonoBehaviour
         BALLSPEED = Mathf.Clamp(ballSpeed, 0.7f, 2.5f); 
         Debug.Log(AppData.Instance.speedData.gameSpeed);
         MOVEDURATION = 0.5f * (BALLSTARTY - BALLENDY) / BALLSPEED;
+        celebrationPanel.SetActive(false);
+
     }
 
     private void UpdateText()
@@ -654,9 +699,29 @@ public class HatGameController : MonoBehaviour
             gameState = GameStates.STOP;
             AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
             float gameTime = HomerTherapy.TrialDuration - triaTimeLeft;
+                // Stop the current game trial
+                    if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
+                    {
+                        AppData.Instance.selectedGame.updateCummulativeStars();
+                        celebrationPanel.SetActive(true);
+                    }
+                    AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+                    
+                    gameOverPanel.SetActive(!celebrationPanel.gameObject.activeSelf);
+                    
+                    if (gameOverPanel.gameObject.activeSelf)
+                    {
+                        GameOverStar.SetActive(AppData.Instance.selectedGame.isAchievedToday());
+                        yesterdayScoreTxt.text = $"{scores[1]:D4}";
+                        todayScoreTxt.text = $"{(scores[0]+nSuccess):D4}";
+                    }
+                    if (celebrationPanel.gameObject.activeSelf)
+                    {
+                        updateStarCount();
+                        scoreComparisonTxt.text = $"{(scores[0] + nSuccess).ToString("D3")}";
+                    }
             Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
             if (AppData.Instance.speedData.gameSpeed != gameSpeed)  AppData.Instance.speedData.setGameSpeed(gameSpeed);
-             AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
              gameState = GameStates.DONE;
              Time.timeScale = 1f;
             SceneManager.LoadScene(prevScene);
@@ -669,7 +734,7 @@ public class HatGameController : MonoBehaviour
     {
           if(AppData.Instance.previousSuccessRates!=null)
         {
-            SuccessRateBanner.SetActive(true);
+            // SuccessRateBanner.SetActive(true);
             prevSR.text = $" previous SR : {AppData.Instance.previousSuccessRates[0]}%";
             currSR.text = $"Current Success Rate : {AppData.Instance.previousSuccessRates[1]}%";
         }

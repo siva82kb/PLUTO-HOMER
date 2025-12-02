@@ -94,6 +94,6 @@ public class CloudController : MonoBehaviour
     }
 
     // public float AngleToScreen(float angle) => Mathf.Lerp(-PLAYSIZE, PLAYSIZE, (angle - aprom[0]) / (aprom[1] - aprom[0]));
-    public float AngleToScreen(float angle) => Mathf.Lerp(-7.1f, 7.1f, (angle - aprom[0]) / (aprom[1] - aprom[0]));
+    public float AngleToScreen(float angle) => Mathf.Lerp(-6.8f, 6.8f, (angle - aprom[0]) / (aprom[1] - aprom[0]));
     
 }   

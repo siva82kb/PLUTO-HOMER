@@ -3876,6 +3876,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: conectStatusPluto
       objectReference: {fileID: 0}
+    - target: {fileID: 3942099222079621639, guid: 3f5b5b39d3788944d96dbeb999d2d057, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6473857889621378673, guid: 3f5b5b39d3788944d96dbeb999d2d057, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5

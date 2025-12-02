@@ -377,8 +377,7 @@ public class PlutoUserData
     public Dictionary<string, float> mechMoveTimePrev { get; private set; } // Previous movement time 
     public Dictionary<string, float> mechMoveTimeCurr { get; private set; } // Current movement time
     public bool isExceeded { private set; get; }
-
-
+    public const string DATETIME = "DateTime";
     // Total movement times.
     public float totalMoveTimePrsc
     {
@@ -858,6 +857,154 @@ public class PlutoUserData
         return cuScores;
     }
 
+    public int[] ReadCumulativeHitsForAllGames()
+{
+    string[] games = { "PONG", "TUK", "HAT", "FRUITCH", "RNR" };
+    string[] mechanisms = { "WFE", "WURD", "FPS", "HOC", "FME1", "FME2" };  // change if different
+
+    int[] cumulativeHitsArray = new int[games.Length];
+
+    for (int i = 0; i < games.Length; i++)
+    {
+        string gameName = games[i];
+        int totalHits = 0;
+
+        foreach (string mech in mechanisms)
+        {
+            var lastRow = dTableSession.AsEnumerable()?
+                .Where(row => row.Field<string>("GameName") == gameName &&
+                              row.Field<string>("Mechanism") == mech)
+                .LastOrDefault();
+
+            if (lastRow != null)
+            {
+                totalHits += Convert.ToInt32(lastRow.Field<string>("CummulativeHits"));
+            }
+        }
+
+        cumulativeHitsArray[i] = totalHits;
+        AppLogger.LogInfo($"Game '{gameName}' total cumulative hits from all mechanisms = {totalHits}");
+    }
+
+    return cumulativeHitsArray;
+}
+
+
+    // public int[] readStarCounts(string gameName)
+    // {
+    //     var lastRow = dTableSession.AsEnumerable().LastOrDefault();
+    //     if (lastRow == null) return new int[] { 0, 0 };
+    //     int cummulativeStarCounts = Convert.ToInt32(lastRow.Field<string>("CummulativeStars"));
+       
+    //     DateTime today = DateTime.Today;
+      
+    //     var currentStarCount = dTableSession.AsEnumerable()
+    //                               .Where(row => DateTime.ParseExact(row.Field<string>(DATETIME).Trim(), DataManager.DATEFORMAT, CultureInfo.InvariantCulture).Date == today.Date &&
+    //                                      row.Field<string>("GameName") == gameName
+    //                                      )
+    //                               .Sum(row => Convert.ToInt32(row["currentStar"]));
+
+    //     return new int[] { cummulativeStarCounts, currentStarCount };
+    // }
+    public int[] readStarCounts(string gameName)
+    {
+        var lastRow = dTableSession.AsEnumerable()?
+            .Where(row => row.Field<string>("GameName") == gameName &&
+                        row.Field<string>("Mechanism") == AppData.Instance.selectedMechanism.name)
+            .LastOrDefault();
+
+        if (lastRow == null)
+        {
+            AppLogger.LogInfo($"No data found for game '{gameName}' and mechanism '{AppData.Instance.selectedMechanism.name}'. Stars set to 0.");
+            return new int[] { 0, 0 };
+        }
+
+        int cumulativeStars = Convert.ToInt32(lastRow.Field<string>("CummulativeStars"));
+        DateTime today = DateTime.Today;
+
+        int currentStarCount = dTableSession.AsEnumerable()
+            .Where(row =>
+                row.Field<string>("GameName") == gameName &&
+                row.Field<string>("Mechanism") == AppData.Instance.selectedMechanism.name &&
+                DateTime.ParseExact(row.Field<string>(DATETIME).Trim(),
+                                    DataManager.DATEFORMAT,
+                                    CultureInfo.InvariantCulture).Date == today.Date)
+            .Sum(row => Convert.ToInt32(row.Field<string>("currentStar")));
+
+        return new int[] { cumulativeStars, currentStarCount };
+    }
+
+    public int[] getLastTwoDifferentDatesScore(String gameName)
+    {
+        // AppData.Instance.reloadSessionDetails();
+        var table = AppData.Instance.userData.dTableSession;
+
+        if (table == null || table.Rows.Count == 0)
+            return new[] { 0, 0 };
+
+       
+        //if it is a new day then only get last date data
+        var lastRow = table.Rows[table.Rows.Count - 1];
+        DateTime lastDate = DateTime.ParseExact(lastRow.Field<string>(DATETIME),DataManager.DATEFORMAT,CultureInfo.InvariantCulture);
+        Debug.Log($"{lastDate}");
+    
+        //confirms only lastDate and Today data Comparison
+        if (lastDate.Date != DateTime.Today.Date)
+        {
+            int score = GetScoreForDate(lastDate, gameName);
+            return new[] { 0,score}; 
+        }
+
+        //collect all dates
+        List<DateTime> allDates = new List<DateTime>();
+
+        foreach (var row in table.AsEnumerable())
+        {
+            string dateStr = row.Field<string>(DATETIME);
+
+            if (DateTime.TryParseExact(
+                    dateStr,
+                    DataManager.DATEFORMAT,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out DateTime dt))
+            {
+                allDates.Add(dt.Date);
+            }
+        }
+
+        if (allDates.Count == 0)
+            return new[] { 0, 0 };
+
+        var distinctDates = allDates
+            .Distinct()
+            .OrderByDescending(d => d)
+            .Take(2)
+            .ToList();
+
+        // If there is only ONE unique date:
+        if (distinctDates.Count == 1)
+            return new[] { GetScoreForDate(distinctDates[0],gameName), 0 };
+
+        DateTime date1 = distinctDates[0]; // today date
+        DateTime date2 = distinctDates[1]; // yesterday date
+
+        int score1 = GetScoreForDate(date1, gameName);
+        int score2 = GetScoreForDate(date2, gameName);
+        Debug.Log($"{score1},{score2} from getfuntion");
+        return new[] { score1, score2 };
+    }
+
+    private int GetScoreForDate(DateTime targetDate,String gameName)
+    {
+        var table = AppData.Instance.userData.dTableSession;
+        int total = AppData.Instance.userData.dTableSession.AsEnumerable()
+              .Where(row => DateTime.ParseExact(row.Field<string>(DATETIME), DataManager.DATEFORMAT, CultureInfo.InvariantCulture).Date == targetDate.Date &&
+                     row.Field<string>("GameName") == gameName
+                     )
+              .Sum(row => Convert.ToInt32(row["CurrentHits"]));
+        return total;
+    }
 
 }
 
@@ -874,14 +1021,18 @@ public class PlutoGame
     public int cummulativeTargets { get; private set; } = 0;
     public int cummulativeHits { get; private set; } = 0;
     public int cummulativeMisses { get; private set; } = 0;
-
-    public PlutoGame(string gName, string mName, int gCuTargets, int gCuHits, int gCuMisses)
+    public int cummulativeStars {  get; private set; } = 0;
+    public int currentStar {  get; private set; } = 0;
+    public int todayStar {  get; private set; } = 0;
+    public PlutoGame(string gName, string mName, int gCuTargets, int gCuHits, int gCuMisses, int gCuStars,int TodayStars)
     {
         name = gName?.ToUpper() ?? string.Empty;
         mech = mName?.ToUpper() ?? string.Empty;
         cummulativeTargets = gCuTargets;
         cummulativeHits = gCuHits;
         cummulativeMisses = gCuMisses;
+        cummulativeStars = gCuStars;
+        todayStar = TodayStars;
     }
 
     public void ResetCummulativeScore()
@@ -890,6 +1041,25 @@ public class PlutoGame
         cummulativeHits = 0;
         cummulativeMisses = 0;
     }
+    public void updateCummulativeStars()
+    {
+       
+        cummulativeStars++;
+        currentStar = 1;
+        todayStar += currentStar;
+    }
+    //Reset the trailStar Count
+    public void resetstarCount()
+    {
+        currentStar = 0;
+    }
+   
+    //To check if they achieved Today  or not
+    public bool isAchievedToday()
+    {
+        return todayStar > 0 ;
+    }
+    
 
     public void UpdateTargetsHitsMisses(int targets, int hits, int misses)
     {
@@ -951,6 +1121,30 @@ public static class MovementTracker
 
 }
 
+public static class GameFuncs
+{
+    //Game Achievement Data
+        public static int[] GetScores()
+        {
+            return AppData.Instance.userData.getLastTwoDifferentDatesScore(AppData.Instance.selectedGameName);
+        }
+
+        public static int[] GetStarsCount()
+        {
+            return AppData.Instance.userData.readStarCounts(AppData.Instance.selectedGameName);
+        }
+
+        public static int[] GetCummulativeScores()
+        {
+            return AppData.Instance.userData.readCummulativeHitsMissesForGameMovement(AppData.Instance.selectedGameName, AppData.Instance.selectedMechanism.name);
+        }
+
+        public static bool IsAchievedToday()
+        {
+            var starsCount = GetStarsCount();
+            return starsCount[1] > 0;
+        }
+}
 public static class Others
 {
     public static float gameTime = 0f;

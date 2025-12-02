@@ -89,6 +89,7 @@ public partial class AppData
         WriteTrialDataToRawDataFile();
         PlutoComm.OnNewPlutoData -= OnNewPlutoDataDataLogging;
         trialRawDataFile = null;
+        Instance.selectedGame.resetstarCount();
         //set to upload the data to the AWS
         awsManager.changeUploadStatus(awsManager.status[0]);
     }
@@ -138,7 +139,9 @@ public partial class AppData
             $"{selectedGame.currentMisses}",                        // CurrentMisses
             $"{selectedGame.cummulativeTargets}",                   // CummulativeTargets
             $"{selectedGame.cummulativeHits}",                      // CummulativeHits
-            $"{selectedGame.cummulativeMisses}", 
+            $"{selectedGame.cummulativeMisses}",                     // CummulativeMisses
+            $"{selectedGame.currentStar}",                         // CurrentStarcounts
+            $"{selectedGame.cummulativeStars}"
         };
 
         // Write the trial row to the session file.

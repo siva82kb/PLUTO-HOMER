@@ -14,6 +14,12 @@ public class connectStatusHandler : MonoBehaviour
     private Image connectStatus;
     private GameObject loading;
     private TextMeshProUGUI statusText;
+     public TextMeshProUGUI errorTxt;
+    public Button closePanel;
+    public GameObject errorPanel;
+
+    BatteryStatus status ;
+    float level;
     
     private float disconnectTimer = 0f;
     private const float shutdownDelay = 5f;
@@ -33,11 +39,33 @@ public class connectStatusHandler : MonoBehaviour
         connectStatus = GetComponent<Image>(); // Uncomment if connectStatus is on the same GameObject
         loading = transform.Find("loading").gameObject; // Assuming loading is a child GameObject
         statusText = transform.Find("statusText").GetComponent<TextMeshProUGUI>();
+        closePanel.onClick.AddListener(delegate { CloseAppLogger(); });
+        if (AppData.Instance != null)return;
+            if (SceneManager.GetActiveScene().name == "plutoDiagnostics") return;
+            errorPanel.SetActive(true);
+        
+        AppLogger.LogInfo($"Starting Device with a Battery level of  | level : {SystemInfo.batteryLevel*100}%");
     }
 
     // Update is called once per frame
     void Update()
     {
+         level = SystemInfo.batteryLevel;      // 0.0 � 1.0   OR -1 if unsupported
+        status = SystemInfo.batteryStatus;
+
+        //if level below 30% it show the indication to connect charger
+        if (level < 0.3 && !errorPanel.gameObject.activeSelf && status != BatteryStatus.Charging)// 30% Battery Level Threshold
+        {
+            errorPanel.SetActive(true);
+            AppLogger.LogInfo($"Error Below BatteryLevel   | level : {SystemInfo.batteryLevel * 100}%");
+            errorTxt.text = $"Battery Low{level * 100}%Please Connect the Charger";
+        }
+        //if Battery connected after the indication shown, Indication disappear Dynamically
+        if(status == BatteryStatus.Charging && level <= 0.3 && errorPanel.gameObject.activeSelf)
+        {
+            AppLogger.LogInfo($"closed dynamically when device connect with charger | status : {status}");
+            errorPanel.SetActive(!errorPanel.gameObject.activeSelf);
+        }
         // Update connection status
         if (ConnectToRobot.isPLUTO)
         {
@@ -77,6 +105,46 @@ public class connectStatusHandler : MonoBehaviour
 
     private void CloseAppLogger()
     {
+         if (FlappyGameControl.Instance != null)
+        {
+            if (FlappyGameControl.Instance.IsGamePlaying())
+            {
+                FlappyGameControl.Instance.exitGame();
+
+            }
+        }
+        if(PongGameController.Instance != null)
+        {
+            if (PongGameController.Instance.IsGamePlaying())
+            {
+                PongGameController.Instance.ExitGame();
+               
+            }
+        }
+        if(FruitBasketGameController.Instance != null)
+        {
+            if (FruitBasketGameController.Instance.isGamePlaying())
+            {
+
+                FruitBasketGameController.Instance.exitGame();
+            }
+        }
+        if(GameManager.Instance != null)
+        {
+            if (GameManager.Instance.IsGamePlaying())
+            {
+
+                GameManager.Instance.Exit();
+            }
+        }
+        if(FruitBasketGameController.Instance != null)
+        {
+            if (FruitBasketGameController.Instance.isGamePlaying())
+            {
+
+                FruitBasketGameController.Instance.exitGame();
+            }
+        }
         AppLogger.StopLogging();
         PlutoAanLogger.StopLogging();
         PlutoComLogger.StopLogging();

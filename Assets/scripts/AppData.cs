@@ -19,7 +19,7 @@ public partial class AppData
      * CONSTANT FIXED VARIABLES.
      */
     // COM Port for the device
-    public const string COMPort = "COM47";
+    public const string COMPort = "COM21";
 
 
     // What is this used for?
@@ -181,12 +181,17 @@ public partial class AppData
         selectedGameName = gameName;
         previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(selectedMechanism.name, selectedGameName);
         int[] cuScores = Instance.userData.readCummulativeHitsMissesForGameMovement(selectedGameName, selectedMechanism?.name);
+         //Read the Cummulative stars from the session data
+        int[] starCount = Instance.userData.readStarCounts(gameName);
+        UnityEngine.Debug.Log($"{starCount[0]}/{starCount[1]}stars");
         // Set the selected game.
         selectedGame = new PlutoGame(gName: selectedGameName,
                                     mName: selectedMechanism?.name,
                                     gCuTargets: cuScores[0],
                                     gCuHits: cuScores[1],
-                                    gCuMisses: cuScores[2]);
+                                    gCuMisses: cuScores[2],
+                                    gCuStars: starCount[0],
+                                    TodayStars: starCount[1]);
         
         // // Cannot set game before selecting mechanism.
         // if (selectedMechanism == null) 
@@ -223,5 +228,8 @@ public partial class AppData
     public string trainingSide => userData?.rightHand == true ? "RIGHT" : "LEFT";
     
     // Check training size.
+    
     public bool IsTrainingSide(string side) => string.Equals(trainingSide, side, StringComparison.OrdinalIgnoreCase);
+    // public void reloadSessionDetails() => Instance.userData.readParseSessionData(DataManager.sessionFile);
+
 }

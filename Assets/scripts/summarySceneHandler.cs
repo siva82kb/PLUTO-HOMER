@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using XCharts.Runtime;
+using TMPro;
 
 public class summarySceneHandler : MonoBehaviour
 {
@@ -13,14 +14,42 @@ public class summarySceneHandler : MonoBehaviour
     public BarChart barchart;
     public string title;
     private ConcurrentQueue<System.Action> _actionQueue = new ConcurrentQueue<System.Action>();
+    public TextMeshProUGUI ttCummulativeScoreTxt;
+    public TextMeshProUGUI ppCummulativeScoreTxt;
+    public TextMeshProUGUI htCummulativeScoreTxt;
+    public TextMeshProUGUI fcCummulativeScoreTxt;
+    public TextMeshProUGUI rgCummulativeScoreTxt;
+    public TextMeshProUGUI ppCurrentScoreTxt;
+    public TextMeshProUGUI ttCurrentScoreTxt;
+    public TextMeshProUGUI htCurrentScoreTxt;
+    public TextMeshProUGUI fcCurrentScoreTxt;
+    public TextMeshProUGUI rgCurrentScoreTxt;
+
+    public GameObject TTstar;
+    public GameObject PPstar;
+    public GameObject HTstar;
+    public GameObject FCstar;
+    public GameObject RRstar;
+    int[] cummulativeScores;
 
     
     public void Start()
     {
         title = "summary";
         initializeChart();
+        cummulativeScores = AppData.Instance.userData.ReadCumulativeHitsForAllGames();
+        displayCummulativeScore();
     }
 
+    private void displayCummulativeScore()
+    {
+        ppCummulativeScoreTxt.text = $"{cummulativeScores[0]:D4}";
+        ttCummulativeScoreTxt.text = $"{cummulativeScores[1]:D4}";
+        htCummulativeScoreTxt.text = $"{cummulativeScores[2]:D4}";
+        fcCummulativeScoreTxt.text = $"{cummulativeScores[3]:D4}";
+        rgCummulativeScoreTxt.text = $"{cummulativeScores[4]:D4}";
+
+    }
     void Update()
     {
         while (_actionQueue.TryDequeue(out var action))

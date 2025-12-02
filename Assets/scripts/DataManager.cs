@@ -54,6 +54,7 @@ public static class DataManager
         "AssistMode", "DesiredSuccessRate", "SuccessRate", "CurrentControlBound", "NextControlBound","MoveTime",
         "CurrentTargets", "CurrentHits", "CurrentMisses",
         "CummulativeTargets", "CummulativeHits", "CummulativeMisses",
+         "currentStar","CummulativeStars"
     };
 
     // Raw data header.    

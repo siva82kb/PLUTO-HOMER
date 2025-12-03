@@ -858,54 +858,37 @@ public class PlutoUserData
     }
 
     public int[] ReadCumulativeHitsForAllGames()
-{
-    string[] games = { "PONG", "TUK", "HAT", "FRUITCH", "RNR" };
-    string[] mechanisms = { "WFE", "WURD", "FPS", "HOC", "FME1", "FME2" };  // change if different
-
-    int[] cumulativeHitsArray = new int[games.Length];
-
-    for (int i = 0; i < games.Length; i++)
     {
-        string gameName = games[i];
-        int totalHits = 0;
+        string[] games = { "PONG", "TUK", "HAT", "FRUITCH", "RNR" };
+        string[] mechanisms = { "WFE", "WURD", "FPS", "HOC", "FME1", "FME2" };  // change if different
 
-        foreach (string mech in mechanisms)
+        int[] cumulativeHitsArray = new int[games.Length];
+
+        for (int i = 0; i < games.Length; i++)
         {
-            var lastRow = dTableSession.AsEnumerable()?
-                .Where(row => row.Field<string>("GameName") == gameName &&
-                              row.Field<string>("Mechanism") == mech)
-                .LastOrDefault();
+            string gameName = games[i];
+            int totalHits = 0;
 
-            if (lastRow != null)
+            foreach (string mech in mechanisms)
             {
-                totalHits += Convert.ToInt32(lastRow.Field<string>("CummulativeHits"));
+                var lastRow = dTableSession.AsEnumerable()?
+                    .Where(row => row.Field<string>("GameName") == gameName &&
+                                row.Field<string>("Mechanism") == mech)
+                    .LastOrDefault();
+
+                if (lastRow != null)
+                {
+                    totalHits += Convert.ToInt32(lastRow.Field<string>("CummulativeHits"));
+                }
             }
+
+            cumulativeHitsArray[i] = totalHits;
+            AppLogger.LogInfo($"Game '{gameName}' total cumulative hits from all mechanisms = {totalHits}");
         }
 
-        cumulativeHitsArray[i] = totalHits;
-        AppLogger.LogInfo($"Game '{gameName}' total cumulative hits from all mechanisms = {totalHits}");
+        return cumulativeHitsArray;
     }
 
-    return cumulativeHitsArray;
-}
-
-
-    // public int[] readStarCounts(string gameName)
-    // {
-    //     var lastRow = dTableSession.AsEnumerable().LastOrDefault();
-    //     if (lastRow == null) return new int[] { 0, 0 };
-    //     int cummulativeStarCounts = Convert.ToInt32(lastRow.Field<string>("CummulativeStars"));
-       
-    //     DateTime today = DateTime.Today;
-      
-    //     var currentStarCount = dTableSession.AsEnumerable()
-    //                               .Where(row => DateTime.ParseExact(row.Field<string>(DATETIME).Trim(), DataManager.DATEFORMAT, CultureInfo.InvariantCulture).Date == today.Date &&
-    //                                      row.Field<string>("GameName") == gameName
-    //                                      )
-    //                               .Sum(row => Convert.ToInt32(row["currentStar"]));
-
-    //     return new int[] { cummulativeStarCounts, currentStarCount };
-    // }
     public int[] readStarCounts(string gameName)
     {
         var lastRow = dTableSession.AsEnumerable()?
@@ -943,7 +926,6 @@ public class PlutoUserData
             return new[] { 0, 0 };
 
        
-        //if it is a new day then only get last date data
         var lastRow = table.Rows[table.Rows.Count - 1];
         DateTime lastDate = DateTime.ParseExact(lastRow.Field<string>(DATETIME),DataManager.DATEFORMAT,CultureInfo.InvariantCulture);
         Debug.Log($"{lastDate}");
@@ -1006,7 +988,129 @@ public class PlutoUserData
         return total;
     }
 
+
+    public class GameStats
+    {
+        public string GameName;
+        public int CumulativeHits;    
+        public int PreviousDayHits; 
+        public int TodayHits; 
+    }
+
+    public List<GameStats> ReadGameStats()
+    {
+        string[] games = { "PONG", "TUK", "HAT", "FRUITCH", "RNR" };
+        string[] mechanisms = { "WFE", "WURD", "FPS", "HOC", "FME1", "FME2" };
+
+        DateTime today = DateTime.Today;
+        DateTime previousDay = today.AddDays(-1);
+
+        List<GameStats> result = new List<GameStats>();
+
+        foreach (string gameName in games)
+        {
+            int cumulativeHits = 0;
+            int todayHits = 0;
+            int previousDayHits = 0;
+
+            foreach (string mech in mechanisms)
+            {
+                var lastRow = dTableSession.AsEnumerable()
+                    .Where(row =>
+                        row.Field<string>("GameName") == gameName &&
+                        row.Field<string>("Mechanism") == mech)
+                    .LastOrDefault();
+
+                if (lastRow != null)
+                {
+                    cumulativeHits += Convert.ToInt32(lastRow["CummulativeHits"]);
+                }
+
+                todayHits += dTableSession.AsEnumerable()
+                    .Where(row =>
+                        row.Field<string>("GameName") == gameName &&
+                        row.Field<string>("Mechanism") == mech &&
+                        DateTime.ParseExact(row.Field<string>(DATETIME).Trim(),
+                            DataManager.DATEFORMAT,
+                            CultureInfo.InvariantCulture).Date == today)
+                    .Sum(row => Convert.ToInt32(row["CurrentHits"]));
+
+                previousDayHits += dTableSession.AsEnumerable()
+                    .Where(row =>
+                        row.Field<string>("GameName") == gameName &&
+                        row.Field<string>("Mechanism") == mech &&
+                        DateTime.ParseExact(row.Field<string>(DATETIME).Trim(),
+                            DataManager.DATEFORMAT,
+                            CultureInfo.InvariantCulture).Date == previousDay)
+                    .Sum(row => Convert.ToInt32(row["CurrentHits"]));
+            }
+
+            result.Add(new GameStats
+            {
+                GameName = gameName,
+                CumulativeHits = cumulativeHits,
+                PreviousDayHits = previousDayHits,
+                TodayHits = todayHits
+            });
+
+            AppLogger.LogInfo(
+                $"GAME: {gameName} | Cumulative={cumulativeHits} | Yesterday={previousDayHits} | Today={todayHits}");
+        }
+
+        return result;
+    }
+    public class MechanismStats
+    {
+        public string Mechanism;
+        public int TodayStars;
+        public int YesterdayStars;
+        public int CumulativeStars;
+    }
+    public List<MechanismStats> ReadMechanismStarStats()
+    {
+        string[] mechanisms = { "WFE", "WURD", "FPS", "HOC", "FME1", "FME2" };
+        List<MechanismStats> results = new List<MechanismStats>();
+
+        DateTime today = DateTime.Today;
+        DateTime yesterday = today.AddDays(-1);
+
+        foreach (string mech in mechanisms)
+        {
+            int cumulativeStars = dTableSession.AsEnumerable()
+            .Where(r => r.Field<string>("Mechanism") == mech)
+            .Sum(r => Convert.ToInt32(r["currentStar"]));
+
+
+            int todayStars = dTableSession.AsEnumerable()
+                .Where(r =>
+                    r.Field<string>("Mechanism") == mech &&
+                    DateTime.ParseExact(r.Field<string>("DateTime"), DataManager.DATEFORMAT, null).Date == today)
+                .Sum(r => Convert.ToInt32(r["currentStar"]));
+
+            int yStars = dTableSession.AsEnumerable()
+                .Where(r =>
+                    r.Field<string>("Mechanism") == mech &&
+                    DateTime.ParseExact(r.Field<string>("DateTime"), DataManager.DATEFORMAT, null).Date == yesterday
+                )
+                .Sum(r => Convert.ToInt32(r["currentStar"]));
+
+            results.Add(new MechanismStats
+            {
+                Mechanism = mech,
+                TodayStars = todayStars,
+                YesterdayStars = yStars,
+                CumulativeStars = cumulativeStars
+            });
+        }
+
+        return results;
+    }
+
+
+
 }
+
+
 
 public class PlutoGame
 {

@@ -7,6 +7,8 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using XCharts.Runtime;
 using TMPro;
+using System.Collections.Generic;
+using static PlutoUserData;
 
 public class summarySceneHandler : MonoBehaviour
 {
@@ -25,31 +27,79 @@ public class summarySceneHandler : MonoBehaviour
     public TextMeshProUGUI fcCurrentScoreTxt;
     public TextMeshProUGUI rgCurrentScoreTxt;
 
-    public GameObject TTstar;
-    public GameObject PPstar;
-    public GameObject HTstar;
-    public GameObject FCstar;
-    public GameObject RRstar;
+    public GameObject WFEstar;
+    public GameObject WURDstar;
+    public GameObject FPSstar;
+    public GameObject HOCstar;
+    public GameObject FME1star;
+    public GameObject FME2star;
+
     int[] cummulativeScores;
+    public Transform WFEStarParent;
+public Transform WURDStarParent;
+public Transform FPSStarParent;
+public Transform HOCStarParent;
+public Transform FME1StarParent;
+public Transform FME2StarParent;
+
+public TextMeshProUGUI WFEStarText;
+public TextMeshProUGUI WURDStarText;
+public TextMeshProUGUI FPSStarText;
+public TextMeshProUGUI HOCStarText;
+public TextMeshProUGUI FME1StarText;
+public TextMeshProUGUI FME2StarText;
+public TextMeshProUGUI compWFEStarText;
+public TextMeshProUGUI compWURDStarText;
+public TextMeshProUGUI compFPSStarText;
+public TextMeshProUGUI compHOCStarText;
+public TextMeshProUGUI compFME1StarText;
+public TextMeshProUGUI compFME2StarText;
+
 
     
     public void Start()
     {
         title = "summary";
         initializeChart();
-        cummulativeScores = AppData.Instance.userData.ReadCumulativeHitsForAllGames();
-        displayCummulativeScore();
-    }
 
-    private void displayCummulativeScore()
+        List<MechanismStats> mechStats = AppData.Instance.userData.ReadMechanismStarStats();
+        displayMechanismStars(mechStats);
+    }
+    private void displayMechanismStars(List<MechanismStats> stats)
     {
-        ppCummulativeScoreTxt.text = $"{cummulativeScores[0]:D4}";
-        ttCummulativeScoreTxt.text = $"{cummulativeScores[1]:D4}";
-        htCummulativeScoreTxt.text = $"{cummulativeScores[2]:D4}";
-        fcCummulativeScoreTxt.text = $"{cummulativeScores[3]:D4}";
-        rgCummulativeScoreTxt.text = $"{cummulativeScores[4]:D4}";
+        foreach (var s in stats)
+        {
+            Transform parent = null;
+            TextMeshProUGUI txt = null;
+            TextMeshProUGUI comptxt = null;
 
+
+            switch (s.Mechanism)
+            {
+                case "WFE": parent = WFEStarParent; txt = WFEStarText; comptxt = compWFEStarText; if(s.CumulativeStars>0)WFEstar.GetComponent<Image>().color = Color.white; break;
+                case "WURD": parent = WURDStarParent; txt = WURDStarText; comptxt = compWURDStarText; if(s.CumulativeStars>0)WURDstar.GetComponent<Image>().color = Color.white; break;
+                case "FPS": parent = FPSStarParent; txt = FPSStarText; comptxt = compFPSStarText; if(s.CumulativeStars>0)FPSstar.GetComponent<Image>().color = Color.white; break;
+                case "HOC": parent = HOCStarParent; txt = HOCStarText; comptxt = compHOCStarText; if(s.CumulativeStars>0)HOCstar.GetComponent<Image>().color = Color.white; break;
+                case "FME1": parent = FME1StarParent; txt = FME1StarText; comptxt = compFME1StarText; if(s.CumulativeStars>0)FME1star.GetComponent<Image>().color = Color.white; break;
+                case "FME2": parent = FME2StarParent; txt = FME2StarText; comptxt = compFME2StarText; if(s.CumulativeStars>0)FME2star.GetComponent<Image>().color = Color.white; break;
+            }
+
+            if (parent == null || txt == null) continue;
+
+            // Reset all stars to grey
+            for (int i = 0; i < parent.childCount; i++)
+                parent.GetChild(i).GetComponent<Image>().color = Color.black;
+
+            // Color today’s stars white
+            for (int i = 0; i < s.TodayStars; i++)
+                parent.GetChild(i).GetComponent<Image>().color = Color.white;
+
+            // Text format => Today / Yesterday / Total
+            txt.text = $"{s.CumulativeStars:D3}";
+            comptxt.text = $"{s.TodayStars:D2}/{s.YesterdayStars:D2}";
+        }
     }
+
     void Update()
     {
         while (_actionQueue.TryDequeue(out var action))
@@ -82,19 +132,7 @@ public class summarySceneHandler : MonoBehaviour
 
             ConnectToRobot.disconnect();
             SceneManager.LoadScene("DATAUPLOAD");
-            // Application.Quit();
-            // Process.Start("shutdown", "/s /t 0");
-            // #if UNITY_EDITOR
-            //     UnityEditor.EditorApplication.isPlaying = false; 
-            // #endif
         });
-    }
-    public void LoginScene(){
-    //     AppData.Instance.userData = null;
-    //    // PlutoComm.stopSensorStream();
-
-    //    AppData.Instance.setUser(null);
-    //     if(AppData.Instance.userData == null && AppData.Instance.userID == null) SceneManager.LoadScene("LOGIN");
     }
 
     //To initialize the barchart with whole data of moveTime per day

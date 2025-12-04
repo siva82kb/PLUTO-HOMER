@@ -22,8 +22,8 @@ public class HatGameController : MonoBehaviour
      public GameObject gameSpeedControl;
     private GameSpeedController gsc = null;
     // Game graphics related variables.
-    public Text ScoreText, speed;
-    public Text timeLeftText, status;
+    public Text  speed,status;
+    public TextMeshProUGUI timeLeftText, ScoreText ;
     public GameObject GameOverObject;
     public GameObject StartButton, ExitButton;
     public GameObject PauseButton;
@@ -140,7 +140,7 @@ public class HatGameController : MonoBehaviour
     public TextMeshProUGUI yesterdayScoreTxt;
     public TextMeshProUGUI todayScoreTxt;
     public TextMeshProUGUI starCount;
-    public GameObject GameOverStar,gameOverPanel;
+    public GameObject GameOverStar,gameOverPanel , starLabel;
     public int _starCount;
 
     private void Awake()
@@ -636,10 +636,11 @@ public class HatGameController : MonoBehaviour
         player = GameObject.FindGameObjectWithTag("Player");
         scale = new Vector3(1f, 1f, 1f);
         player.transform.localScale = scale;
+        if(AppData.Instance.selectedGame.isAchievedToday())starLabel.GetComponent<Image>().color = Color.white;
 
-        // Intialize text
-        timeLeftText = GameObject.FindGameObjectWithTag("TimeLeftText").GetComponent<Text>();
-        ScoreText = GameObject.FindGameObjectWithTag("ScoreText").GetComponent<Text>();
+        // // Intialize text
+        // timeLeftText = GameObject.FindGameObjectWithTag("TimeLeftText").GetComponent<TextMeshProUGUI>();
+        // ScoreText = GameObject.FindGameObjectWithTag("ScoreText").GetComponent<TextMeshProUGUI>();
         reminderPanel = GameObject.FindGameObjectWithTag("ReminderPanel");
 
 
@@ -684,8 +685,8 @@ public class HatGameController : MonoBehaviour
 
     private void UpdateText()
     {
-        timeLeftText.text = $": {(int)triaTimeLeft}";
-        ScoreText.text = $"SCORE: {nSuccess}";
+        timeLeftText.text = $"Timer:{(int)triaTimeLeft}s";
+        ScoreText.text = $"Score:{nSuccess:D2}";
     }
 
     public void exitGame()

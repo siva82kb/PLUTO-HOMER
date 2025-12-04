@@ -1,9 +1,11 @@
 
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
 public class trialTime : MonoBehaviour
 {
     private TextMeshProUGUI trialNo;
+    public Image fillColor;
     // Start is called before the first frame update
     void Start()
     {
@@ -13,6 +15,7 @@ public class trialTime : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        trialNo.text =$"{AppData.Instance.selectedMechanism.trialNumberDay}/ {AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name]}";
+        trialNo.text =$"{AppData.Instance.selectedMechanism.trialNumberDay:D2}/{AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name]}";
+        fillColor.fillAmount = AppData.Instance.selectedMechanism.trialNumberDay / AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name];
     }
 }

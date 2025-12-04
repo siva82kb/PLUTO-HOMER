@@ -15,7 +15,7 @@ public class FlappyGameControl : MonoBehaviour
 {
     public AudioClip[] winClip;
     public AudioClip[] hitClip;
-    public Text ScoreText;
+    public TextMeshProUGUI ScoreText;
     public static FlappyGameControl Instance { get; private set; }
     public GameObject GameOverText;
     public GameObject[] pauseObjects, finishObjects;
@@ -64,7 +64,7 @@ public class FlappyGameControl : MonoBehaviour
     public int nSuccess = 0;
     public int nFailure = 0;
     private string prevScene = "CHGAME";
-     public Text timeLeftText, status, gameSpeedViewer;
+     public Text status, gameSpeedViewer;
     public enum GameStates
     {
         WAITING = 0,
@@ -102,7 +102,7 @@ public class FlappyGameControl : MonoBehaviour
     public GameObject aromRight;
     private GameObject targetTemp;
     public GameObject HSC; //HighScoreCanvas
-    public TextMeshProUGUI score1;
+    public TextMeshProUGUI score1, timeLeftText;
     private float lastHighScore, eventDelayTimer = 0f, gameSpeed;
     private bool runOnce = false, changeScene = false;
     public Image loadingImage;
@@ -119,7 +119,7 @@ public class FlappyGameControl : MonoBehaviour
     public TextMeshProUGUI yesterdayScoreTxt;
     public TextMeshProUGUI todayScoreTxt;
     public TextMeshProUGUI starCount;
-    public GameObject GameOverStar;
+    public GameObject GameOverStar, starLabel;
     public int _starCount;
     private int[] scores;
 
@@ -143,6 +143,8 @@ public class FlappyGameControl : MonoBehaviour
     private void InitializeGame()
     {
         reminderPanel = GameObject.FindGameObjectWithTag("ReminderPanel");
+        if(AppData.Instance.selectedGame.isAchievedToday())starLabel.GetComponent<Image>().color = Color.white;
+
         gameOverPanel.SetActive(false);
         // Intialize game logic variables
         gameState = GameStates.WAITING;
@@ -743,8 +745,8 @@ public class FlappyGameControl : MonoBehaviour
 
     private void UpdateText()
     {
-        timeLeftText.text = $": {(int)triaTimeLeft}";
-        ScoreText.text = $"Score: {nSuccess}";
+        timeLeftText.text = $"Timer:{(int)triaTimeLeft}s";
+        ScoreText.text = $"Score:{nSuccess}";
     }
 
     private void UpdatePlutoAANTarget()

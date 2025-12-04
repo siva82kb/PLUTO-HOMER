@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -89,6 +90,11 @@ namespace XCharts.Runtime
         {
             get { return m_Data; }
             set { if (PropertyUtil.SetClass(ref m_Data, value)) SetVerticesDirty(); }
+        }
+
+        public void AddData(MarkLineData markLineData)
+        {
+            throw new NotImplementedException();
         }
 
         public override void SetDefaultValue()

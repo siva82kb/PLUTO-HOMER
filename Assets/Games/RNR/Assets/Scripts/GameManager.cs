@@ -100,7 +100,7 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI yesterdayScoreTxt;
     public TextMeshProUGUI todayScoreTxt;
     public TextMeshProUGUI starCount;
-    public GameObject GameOverStar;
+    public GameObject GameOverStar, starLabel;
     public int _starCount;
     private int[] scores;
 
@@ -120,6 +120,7 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         initializeGame();
+        if(AppData.Instance.selectedGame.isAchievedToday())starLabel.GetComponent<Image>().color = Color.white;
         GameObject cloudObj = Instantiate(cloudPrefab, new Vector3(0, 3.5f, 0), Quaternion.identity);
         playerCloud = cloudObj.GetComponent<CloudController>();
         PLAYSIZE = Camera.main.orthographicSize * Camera.main.aspect;
@@ -325,8 +326,8 @@ public class GameManager : MonoBehaviour
         }
 
         // Score.text = $"Score : {score}";
-        Score.text = $"SCORE: {score}";
-        Timer.text = "TIME: " + trialTimeLeft.ToString("F0");
+        Score.text = $"Score:{(int)score}";
+        Timer.text = $"Timer:{(int)trialTimeLeft:D2}s";
     }
 
     void FixedUpdate()

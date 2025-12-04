@@ -75,9 +75,9 @@ public class PongGameController : MonoBehaviour
     public TextMeshProUGUI finalScore;
 
     public GameObject HSC; //HighScoreCanvas
-    public TextMeshProUGUI score;
+    public TextMeshProUGUI score, timeLeftText;
     private float lastHighScore;
-    public Text timeLeftText, gameSpeedViewer;
+    public Text tgameSpeedViewer;
     static float playSize;
     // static float topBound = 5.5F;
     static float topBound = 6F;
@@ -106,7 +106,7 @@ public class PongGameController : MonoBehaviour
     public TextMeshProUGUI yesterdayScoreTxt;
     public TextMeshProUGUI todayScoreTxt;
     public TextMeshProUGUI starCount;
-    public GameObject GameOverStar;
+    public GameObject GameOverStar,starLabel;
     public int _starCount;
     private int[] scores;
     private void Awake()
@@ -125,6 +125,7 @@ public class PongGameController : MonoBehaviour
     void Start()
     {
         InitializeGame();
+        if(AppData.Instance.selectedGame.isAchievedToday())starLabel.GetComponent<Image>().color = Color.white;
         initializeGameSpeedController();
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
         finishObjects = GameObject.FindGameObjectsWithTag("ShowOnFinish");
@@ -787,7 +788,7 @@ public void updateStarCount()
     }
     private void UpdateText()
     {
-        timeLeftText.text = $"TIME: {(int)triaTimeLeft}";
+        timeLeftText.text = $"Timer:{(int)triaTimeLeft}s";
         // gameSpeedViewer.text = $"GS :{(int)gameSpeed}";
         //core.text = $"Score: {nSuccess}";
     }

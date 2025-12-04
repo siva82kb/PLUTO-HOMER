@@ -977,16 +977,23 @@ public class PlutoUserData
         return new[] { score1, score2 };
     }
 
-    private int GetScoreForDate(DateTime targetDate,String gameName)
+    private int GetScoreForDate(DateTime targetDate, string gameName)
     {
         var table = AppData.Instance.userData.dTableSession;
-        int total = AppData.Instance.userData.dTableSession.AsEnumerable()
-              .Where(row => DateTime.ParseExact(row.Field<string>(DATETIME), DataManager.DATEFORMAT, CultureInfo.InvariantCulture).Date == targetDate.Date &&
-                     row.Field<string>("GameName") == gameName
-                     )
-              .Sum(row => Convert.ToInt32(row["CurrentHits"]));
+
+        int total = table.AsEnumerable()
+            .Where(row =>
+                DateTime.ParseExact(row.Field<string>(DATETIME),
+                                    DataManager.DATEFORMAT,
+                                    CultureInfo.InvariantCulture).Date == targetDate.Date &&
+                row.Field<string>("GameName") == gameName &&
+                row.Field<string>("Mechanism") == AppData.Instance.selectedMechanism.name
+            )
+            .Sum(row => Convert.ToInt32(row["CurrentHits"]));
+
         return total;
     }
+
 
 
     public class GameStats

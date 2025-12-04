@@ -20,11 +20,18 @@ public class SessionDataHandler
     public string STARTTIME = "StartTime";
     public string STOPTIME = "StopTime";
     public string MECHANISM = "Mechanism";
+    public DateTime StartDate;
+    public DateTime EndDate;
+
+
+
 
     public SessionDataHandler(string path)
     {
         filePath = path;
+        LoadConfigDates(AppData.Instance.userData.dTableConfig);
         LoadSessionData();
+
     }
     //session file into dataTable
     private void LoadSessionData()
@@ -64,55 +71,62 @@ public class SessionDataHandler
             UnityEngine.Debug.Log("CSV file not found at: " + filePath);
         }
     }
+    public void LoadConfigDates(DataTable configTable)
+    {
+        if (configTable.Rows.Count > 0)
+        {
+            var row = configTable.Rows[0];
+
+            StartDate = DateTime.ParseExact(row["StartDate"].ToString(), "dd-MM-yyyy", CultureInfo.InvariantCulture);
+            EndDate = DateTime.ParseExact(row["EndDate"].ToString(), "dd-MM-yyyy", CultureInfo.InvariantCulture);
+
+            
+        }
+    }
 
  
     public void summaryCalculateMovTimePerDayWithLinq()
     {
         if (sessionTable == null || sessionTable.Rows.Count == 0)
         {
-            AppLogger.LogWarning("Session table is null or empty.");
             summaryElapsedTimeDay = new float[0];
             summaryDate = new string[0];
             return;
         }
 
-        var movTimePerDay = sessionTable.AsEnumerable()
+        // Step 1: Group existing data by date
+        var actualData = sessionTable.AsEnumerable()
             .Where(row =>
                 !string.IsNullOrWhiteSpace(row.Field<string>(DATETIME)) &&
                 !string.IsNullOrWhiteSpace(row.Field<string>(MOVETIME)) &&
-                int.TryParse(row[MOVETIME].ToString(), out _))
+                double.TryParse(row[MOVETIME].ToString(), out _))
             .GroupBy(row =>
             {
-                var dateString = row.Field<string>(DATETIME);
-                return DateTime.ParseExact(dateString, DATEFORMAT_INFILE, CultureInfo.InvariantCulture).Date;
+                return DateTime.ParseExact(row.Field<string>(DATETIME),
+                                        DATEFORMAT_INFILE,
+                                        CultureInfo.InvariantCulture).Date;
             })
-            .Select(group => new
-            {
-                Date = group.Key,
-                DayOfWeek = group.Key.DayOfWeek,
-                TotalMovTime = group.Sum(row => Convert.ToInt32(row[MOVETIME]))
-            })
-            .OrderBy(entry => entry.Date)
-            .ToList();
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(r => Convert.ToDouble(r[MOVETIME])) / 60.0   // seconds -> minutes
+            );
 
-        if (movTimePerDay.Count == 0)
+        int totalDays = (EndDate - StartDate).Days + 1;
+        summaryDate = new string[totalDays];
+        summaryElapsedTimeDay = new float[totalDays];
+
+        for (int i = 0; i < totalDays; i++)
         {
-            AppLogger.LogWarning("No valid session data found for movement time calculation.");
-            summaryElapsedTimeDay = new float[0];
-            summaryDate = new string[0];
-            return;
-        }
+            DateTime current = StartDate.AddDays(i);
 
-        summaryElapsedTimeDay = new float[movTimePerDay.Count];
-        summaryDate = new string[movTimePerDay.Count];
+            summaryDate[i] = current.ToString(DATEFORMAT);
 
-        for (int i = 0; i < movTimePerDay.Count; i++)
-        {
-            summaryElapsedTimeDay[i] = movTimePerDay[i].TotalMovTime / 60f; // Convert seconds to minutes
-            summaryDate[i] = movTimePerDay[i].Date.ToString(DATEFORMAT);    // Format date as specified
+            // if date exists in session table, use it; otherwise 0
+            summaryElapsedTimeDay[i] = actualData.ContainsKey(current)
+                ? (float)actualData[current]
+                : 0f;
         }
     }
-
 
     
     public void CalculateMovTimeForMechanism(string mechanism)

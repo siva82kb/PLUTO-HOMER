@@ -22,8 +22,8 @@ public class FruitBasketGameController : MonoBehaviour
     public GameObject gameOver;
     public GameObject onPause;
     private GameObject gardenerGameObj;
-    public Text timertxt, status;
-    public Text scoreTxt,bestScore;
+    public Text bestScore, status;
+    public TextMeshProUGUI scoreTxt,timertxt;
     public Text messageTxt;
     public AudioSource audioSource;
     public AudioClip[] soundClips;  // Add multiple clips in Inspector
@@ -91,7 +91,7 @@ public class FruitBasketGameController : MonoBehaviour
     public TextMeshProUGUI yesterdayScoreTxt;
     public TextMeshProUGUI todayScoreTxt;
     public TextMeshProUGUI starCount;
-    public GameObject GameOverStar;
+    public GameObject GameOverStar, starLabel;
     public int _starCount;
     private int[] scores;
   
@@ -106,6 +106,8 @@ public class FruitBasketGameController : MonoBehaviour
     void Start()
     {
         initializeGameSpeedController();
+        if(AppData.Instance.selectedGame.isAchievedToday())starLabel.GetComponent<Image>().color = Color.white;
+
         canvasRect = mainCanvas.GetComponent<RectTransform>();
         PLAYSIZE = canvasRect.rect.width / 2f;//canvasWidth
 
@@ -714,8 +716,8 @@ public class FruitBasketGameController : MonoBehaviour
                         ? "PRESS PLUTO BUTTON TO START GAME"
                         : "";
 
-        timertxt.text = $"TIME: {trialTimeLeft.ToString("F0")}s";
-        scoreTxt.text = nSuccess.ToString();
+        timertxt.text = $"Timer:{trialTimeLeft.ToString("F0")}s";
+        scoreTxt.text = $"Score:{nSuccess:D2}";
     }
     private void onPlutoButtonReleased()
     {

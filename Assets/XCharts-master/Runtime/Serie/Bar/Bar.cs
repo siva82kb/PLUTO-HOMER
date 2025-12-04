@@ -11,6 +11,8 @@ namespace XCharts.Runtime
     [SerieDataExtraField("m_Ignore")]
     public class Bar : Serie, INeedSerieContainer
     {
+        public MarkLine markLine;
+
         public int containerIndex { get; internal set; }
         public int containterInstanceId { get; internal set; }
 

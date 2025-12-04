@@ -36,24 +36,24 @@ public class summarySceneHandler : MonoBehaviour
 
     int[] cummulativeScores;
     public Transform WFEStarParent;
-public Transform WURDStarParent;
-public Transform FPSStarParent;
-public Transform HOCStarParent;
-public Transform FME1StarParent;
-public Transform FME2StarParent;
+    public Transform WURDStarParent;
+    public Transform FPSStarParent;
+    public Transform HOCStarParent;
+    public Transform FME1StarParent;
+    public Transform FME2StarParent;
 
-public TextMeshProUGUI WFEStarText;
-public TextMeshProUGUI WURDStarText;
-public TextMeshProUGUI FPSStarText;
-public TextMeshProUGUI HOCStarText;
-public TextMeshProUGUI FME1StarText;
-public TextMeshProUGUI FME2StarText;
-public TextMeshProUGUI compWFEStarText;
-public TextMeshProUGUI compWURDStarText;
-public TextMeshProUGUI compFPSStarText;
-public TextMeshProUGUI compHOCStarText;
-public TextMeshProUGUI compFME1StarText;
-public TextMeshProUGUI compFME2StarText;
+    public TextMeshProUGUI WFEStarText;
+    public TextMeshProUGUI WURDStarText;
+    public TextMeshProUGUI FPSStarText;
+    public TextMeshProUGUI HOCStarText;
+    public TextMeshProUGUI FME1StarText;
+    public TextMeshProUGUI FME2StarText;
+    public TextMeshProUGUI compWFEStarText;
+    public TextMeshProUGUI compWURDStarText;
+    public TextMeshProUGUI compFPSStarText;
+    public TextMeshProUGUI compHOCStarText;
+    public TextMeshProUGUI compFME1StarText;
+    public TextMeshProUGUI compFME2StarText;
 
 
     
@@ -86,11 +86,9 @@ public TextMeshProUGUI compFME2StarText;
 
             if (parent == null || txt == null) continue;
 
-            // Reset all stars to grey
             for (int i = 0; i < parent.childCount; i++)
                 parent.GetChild(i).GetComponent<Image>().color = Color.black;
 
-            // Color today’s stars white
             for (int i = 0; i < s.TodayStars; i++)
                 parent.GetChild(i).GetComponent<Image>().color = Color.white;
 
@@ -110,7 +108,6 @@ public TextMeshProUGUI compFME2StarText;
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
     }
 
-    // To load the data for a specific mechanism into the bar graph.
     public void mechanismClicked(Button button)
     {
         title = button.gameObject.name.ToUpper();
@@ -143,7 +140,7 @@ public TextMeshProUGUI compFME2StarText;
         sessionDataHandler = new SessionDataHandler(DataManager.sessionFile);
 
         sessionDataHandler.summaryCalculateMovTimePerDayWithLinq();
-
+        sessionDataHandler.LoadConfigDates(AppData.Instance.userData.dTableConfig);
         barchart = gameObject.GetComponent<BarChart>();
         if (barchart == null)
         {
@@ -166,8 +163,10 @@ public TextMeshProUGUI compFME2StarText;
         xAxis.type = Axis.AxisType.Category; 
         yAxis.type = Axis.AxisType.Value;
         yAxis.min = 0; 
-        yAxis.max = sessionDataHandler.summaryElapsedTimeDay.Max(); 
-
+        yAxis.max = sessionDataHandler.summaryElapsedTimeDay.Max();
+        // yAxis.max = 100;     // fixed Y-axis limit
+        yAxis.boundaryGap = false; 
+   
         
         var dataZoom = barchart.EnsureChartComponent<DataZoom>();
         dataZoom.enable = true;

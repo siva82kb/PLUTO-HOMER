@@ -2607,6 +2607,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5720896092599798003, guid: e42e9d15d084bbd4f83586ccbea336dc, type: 3}
+      propertyPath: m_fontSize
+      value: 20.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5720896092599798003, guid: e42e9d15d084bbd4f83586ccbea336dc, type: 3}
+      propertyPath: m_VerticalAlignment
+      value: 512
+      objectReference: {fileID: 0}
+    - target: {fileID: 5720896092599798003, guid: e42e9d15d084bbd4f83586ccbea336dc, type: 3}
+      propertyPath: m_HorizontalAlignment
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 6736922983508021492, guid: e42e9d15d084bbd4f83586ccbea336dc, type: 3}
       propertyPath: m_Name
       value: celebrationPanel
@@ -2630,6 +2642,22 @@ PrefabInstance:
     - target: {fileID: 7598220393423169118, guid: e42e9d15d084bbd4f83586ccbea336dc, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -0.000015259
+      objectReference: {fileID: 0}
+    - target: {fileID: 9038625863709130302, guid: e42e9d15d084bbd4f83586ccbea336dc, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 428.9395
+      objectReference: {fileID: 0}
+    - target: {fileID: 9038625863709130302, guid: e42e9d15d084bbd4f83586ccbea336dc, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 28.2946
+      objectReference: {fileID: 0}
+    - target: {fileID: 9038625863709130302, guid: e42e9d15d084bbd4f83586ccbea336dc, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -6.5988
+      objectReference: {fileID: 0}
+    - target: {fileID: 9038625863709130302, guid: e42e9d15d084bbd4f83586ccbea336dc, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -63.9195
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

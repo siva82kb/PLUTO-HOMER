@@ -27385,6 +27385,50 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1895452631}
     m_Modifications:
+    - target: {fileID: 153785020917680066, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_fontSize
+      value: 51.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 153785020917680066, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_enableAutoSizing
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 153785020917680066, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_VerticalAlignment
+      value: 512
+      objectReference: {fileID: 0}
+    - target: {fileID: 4347067382424517030, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 132.48
+      objectReference: {fileID: 0}
+    - target: {fileID: 4347067382424517030, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 49.9938
+      objectReference: {fileID: 0}
+    - target: {fileID: 4347067382424517030, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 17.459
+      objectReference: {fileID: 0}
+    - target: {fileID: 4347067382424517030, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 11.5307
+      objectReference: {fileID: 0}
+    - target: {fileID: 6403611489427869032, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 98.0205
+      objectReference: {fileID: 0}
+    - target: {fileID: 6403611489427869032, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 98.547
+      objectReference: {fileID: 0}
+    - target: {fileID: 6403611489427869032, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -97.4764
+      objectReference: {fileID: 0}
+    - target: {fileID: 6403611489427869032, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 5.765
+      objectReference: {fileID: 0}
     - target: {fileID: 7542494530352610132, guid: f589b369b7a47164faecc06de2710b29, type: 3}
       propertyPath: m_Name
       value: starlabel

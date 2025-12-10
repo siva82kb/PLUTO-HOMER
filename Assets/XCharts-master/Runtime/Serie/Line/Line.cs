@@ -15,6 +15,8 @@ namespace XCharts.Runtime
     {
         public int containerIndex { get; internal set; }
         public int containterInstanceId { get; internal set; }
+        public bool showInLegend { get; set; }
+
         public static Serie AddDefaultSerie(BaseChart chart, string serieName)
         {
             var serie = chart.AddSerie<Line>(serieName);
@@ -31,6 +33,11 @@ namespace XCharts.Runtime
         {
             var newSerie = serie.Clone<Line>();
             return newSerie;
+        }
+
+        public void AddData(int i, object value)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -534,8 +534,8 @@ public class FlappyGameControl : MonoBehaviour
         // scrollSpeed = -2 - 1 * (0.02f * AppData.Instance.speedData.gameSpeed);
         //if (AppData.Instance.speedData.gameSpeed > 38f) gameSpeed = 38.0f;
         scrollSpeed = -2f - (0.05f * gameSpeed);
+        hidePaused();
 
-            hidePaused();
         // Start new trial.
         AppData.Instance.StartNewTrial();
          gsc.sessionDetailsText.text = $"sessionNo: {AppData.Instance.currentSessionNumber}\n" +
@@ -615,7 +615,7 @@ public class FlappyGameControl : MonoBehaviour
                     targetPosition = AngleToScreen(targetAngle);
                     spawnColumn();
                     MOVEDURATION = MoveDuration();
-                  //  Debug.Log($"mm :{MOVEDURATION}");
+                    //  Debug.Log($"mm :{MOVEDURATION}");
                     // Set new trial in the AAN controller.
                     float checkFME = ((PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME1") && (PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME2")) ? gameSpeed : 20.0f;
                     AppData.Instance.aanController.SetNewTrialDetails(PlutoComm.angle, targetAngle, MOVEDURATION, checkFME);
@@ -714,7 +714,7 @@ public class FlappyGameControl : MonoBehaviour
                     lastHighScore = AppData.Instance.successRate * (PlutoAANController.MAXCONTROLBOUND - AppData.Instance.CurrentControlBound);
                     if (AppData.Instance.previousSuccessRates == null)
                     {
-                        score1.text = $"{(int)lastHighScore}";
+                            score1.text = $"{(int)lastHighScore}";
                         // if (lastHighScore > Others.highestSuccessRate)
                         // {
                         //     StartCoroutine(ShowForSeconds(HSC, 1.3f));

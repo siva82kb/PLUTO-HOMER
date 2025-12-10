@@ -116,6 +116,12 @@ namespace XCharts.Runtime
             item.label.formatter = "{c}";
             data.Add(item);
         }
+
+        public class Data : MarkLineData
+        {
+            public int yValue { get; set; }
+            public string name { get; set; }
+        }
     }
     /// <summary>
     /// Data of marking line. 
@@ -124,6 +130,8 @@ namespace XCharts.Runtime
     [System.Serializable]
     public class MarkLineData : ChildComponent
     {
+        public int value;
+        public int yAxis;
         [SerializeField] private MarkLineType m_Type = MarkLineType.None;
         [SerializeField] private string m_Name;
         [SerializeField] private int m_Dimension = 1;

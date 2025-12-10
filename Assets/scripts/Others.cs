@@ -1067,12 +1067,14 @@ public class PlutoUserData
         return result;
     }
     public class MechanismStats
-    {
-        public string Mechanism;
-        public int TodayStars;
-        public int YesterdayStars;
-        public int CumulativeStars;
-    }
+{
+    public string Mechanism;
+    public int TodayStars;
+    public int YesterdayStars;
+    public int CumulativeStars;
+    public int CumulativeStarsYesterday;
+
+}
     public List<MechanismStats> ReadMechanismStarStats()
     {
         string[] mechanisms = { "WFE", "WURD", "FPS", "HOC", "FME1", "FME2" };
@@ -1081,24 +1083,32 @@ public class PlutoUserData
         DateTime today = DateTime.Today;
         DateTime yesterday = today.AddDays(-1);
 
-        foreach (string mech in mechanisms)
-        {
-            int cumulativeStars = dTableSession.AsEnumerable()
-            .Where(r => r.Field<string>("Mechanism") == mech)
+        // ⭐ TOTAL stars of ALL mechanisms (till today)
+        int cumulativeStarsAll = dTableSession.AsEnumerable()
+            .Sum(r => Convert.ToInt32(r["currentStar"]));
+        
+        // ⭐ Cumulative stars till yesterday (ACROSS ALL mechanisms)
+        int cumulativeUntilYesterday = dTableSession.AsEnumerable()
+            .Where(r => DateTime.ParseExact(
+                    r.Field<string>("DateTime"), DataManager.DATEFORMAT, null).Date <= yesterday)
             .Sum(r => Convert.ToInt32(r["currentStar"]));
 
-
+        foreach (string mech in mechanisms)
+        {
+            // ⭐ Today stars for this mechanism
             int todayStars = dTableSession.AsEnumerable()
                 .Where(r =>
                     r.Field<string>("Mechanism") == mech &&
-                    DateTime.ParseExact(r.Field<string>("DateTime"), DataManager.DATEFORMAT, null).Date == today)
+                    DateTime.ParseExact(r.Field<string>("DateTime"),
+                        DataManager.DATEFORMAT, null).Date == today)
                 .Sum(r => Convert.ToInt32(r["currentStar"]));
 
+            // ⭐ Yesterday stars for this mechanism
             int yStars = dTableSession.AsEnumerable()
                 .Where(r =>
                     r.Field<string>("Mechanism") == mech &&
-                    DateTime.ParseExact(r.Field<string>("DateTime"), DataManager.DATEFORMAT, null).Date == yesterday
-                )
+                    DateTime.ParseExact(r.Field<string>("DateTime"),
+                        DataManager.DATEFORMAT, null).Date == yesterday)
                 .Sum(r => Convert.ToInt32(r["currentStar"]));
 
             results.Add(new MechanismStats
@@ -1106,15 +1116,15 @@ public class PlutoUserData
                 Mechanism = mech,
                 TodayStars = todayStars,
                 YesterdayStars = yStars,
-                CumulativeStars = cumulativeStars
+
+                // ⭐ SAME for ALL mechanisms
+                CumulativeStars = cumulativeStarsAll,
+                CumulativeStarsYesterday = cumulativeUntilYesterday
             });
         }
 
         return results;
     }
-
-
-
 }
 
 

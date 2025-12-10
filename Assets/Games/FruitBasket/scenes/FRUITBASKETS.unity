@@ -5830,6 +5830,54 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1895689831}
     m_Modifications:
+    - target: {fileID: 153785020917680066, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_fontSize
+      value: 57.9
+      objectReference: {fileID: 0}
+    - target: {fileID: 153785020917680066, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_enableAutoSizing
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4347067382424517030, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 118.331
+      objectReference: {fileID: 0}
+    - target: {fileID: 4347067382424517030, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 66.326
+      objectReference: {fileID: 0}
+    - target: {fileID: 4347067382424517030, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 10.3849
+      objectReference: {fileID: 0}
+    - target: {fileID: 4347067382424517030, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 10.812
+      objectReference: {fileID: 0}
+    - target: {fileID: 6403611489427869032, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0.49999976
+      objectReference: {fileID: 0}
+    - target: {fileID: 6403611489427869032, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0.5000022
+      objectReference: {fileID: 0}
+    - target: {fileID: 6403611489427869032, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 95.8076
+      objectReference: {fileID: 0}
+    - target: {fileID: 6403611489427869032, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 93.4379
+      objectReference: {fileID: 0}
+    - target: {fileID: 6403611489427869032, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -84.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6403611489427869032, guid: f589b369b7a47164faecc06de2710b29, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 13.9
+      objectReference: {fileID: 0}
     - target: {fileID: 7542494530352610132, guid: f589b369b7a47164faecc06de2710b29, type: 3}
       propertyPath: m_Name
       value: starlabel

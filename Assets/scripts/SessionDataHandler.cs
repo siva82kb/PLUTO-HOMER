@@ -75,7 +75,7 @@ public class SessionDataHandler
     {
         if (configTable.Rows.Count > 0)
         {
-            var row = configTable.Rows[0];
+            var row = configTable.Rows[configTable.Rows.Count - 1];
 
             StartDate = DateTime.ParseExact(row["StartDate"].ToString(), "dd-MM-yyyy", CultureInfo.InvariantCulture);
             EndDate = DateTime.ParseExact(row["EndDate"].ToString(), "dd-MM-yyyy", CultureInfo.InvariantCulture);
@@ -121,7 +121,6 @@ public class SessionDataHandler
 
             summaryDate[i] = current.ToString(DATEFORMAT);
 
-            // if date exists in session table, use it; otherwise 0
             summaryElapsedTimeDay[i] = actualData.ContainsKey(current)
                 ? (float)actualData[current]
                 : 0f;

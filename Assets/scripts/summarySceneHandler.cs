@@ -13,19 +13,11 @@ using static PlutoUserData;
 public class summarySceneHandler : MonoBehaviour
 {
     public SessionDataHandler sessionDataHandler;
-    public BarChart barchart;
+    // public BarChart lineChart;
+    public LineChart lineChart;
+
     public string title;
     private ConcurrentQueue<System.Action> _actionQueue = new ConcurrentQueue<System.Action>();
-    public TextMeshProUGUI ttCummulativeScoreTxt;
-    public TextMeshProUGUI ppCummulativeScoreTxt;
-    public TextMeshProUGUI htCummulativeScoreTxt;
-    public TextMeshProUGUI fcCummulativeScoreTxt;
-    public TextMeshProUGUI rgCummulativeScoreTxt;
-    public TextMeshProUGUI ppCurrentScoreTxt;
-    public TextMeshProUGUI ttCurrentScoreTxt;
-    public TextMeshProUGUI htCurrentScoreTxt;
-    public TextMeshProUGUI fcCurrentScoreTxt;
-    public TextMeshProUGUI rgCurrentScoreTxt;
 
     public GameObject WFEstar;
     public GameObject WURDstar;
@@ -33,6 +25,15 @@ public class summarySceneHandler : MonoBehaviour
     public GameObject HOCstar;
     public GameObject FME1star;
     public GameObject FME2star;
+    public GameObject TOTstar;
+
+
+    public GameObject WFE;
+    public GameObject WURD;
+    public GameObject FPS;
+    public GameObject HOC;
+    public GameObject FME1;
+    public GameObject FME2;
 
     int[] cummulativeScores;
     public Transform WFEStarParent;
@@ -54,19 +55,46 @@ public class summarySceneHandler : MonoBehaviour
     public TextMeshProUGUI compHOCStarText;
     public TextMeshProUGUI compFME1StarText;
     public TextMeshProUGUI compFME2StarText;
-
+    public TextMeshProUGUI compTOTStarText;
+    public TextMeshProUGUI TOTStarText;
+    private int totalstar;
 
     
     public void Start()
     {
         title = "summary";
+        ShowOnlyPrescribedMechanisms();   // 🔥 Hide unused ones
         initializeChart();
 
         List<MechanismStats> mechStats = AppData.Instance.userData.ReadMechanismStarStats();
         displayMechanismStars(mechStats);
     }
+    private void ShowOnlyPrescribedMechanisms()
+    {
+        Dictionary<string, GameObject> mechObjects = new Dictionary<string, GameObject>()
+        {
+            { "WFE", WFE },
+            { "WURD", WURD },
+            { "FPS", FPS },
+            { "HOC", HOC },
+            { "FME1", FME1 },
+            { "FME2", FME2 }
+        };
+
+        foreach (var kvp in mechObjects)
+        {
+            string mech = kvp.Key;
+            GameObject obj = kvp.Value;
+
+            bool isPrescribed = AppData.Instance.userData.mechMoveTimePrsc[mech] > 0;
+
+            obj.SetActive(isPrescribed);   // 🔥 Only show if prescribed
+        }
+    }
+
     private void displayMechanismStars(List<MechanismStats> stats)
     {
+        
         foreach (var s in stats)
         {
             Transform parent = null;
@@ -76,12 +104,12 @@ public class summarySceneHandler : MonoBehaviour
 
             switch (s.Mechanism)
             {
-                case "WFE": parent = WFEStarParent; txt = WFEStarText; comptxt = compWFEStarText; if(s.CumulativeStars>0)WFEstar.GetComponent<Image>().color = Color.white; break;
-                case "WURD": parent = WURDStarParent; txt = WURDStarText; comptxt = compWURDStarText; if(s.CumulativeStars>0)WURDstar.GetComponent<Image>().color = Color.white; break;
-                case "FPS": parent = FPSStarParent; txt = FPSStarText; comptxt = compFPSStarText; if(s.CumulativeStars>0)FPSstar.GetComponent<Image>().color = Color.white; break;
-                case "HOC": parent = HOCStarParent; txt = HOCStarText; comptxt = compHOCStarText; if(s.CumulativeStars>0)HOCstar.GetComponent<Image>().color = Color.white; break;
-                case "FME1": parent = FME1StarParent; txt = FME1StarText; comptxt = compFME1StarText; if(s.CumulativeStars>0)FME1star.GetComponent<Image>().color = Color.white; break;
-                case "FME2": parent = FME2StarParent; txt = FME2StarText; comptxt = compFME2StarText; if(s.CumulativeStars>0)FME2star.GetComponent<Image>().color = Color.white; break;
+                case "WFE": parent = WFEStarParent; txt = WFEStarText; comptxt = compWFEStarText; if(s.TodayStars>0)WFEstar.GetComponent<Image>().color = Color.white; break;
+                case "WURD": parent = WURDStarParent; txt = WURDStarText; comptxt = compWURDStarText; if(s.TodayStars>0)WURDstar.GetComponent<Image>().color = Color.white; break;
+                case "FPS": parent = FPSStarParent; txt = FPSStarText; comptxt = compFPSStarText; if(s.TodayStars>0)FPSstar.GetComponent<Image>().color = Color.white; break;
+                case "HOC": parent = HOCStarParent; txt = HOCStarText; comptxt = compHOCStarText; if(s.TodayStars>0)HOCstar.GetComponent<Image>().color = Color.white; break;
+                case "FME1": parent = FME1StarParent; txt = FME1StarText; comptxt = compFME1StarText; if(s.TodayStars>0)FME1star.GetComponent<Image>().color = Color.white; break;
+                case "FME2": parent = FME2StarParent; txt = FME2StarText; comptxt = compFME2StarText; if(s.TodayStars>0)FME2star.GetComponent<Image>().color = Color.white; break;
             }
 
             if (parent == null || txt == null) continue;
@@ -93,9 +121,15 @@ public class summarySceneHandler : MonoBehaviour
                 parent.GetChild(i).GetComponent<Image>().color = Color.white;
 
             // Text format => Today / Yesterday / Total
-            txt.text = $"{s.CumulativeStars:D3}";
-            comptxt.text = $"{s.TodayStars:D2}/{s.YesterdayStars:D2}";
+            txt.text = $"{s.TodayStars:D1}";
+            comptxt.text = $"{s.CumulativeStars:D3}/{s.CumulativeStarsYesterday:D3}";
+            totalstar=s.CumulativeStars;
+
+            TOTStarText.text = $"{s.CumulativeStars:D3}";
+            compTOTStarText.text=$"{s.CumulativeStars:D3}/{s.CumulativeStarsYesterday:D3}";
         }
+        if(totalstar>0)TOTstar.GetComponent<Image>().color = Color.white;
+
     }
 
     void Update()
@@ -128,47 +162,76 @@ public class summarySceneHandler : MonoBehaviour
             PlutoComm.stopSensorStream();
 
             ConnectToRobot.disconnect();
+            // try
+            // {
+            //     Application.Quit();
+            //     // Process.Start("shutdown", "/s /t 0");
+
+            //     #if UNITY_EDITOR
+            //                 UnityEditor.EditorApplication.isPlaying = false;
+            //     #endif
+
+            //     // Process.Start("shutdown", "/s /t 0");
+            // }
+            // catch (System.Exception ex)
+            // {
+            //     //Debug.LogError("Failed to shutdown: " + ex.Message);
+            // }
             SceneManager.LoadScene("DATAUPLOAD");
         });
     }
-
-    //To initialize the barchart with whole data of moveTime per day
+   
     public void initializeChart()
     {
-        // Debug.Log("Is bar chart active: " + barchart.gameObject.activeSelf);
-
         sessionDataHandler = new SessionDataHandler(DataManager.sessionFile);
 
         sessionDataHandler.summaryCalculateMovTimePerDayWithLinq();
         sessionDataHandler.LoadConfigDates(AppData.Instance.userData.dTableConfig);
-        barchart = gameObject.GetComponent<BarChart>();
-        if (barchart == null)
+
+        lineChart = gameObject.GetComponent<LineChart>();
+        if (lineChart == null)
         {
-            barchart = gameObject.AddComponent<BarChart>();
-            barchart.Init();;
+            lineChart = gameObject.AddComponent<LineChart>();
+            lineChart.Init();
         }
 
-        // Set chart title and tooltip visibility
-        barchart.EnsureChartComponent<Title>().show = true;
-        barchart.EnsureChartComponent<Title>().text = title;
+        // Title
+        var titleComp = lineChart.EnsureChartComponent<Title>();
+        titleComp.show = true;
+        titleComp.text = title;
 
-        barchart.EnsureChartComponent<Tooltip>().show = true;
-        barchart.EnsureChartComponent<Legend>().show = true;
+        // Tooltip & Legend
+        lineChart.EnsureChartComponent<Tooltip>().show = true;
+        lineChart.EnsureChartComponent<Legend>().show = true;
 
-        // Ensure x and y axes are created
-        var xAxis = barchart.EnsureChartComponent<XAxis>();
-        var yAxis = barchart.EnsureChartComponent<YAxis>();
+        // Axes
+        var xAxis = lineChart.EnsureChartComponent<XAxis>();
+        var yAxis = lineChart.EnsureChartComponent<YAxis>();
+
         xAxis.show = true;
         yAxis.show = true;
-        xAxis.type = Axis.AxisType.Category; 
+
+        xAxis.type = Axis.AxisType.Category;
         yAxis.type = Axis.AxisType.Value;
-        yAxis.min = 0; 
-        yAxis.max = sessionDataHandler.summaryElapsedTimeDay.Max();
-        // yAxis.max = 100;     // fixed Y-axis limit
-        yAxis.boundaryGap = false; 
-   
-        
-        var dataZoom = barchart.EnsureChartComponent<DataZoom>();
+
+        // Fixed Y-axis limit 0 - 100
+        yAxis.min = 0;
+        yAxis.max = 100;
+
+        // Add horizontal deadline at 60
+        var markLine = lineChart.EnsureChartComponent<MarkLine>();
+        markLine.show = true;
+        markLine.data.Clear();
+
+        // Add line at y = 60
+        markLine.data.Add(new MarkLine.Data()
+        {
+            yValue = 60,
+            name = "Deadline"
+        });
+
+        // Enable zoom
+        var dataZoom = lineChart.EnsureChartComponent<DataZoom>();
         dataZoom.enable = true;
         dataZoom.supportInside = true;
         dataZoom.supportSlider = true;
@@ -177,40 +240,45 @@ public class summarySceneHandler : MonoBehaviour
 
         UpdateChartData();
     }
-   
+
     public void UpdateChartData()
     {
-        if (barchart == null)
-        {
-            // Debug.LogWarning("BarChart is null. Make sure it is initialized.");
-            return;
-        }
+        if (lineChart == null) return;
 
-        // Clear any previous data from the chart
-        int n = Array.IndexOf(PlutoComm.MECHANISMS, title);
+        lineChart.RemoveData();
+        lineChart.EnsureChartComponent<Title>().text = title;
 
-        barchart.RemoveData();
-        barchart.EnsureChartComponent<Title>().text = title;
-        barchart.AddSerie<Bar>();
+        lineChart.AddSerie<Line>();
 
-        var xAxis = barchart.GetChartComponent<XAxis>();
+        var xAxis = lineChart.GetChartComponent<XAxis>();
         xAxis.data.Clear();
-        foreach (string date in sessionDataHandler.summaryDate)
-        {
-            xAxis.data.Add(date); // Add x-axis labels (dates)
-        }
 
-        var yAxis = barchart.GetChartComponent<YAxis>();
-        yAxis.data.Clear();
-      
+        DateTime today = DateTime.Today;
+
         for (int i = 0; i < sessionDataHandler.summaryDate.Length; i++)
         {
-            float yValue = sessionDataHandler.summaryElapsedTimeDay[i];
-            barchart.AddData(0, yValue);
-        
+            string dateStr = sessionDataHandler.summaryDate[i];
+            xAxis.data.Add(dateStr);   // Always show labels
+
+            // Parse date
+            DateTime entryDate = DateTime.Parse(dateStr);
+
+            if (entryDate > today)
+            {
+                // Add empty value → line breaks here
+                lineChart.AddData(0, null);
+            }
+            else
+            {
+                // Add actual data
+                float value = sessionDataHandler.summaryElapsedTimeDay[i];
+                lineChart.AddData(0, value);
+            }
         }
-        
-        barchart.RefreshAllComponent();
+
+        lineChart.RefreshAllComponent();
     }
-   
+
+
+
 }

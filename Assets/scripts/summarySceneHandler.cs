@@ -162,22 +162,22 @@ public class summarySceneHandler : MonoBehaviour
             PlutoComm.stopSensorStream();
 
             ConnectToRobot.disconnect();
-            try
-            {
-                Application.Quit();
-                // Process.Start("shutdown", "/s /t 0");
+            // try
+            // {
+            //     Application.Quit();
+            //     // Process.Start("shutdown", "/s /t 0");
 
-                #if UNITY_EDITOR
-                            UnityEditor.EditorApplication.isPlaying = false;
-                #endif
+            //     #if UNITY_EDITOR
+            //                 UnityEditor.EditorApplication.isPlaying = false;
+            //     #endif
 
-                // Process.Start("shutdown", "/s /t 0");
-            }
-            catch (System.Exception ex)
-            {
-                //Debug.LogError("Failed to shutdown: " + ex.Message);
-            }
-            // SceneManager.LoadScene("DATAUPLOAD");
+            //     // Process.Start("shutdown", "/s /t 0");
+            // }
+            // catch (System.Exception ex)
+            // {
+            //     //Debug.LogError("Failed to shutdown: " + ex.Message);
+            // }
+            SceneManager.LoadScene("DATAUPLOAD");
         });
     }
    

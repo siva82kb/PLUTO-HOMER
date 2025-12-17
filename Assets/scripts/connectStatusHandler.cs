@@ -90,7 +90,7 @@ public class connectStatusHandler : MonoBehaviour
                 {
                     // Direct shutdown
                     CloseAppLogger();
-                //    Process.Start("shutdown", "/s /t 0");
+                   Process.Start("shutdown", "/s /t 0");
                 }
                 else
                 {

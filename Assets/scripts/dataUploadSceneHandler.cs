@@ -255,9 +255,11 @@ public class dataUpload : MonoBehaviour
 
         // string pythonExecutionPath = @"C:/Users/gokul/AppData/Local/Programs/Python/Python313/pythonw.exe";
         // string pythonExecutionPath = @"C:/Program Files/Python314/pythonw.exe"; //device-6
-        string pythonExecutionPath = @"C:/Program Files/Python313/pythonw.exe";// device -2
+        // string pythonExecutionPath = @"C:/Program Files/Python313/pythonw.exe";// device -2
+        // string pythonExecutionPath = @"C:/Users/HOMER_10/AppData/Local/Programs/Python/Python314/pythonw.exe";  //Device-7
+        // string pythonExecutionPath = @"C:/Users/HOMER_08/AppData/Local/Programs/Python/Python313/pythonw.exe"; //Device -8
+        string pythonExecutionPath = @"C:/Users/HOMER_11/AppData/Local/Programs/Python/Python314/pythonw.exe";  //Device-9
 
- 
         if (!File.Exists(pythonScriptPath))
 
         {

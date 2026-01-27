@@ -26,6 +26,8 @@ public class PlutoAANController
     public static readonly float MAXCONTROLBOUND = 1f;          // Maximum control bound value.
     public static readonly float MINCONTROLBOUND = 0.16f;       // Minimum control bound value.
     public static float MAX_SPEED = 40.0f;
+    public static float MIN_SPEED = 10.0f;
+
     public float MECH_SPEED = 0f;
 
     public static readonly string[] ADAPTFILEHEADER = new string[] {

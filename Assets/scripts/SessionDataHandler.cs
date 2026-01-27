@@ -12,7 +12,7 @@ public class SessionDataHandler
     private string filePath;
     public float[] summaryElapsedTimeDay;
     public string[] summaryDate;
-    public string DATEFORMAT = "dd/MM";
+    public string DATEFORMAT = "dd/MM/yyyy";
     //Session file header format
     public string DATEFORMAT_INFILE = "yyyy-MM-dd HH:mm:ss";
     public string DATETIME = "DateTime";
@@ -123,7 +123,7 @@ public class SessionDataHandler
 
             summaryElapsedTimeDay[i] = actualData.ContainsKey(current)
                 ? (float)actualData[current]
-                : 0f;
+                :0;
         }
     }
 

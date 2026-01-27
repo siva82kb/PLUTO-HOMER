@@ -90,12 +90,12 @@ public class connectStatusHandler : MonoBehaviour
                 {
                     // Direct shutdown
                     CloseAppLogger();
-                   Process.Start("shutdown", "/s /t 0");
+                //    Process.Start("shutdown", "/s /t 0");
                 }
                 else
                 {
                     // Normal flow: load DataUpload
-                    SceneManager.LoadScene("DATAUPLOAD");
+                    // SceneManager.LoadScene("DATAUPLOAD");
                 }
                 // CloseAppLogger();
                 // SceneManager.LoadScene("DATAUPLOAD");

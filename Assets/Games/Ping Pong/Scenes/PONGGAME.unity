@@ -7307,7 +7307,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Press PlLUTO Button to Continue
+  m_Text: Press PLUTO Button to Continue
 --- !u!222 &2003664841
 CanvasRenderer:
   m_ObjectHideFlags: 0

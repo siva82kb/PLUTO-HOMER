@@ -9,7 +9,7 @@ public class FruitController : MonoBehaviour
     private RectTransform canvasRect;
     public GameObject fruit;
     public Vector3 prevPosition;
-   
+    
     
     void Start()
     {

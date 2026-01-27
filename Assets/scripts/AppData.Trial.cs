@@ -119,7 +119,7 @@ public partial class AppData
             // "GameName"
             selectedGameName,
             // "GameParameter"
-            null,
+            speedData.MOVEDURATION.ToString(),
             // "GameSpeed"
             speedData.gameSpeed.ToString(),
             // "AssistMode"

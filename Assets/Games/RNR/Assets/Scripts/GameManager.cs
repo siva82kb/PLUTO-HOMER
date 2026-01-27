@@ -73,6 +73,7 @@ public class GameManager : MonoBehaviour
     public int nTargets = 0;
     public int nSuccess = 0;
     public int nFailure = 0;
+    private float mechMinDuration, mechMaxDuration, mechMinThreshold, mechMaxThreshold;
     public List<SeedController> seeds;
     private SeedController currentHighlighted;
     private GameObject[] detailObjects;
@@ -80,7 +81,7 @@ public class GameManager : MonoBehaviour
     private float rainTimer = 0f, convertedAngle=0f;
     private float highlightTimer = 0f;
 
-    private float rainDurationToGrow = 0.5f;    // needs 1s of rain
+    private float rainDurationToGrow = 0.2f;    // needs 1s of rain
     public float highlightDuration;     // highlighted for 3s
     private bool hasGrownThisCycle = false, runOnce = false;
     private SeedController lastHighlighted = null; // store last seed
@@ -125,9 +126,6 @@ public class GameManager : MonoBehaviour
         playerCloud = cloudObj.GetComponent<CloudController>();
         PLAYSIZE = Camera.main.orthographicSize * Camera.main.aspect;
 
-        // if (mechanismSpeed < 20) totalTargets = 12;
-        // else if (mechanismSpeed < 30) totalTargets = 16;
-        // else totalTargets = 20;
 
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
         finishObjects = GameObject.FindGameObjectsWithTag("ShowOnFinish");
@@ -169,7 +167,13 @@ public class GameManager : MonoBehaviour
     {
         starCount.text = $"{AppData.Instance.selectedGame.cummulativeStars.ToString("D2")}";
     }
+    float GetTargetEndTime(float gameSpeed)
+    {
+        float t = (gameSpeed - HomerTherapy.MinSpeed) / (HomerTherapy.MaxSpeed - HomerTherapy.MinSpeed);
+        t = Mathf.Clamp01(t);
 
+        return Mathf.Lerp(mechMaxDuration,mechMinDuration, t);
+    }
     public void StartGame()
     {
          // Start new trial.
@@ -200,16 +204,10 @@ public class GameManager : MonoBehaviour
     }
     private float CalculateHighlightDuration(float mechanismSpeed)
     {
-        float slope = (0.2f - 1.0f) / (40f - 10f);  // (-0.8 / 30)
-        rainDurationToGrow = 1.0f + slope * (mechanismSpeed - 10f);
+        // rainDurationToGrow = 0.2f;
 
-        // Clamp to safe range
-        rainDurationToGrow = Mathf.Clamp(rainDurationToGrow, 0.2f, 0.5f);
-        // Linear relation between speed (10 → 40) and duration (7s → 4.5s)
-        float duration = -0.0833f * mechanismSpeed + 7.833f;
-
-        // Clamp so it doesn’t go below or above intended range
-        return Mathf.Clamp(duration, 4.5f, 7f);
+        float  duration = GetTargetEndTime(gameSpeed);
+        return duration;
     }
 
     void Update()
@@ -238,21 +236,6 @@ public class GameManager : MonoBehaviour
             SetVisibility(speedControlsVisible);
 
         }
-
-        // if (isGamePaused && gameState != GameStates.PAUSED) pauseGame();
-        // else if (!isGamePaused && gameState == GameStates.PAUSED) resumeGame();
-        // if ((isFinished && Input.GetKeyDown(KeyCode.P)) || (isFinished && isButtonPressed))
-        // {
-
-        //     if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AROMMOVING
-        //             || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.IDLE)
-        //     {
-        // OnReStartButtonClick();
-        //     }
-        //     isButtonPressed = false;
-        // }
-        // PlayerPosition = GameObject.FindGameObjectWithTag("Player").transform.position;
-//        Debug.Log($"chageScene - {changeScene && gameState == GameStates.DONE},   --{changeScene},--{gameState}");
        
 
         if (currentHighlighted != null)
@@ -340,26 +323,20 @@ public class GameManager : MonoBehaviour
 
     }
 
-        public void increaseGameSpeed()
+    public void increaseGameSpeed()
     {
-           if (gameSpeed >= 40.0f) return;
+        if (gameSpeed >= PlutoAANController.MAX_SPEED) return;
 
         gameSpeed += 1.0f;
         gsc.gameSpeedText.text = $"{gameSpeed:F2}";
         highlightDuration = CalculateHighlightDuration(gameSpeed);
 
-        Debug.Log($"gs - {AppData.Instance.speedData.gameSpeed} + {gameSpeed}");
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s  game speed decreased to {gameSpeed} - HightlightDuration decreased - set to {highlightDuration}");
-
-        
+   
     }
     public void decreaseGameSpeed()
     {
-        string mech = PlutoComm.MECHANISMS[PlutoComm.mechanism];
-
-        if ((mech != "FME1" && mech != "FME2" && gameSpeed <= 10.0f) ||
-            ((mech == "FME1" || mech == "FME2") && gameSpeed <= 1.0f))
-            return;
+        if (gameSpeed <= PlutoAANController.MIN_SPEED) return;
 
         gameSpeed -= 1.0f;
         gsc.gameSpeedText.text = $"{gameSpeed:F2}";
@@ -389,6 +366,8 @@ public class GameManager : MonoBehaviour
         arom = AppData.Instance.selectedMechanism.CurrentArom;
         prom = AppData.Instance.selectedMechanism.CurrentProm;
         aprom = AppData.Instance.selectedMechanism.CurrentAProm;
+        setMinMaxDurationOfMech();
+
 
         gameSpeed = AppData.Instance.speedData.gameSpeed; // degrees/sec
         highlightDuration = CalculateHighlightDuration(gameSpeed);
@@ -484,6 +463,7 @@ public class GameManager : MonoBehaviour
                     hasGrownThisCycle = false;
                     // Set new trial in the AAN controller.
                     float checkFME = ((PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME1") && (PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME2")) ? gameSpeed : 20.0f;
+                    Debug.Log($" check fme {checkFME}");
                     AppData.Instance.aanController.SetNewTrialDetails(PlutoComm.angle, convertedAngle, highlightDuration, checkFME);
                     //AppData.Instance.aanController.SetNewTrialDetails(PlutoComm.angle, targetAngle, MOVEDURATION, AppData.Instance.speedData.gameSpeed);
                     eventDelayTimer = 0.05f;
@@ -558,6 +538,8 @@ public class GameManager : MonoBehaviour
                 {
                     AppData.Instance.speedData.setGameSpeed(gameSpeed);
                 }
+                    AppData.Instance.speedData.setMoveDuration(highlightDuration);
+
                 
                 if (AppData.Instance.aanController.stateChange) UpdatePlutoAANTarget();
                 // Change to done only when the AAN Controller is AromMoving or Idle state.
@@ -623,7 +605,7 @@ public class GameManager : MonoBehaviour
     }
 
 
-private IEnumerator ShowForSeconds(GameObject obj, float seconds)
+    private IEnumerator ShowForSeconds(GameObject obj, float seconds)
     {
         obj.SetActive(true);
         loadingImage.gameObject.SetActive(true);
@@ -681,23 +663,52 @@ private IEnumerator ShowForSeconds(GameObject obj, float seconds)
         // map seedX → angle
         return Mathf.Lerp(aprom[0], aprom[1], Mathf.InverseLerp(minX, maxX, seedX));
     }
-float GetXPositionFromAngle(float targetAngle)
-{
-    float minX = float.MaxValue;
-    float maxX = float.MinValue;
-
-    // find true min/max X among all seeds (same as your original function)
-    foreach (var seed in seeds)
+    float GetXPositionFromAngle(float targetAngle)
     {
-        float x = seed.transform.position.x;
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
+        float minX = float.MaxValue;
+        float maxX = float.MinValue;
+
+        // find true min/max X among all seeds (same as your original function)
+        foreach (var seed in seeds)
+        {
+            float x = seed.transform.position.x;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+        }
+
+        // map angle → normalized position → X position
+        float normalizedPosition = Mathf.InverseLerp(aprom[0], aprom[1], targetAngle);
+        return Mathf.Lerp(minX, maxX, normalizedPosition);
     }
 
-    // map angle → normalized position → X position
-    float normalizedPosition = Mathf.InverseLerp(aprom[0], aprom[1], targetAngle);
-    return Mathf.Lerp(minX, maxX, normalizedPosition);
-}
+    private void setMinMaxDurationOfMech()
+    {
+        string mech = AppData.Instance.selectedMechanism.name;
+        mechMinDuration = (aprom[1]-aprom[0])/HomerTherapy.MaxSpeed;
+        mechMaxDuration = (aprom[1]-aprom[0])/HomerTherapy.MinSpeed;
+        switch (mech)
+        {
+            case"WFE":
+            case"WURD":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechWFEAndWURD;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechWFEAndWURD;
+                break;
+            case"HOC":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechofHOC;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechOfHOC;
+                break;
+            case"FPS":
+            case"FME1":
+            case"FME2":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechFPSAndFME;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechFPSAndFME;
+                break;
+        }
+        if(mechMinDuration < mechMinThreshold) mechMinDuration= mechMinThreshold;
+        if(mechMaxDuration > mechMaxThreshold) mechMaxDuration = mechMaxThreshold;
+
+        Debug.Log($" mech Min speed : { mechMaxDuration}, max :{mechMinDuration}");
+    }
 
 
 
@@ -747,9 +758,6 @@ float GetXPositionFromAngle(float targetAngle)
         isPaused = true;
         Time.timeScale = 0;
         showPaused();
-        // PauseButton.SetActive(false);
-        // ResumeButton.SetActive(true);
-        // ExitButton.SetActive(false);
     }
 
     public void EndGame()
@@ -758,13 +766,11 @@ float GetXPositionFromAngle(float targetAngle)
         Time.timeScale = 1f;
         if (AppData.Instance.selectedMechanism.trialNumberDay >= AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
         {
-              reminderPanel.SetActive(true);
-            
+            reminderPanel.SetActive(true);
         }
         else
         {
             reminderPanel.SetActive(false);
-
         }
         // ShowFinished();
         Debug.Log("Game Over – 60s finished!");
@@ -777,11 +783,8 @@ float GetXPositionFromAngle(float targetAngle)
         isPaused = false;
         gameState = _prevGameState;
         Time.timeScale = 1;
-        // PauseButton.SetActive(true);
-        // ResumeButton.SetActive(false);
         ExitButton.SetActive(true);
         reminderPanel.SetActive(false);
-            
 
          // Send PLUTO heartbeat
         PlutoComm.sendHeartbeat();
@@ -801,8 +804,6 @@ float GetXPositionFromAngle(float targetAngle)
         isTargetReached = true;
         isTargetMissed = false;
         nSuccess++;
-        Debug.Log("Target Reached");
-
     }
 
     public void TargetMissed()
@@ -825,23 +826,13 @@ float GetXPositionFromAngle(float targetAngle)
             seed.highLighter.SetActive(false);
         }
 
-        // if (score >= totalTargets || nTargets >= totalTargets)
-        // {
-        //     currentHighlighted = null;
-        //     EndGame();
-        //     return;
-        // }
-
-        // Clamp angle to -90..90
-        //targetPosition = Mathf.Clamp(targetPosition, aprom[0], aprom[1]);
-
         float r = (aprom[1] - aprom[0]) / 5f;
         if (AppData.Instance.selectedMechanism.IsMechanism("HOC")) r = -r;
         Debug.Log($" aprom min :{aprom[0]}and max is {aprom[1]} and the r is {r} and the tarPOs {targetAngle}");
-    // Map angle to bin (0..4)
+        // Map angle to bin (0..4)
         int bin = Mathf.FloorToInt((targetAngle + aprom[1]) / r); // (-90→0, 90→4)
         Debug.Log($" Bin Num: {bin}");
-    bin = Mathf.Clamp(bin, 0, 4); // safety
+        bin = Mathf.Clamp(bin, 0, 4); // safety
 
         // pick the corresponding seed
         if (bin < seeds.Count)
@@ -854,19 +845,6 @@ float GetXPositionFromAngle(float targetAngle)
             // Convert its X position back to angle
             // float seedX = currentHighlighted.transform.position.x;
             convertedAngle = GetHighlightedSeedAngle();
-     
-            Debug.Log($"Angle {targetAngle:F1} → Highlighting Seed {bin+1} -> {convertedAngle}-> X POSITION{GetXPositionFromAngle(convertedAngle)}");
-            // if (!currentHighlighted.IsFullyGrown)
-            // {
-            //     currentHighlighted.SetHighlight(true);
-            //     nTargets++;
-            //     lastHighlighted = currentHighlighted;
-            //     Debug.Log($"Angle {targetPosition:F1} → Highlighting Seed {bin+1}");
-            // }
-            // else
-            // {
-            //     Debug.Log($"Seed {bin+1} is fully grown. Skipping.");
-            // }
         }
         else
         {
@@ -888,6 +866,8 @@ float GetXPositionFromAngle(float targetAngle)
             Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
             AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
             if (AppData.Instance.speedData.gameSpeed != gameSpeed)  AppData.Instance.speedData.setGameSpeed(gameSpeed);
+                    AppData.Instance.speedData.setMoveDuration(highlightDuration);
+
               // Stop the current game trial
                     if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
                     {

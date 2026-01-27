@@ -18,7 +18,7 @@ public class PongGameController : MonoBehaviour
     public GameObject ball;
     public Text pointCounter, gameOverText;
     public bool isFinished;
-    private bool isButtonPressed = false;
+    private bool isButtonPressed = false, runOnce = false;
     public bool playerWon, enemyWon;
     public AudioClip[] audioClips; 
     public int enemyScore, playerScore;
@@ -66,6 +66,7 @@ public class PongGameController : MonoBehaviour
     private static string prevScene = "CHGAME";
     private float[] arom;
     private float[] prom, aprom;
+    private float mechMinDuration, mechMaxDuration, mechMinThreshold, mechMaxThreshold;
     private float targetAngle;
     
     private float playerPosition;
@@ -119,9 +120,72 @@ public class PongGameController : MonoBehaviour
         {
             Destroy(gameObject);
         }
-        enemy.speedDefault = 3.0f+ (0.04f * AppData.Instance.speedData.gameSpeed);
-        ballSpeed.speed = 1.5f + (0.04f * AppData.Instance.speedData.gameSpeed);
+        // enemy.speedDefault = 3.0f+ (0.04f * AppData.Instance.speedData.gameSpeed);
+
+         float t = (AppData.Instance.speedData.gameSpeed - 10f) / 30f;
+         float mechMax = (AppData.Instance.selectedMechanism.CurrentAProm[1]- AppData.Instance.selectedMechanism.CurrentAProm[0])/HomerTherapy.MaxSpeed;
+        float mechMin = (AppData.Instance.selectedMechanism.CurrentAProm[1]- AppData.Instance.selectedMechanism.CurrentAProm[0])/HomerTherapy.MinSpeed;
+
+        string mech = AppData.Instance.selectedMechanism.name;
+        switch (mech)
+        {
+            case"WFE":
+            case"WURD":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechWFEAndWURD;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechWFEAndWURD;
+                break;
+            case"HOC":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechofHOC;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechOfHOC;
+                break;
+            case"FPS":
+            case"FME1":
+            case"FME2":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechFPSAndFME;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechFPSAndFME;
+                break;
+        }
+        if(mechMax < mechMinThreshold) mechMax= mechMinThreshold;
+        if(mechMin > mechMaxThreshold) mechMin = mechMaxThreshold;
+
+        Debug.Log($"awake duration : t{ t}, max: {mechMax}, min {mechMin}, gs {AppData.Instance.speedData.gameSpeed}");
+        t = Mathf.Clamp01(t);
+        
+        float duration =  Mathf.Lerp(mechMin, mechMax, t);
+        // enemy.speedDefault = 12f/duration;
+
+        // ballSpeed.speed = 1.5f + (0.04f * AppData.Instance.speedData.gameSpeed);
+        ballSpeed.speed = 12f / duration;
+
+        Debug.Log($"awake duration ball speed :{ ballSpeed.speed}, {duration}");
+
+        // gs = (12f / duration)*1.1f;
+        // gs=12f / duration;
+
     }
+    void UpdateBallSpeedAndMoveDuration()
+    {
+        MOVEDURATION = GetTargetEndTime(gameSpeed);
+
+        float EnemyBoundX = -6f;
+        float playerBoundX = 6f;
+        float distance = playerBoundX - EnemyBoundX;
+
+        enemy.speedDefault = distance / MOVEDURATION;
+
+        ballSpeed.speed = distance / MOVEDURATION;
+        gs = ballSpeed.speed;
+    }
+    
+
+    float GetTargetEndTime(float gameSpeed)
+    {
+        float t = (gameSpeed - HomerTherapy.MinSpeed) / (HomerTherapy.MaxSpeed - HomerTherapy.MinSpeed);
+        t = Mathf.Clamp01(t);
+
+        return Mathf.Lerp(mechMaxDuration,mechMinDuration, t);
+    }
+
     void Start()
     {
         InitializeGame();
@@ -274,41 +338,26 @@ public class PongGameController : MonoBehaviour
 
     public void increaseGameSpeed()
     {
-        if (gameSpeed >= 40.0f) return;
+        if (gameSpeed >= PlutoAANController.MAX_SPEED) return;
 
         gameSpeed += 1.0f;
         gsc.gameSpeedText.text = $"{(int)gameSpeed}";
 
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s game speed increased to {gameSpeed}, Ball speed is {ballSpeed.speed}, Enemy Speed is {enemy.speedDefault}");
+        UpdateBallSpeedAndMoveDuration();
 
-
-        UpdateGameSpeeds();
     }
     public void decreaseGameSpeed()
     {
-        bool isFME = PlutoComm.MECHANISMS[PlutoComm.mechanism] == "FME1" || PlutoComm.MECHANISMS[PlutoComm.mechanism] == "FME2";
-
-        if (isFME && gameSpeed <= 1.0f) return;
-        if (!isFME && gameSpeed <= 10.0f) return;
+        if (gameSpeed <= PlutoAANController.MIN_SPEED) return;
 
         gameSpeed -= 1.0f;
         gsc.gameSpeedText.text = $"{(int)gameSpeed}";
 
-        UpdateGameSpeeds();
-        AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s game speed decreased to {gameSpeed}, Ball speed is {ballSpeed.speed}, Enemy Speed is {enemy.speedDefault}");
+        UpdateBallSpeedAndMoveDuration();
+        AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s game speed decreased to {gameSpeed}, Ball speed is {ballSpeed.speed}");
 
 
-    }
-    private void UpdateGameSpeeds()
-    {
-        float speed = 3.0f + (0.04f * gameSpeed);
-        float ballSpd = 1.5f + (0.04f * gameSpeed);
-
-        bool isFME = PlutoComm.MECHANISMS[PlutoComm.mechanism] == "FME1" || PlutoComm.MECHANISMS[PlutoComm.mechanism] == "FME2";
-
-        enemy.speedDefault = Mathf.Clamp(speed, isFME ? 2.0f : 3.0f, 6.0f);
-        ballSpeed.speed = Mathf.Clamp(ballSpd, isFME ? 0.9f : 1.5f, 5.0f);
-        gs = ballSpeed.speed;
     }
 
     private void pauseGame()
@@ -343,21 +392,6 @@ public class PongGameController : MonoBehaviour
         
     }
 
-    private float timeToReach(){
-        if (targetTemp != null)
-        {
-            Rigidbody2D ballRB = targetTemp.GetComponent<Rigidbody2D>();
-
-            // Only predict if the ball is moving toward the player (x velocity positive).
-            if (ballRB.velocity.x > 0)
-            {
-                // Calculate approximate time for the ball to reach the player's bound.
-                float timeToArrival = Mathf.Abs((6f - ball.transform.position.x) / ballRB.velocity.x);
-                return 0.5f * timeToArrival;
-            }
-        }
-        return 0f;
-    }
     public void ExitGame()
     {
         if(gameState == GameStates.DONE || gameState == GameStates.WAITING){
@@ -372,6 +406,8 @@ public class PongGameController : MonoBehaviour
             Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
             AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
             if (AppData.Instance.speedData.gameSpeed != gameSpeed)  AppData.Instance.speedData.setGameSpeed(gameSpeed);
+                    AppData.Instance.speedData.setMoveDuration(MOVEDURATION);
+
             // Stop the current game trial
             if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
             {
@@ -469,7 +505,7 @@ public class PongGameController : MonoBehaviour
         }
         SuccessRateBanner.SetActive(false);
     }
-public void updateStarCount()
+    public void updateStarCount()
     {
         starCount.text = $"{AppData.Instance.selectedGame.cummulativeStars.ToString("D2")}";
     }
@@ -538,17 +574,30 @@ public void updateStarCount()
                 // Spawn a new ball.
                 if(!enemyHit) return;
 
+                if (eventDelayTimer <= 0f && !runOnce)
+                {
+
                 AppData.Instance.aanController.ResetTrial();
                 // Get new target position.
                 // targetAngle = HomerTherapy.GetNewTargetPosition(arom, prom);
                 // targetAngle = HomerTherapy.GetNewTargetPositionUniformFull(arom, prom);
                 // targetPositiony = AngleToScreen(targetAngle);
-                MOVEDURATION = timeToReach();
+                // MOVEDURATION = timeToReach();
                 //setTarget();
                 // Set new trial in the AAN controller.
                 float checkFME = ((PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME1") && (PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME2")) ? gameSpeed : 20.0f;
                 AppData.Instance.aanController.SetNewTrialDetails(PlutoComm.angle, targetAngle, MOVEDURATION, checkFME);
-                gameState = GameStates.MOVE;
+                runOnce = true;
+                eventDelayTimer = 0.05f;
+                }
+                else
+                {
+                    eventDelayTimer -= Time.deltaTime;
+                    if (eventDelayTimer <= 0f)
+                    {
+                        gameState = GameStates.MOVE;   
+                    }
+                }
                 break;
             case GameStates.MOVE:
                 // Update AANController.
@@ -574,7 +623,7 @@ public void updateStarCount()
                        // Debug.Log(gameState);
                         // Wait for the user to score.
                         gameState = isTimeUp ? GameStates.STOP : GameStates.SPAWNBALL;
-
+                        runOnce = false;
                         isBallHitted = false;
                         isBallMissed = false;
                         targetAngle = HomerTherapy.GetNewTargetPositionUniformFull(arom, aprom);
@@ -601,6 +650,7 @@ public void updateStarCount()
                 {
                     AppData.Instance.speedData.setGameSpeed(gameSpeed);
                 }
+                AppData.Instance.speedData.setMoveDuration(MOVEDURATION);
                 
 
                 if (AppData.Instance.aanController.stateChange) UpdatePlutoAANTarget();
@@ -690,6 +740,8 @@ public void updateStarCount()
        // t.transform.position = targetPosition;
     }
 
+
+
     private void InitializeGame()
     {
         // Intialize game logic variables
@@ -708,6 +760,9 @@ public void updateStarCount()
         prom = AppData.Instance.selectedMechanism.CurrentProm;
         aprom = AppData.Instance.selectedMechanism.CurrentAProm;
         gameSpeed = AppData.Instance.speedData.gameSpeed;
+        setMinMaxDurationOfMech();
+        MOVEDURATION = GetTargetEndTime(gameSpeed);
+        
         // gameSpeed = 20.0f; //temp
         // Attach PLUTO button event.
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
@@ -728,6 +783,35 @@ public void updateStarCount()
         isButtonPressed = true;
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- pluto button pressed");
 
+    }
+
+    private void setMinMaxDurationOfMech()
+    {
+        string mech = AppData.Instance.selectedMechanism.name;
+        mechMinDuration = (aprom[1]-aprom[0])/HomerTherapy.MaxSpeed;
+        mechMaxDuration = (aprom[1]-aprom[0])/HomerTherapy.MinSpeed;
+        switch (mech)
+        {
+            case"WFE":
+            case"WURD":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechWFEAndWURD;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechWFEAndWURD;
+                break;
+            case"HOC":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechofHOC;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechOfHOC;
+                break;
+            case"FPS":
+            case"FME1":
+            case"FME2":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechFPSAndFME;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechFPSAndFME;
+                break;
+        }
+        if(mechMinDuration < mechMinThreshold) mechMinDuration= mechMinThreshold;
+        if(mechMaxDuration > mechMaxThreshold) mechMaxDuration = mechMaxThreshold;
+
+        Debug.Log($" mech Min speed : { mechMaxDuration}, max :{mechMinDuration}");
     }
 
     public float AngleToScreen(float angle) => Mathf.Clamp(-playSize + (angle - aprom[0]) * (2 * playSize) / (aprom[1] - aprom[0]), bottomBound, topBound);

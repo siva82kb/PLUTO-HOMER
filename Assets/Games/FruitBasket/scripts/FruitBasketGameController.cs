@@ -17,7 +17,8 @@ public class FruitBasketGameController : MonoBehaviour
     public Canvas mainCanvas;
     public GameObject gardenerPrefeb;
     public Transform gardenerPosition;
-
+    float lastTargetReachTime = -1f;
+    float lastInterTargetDuration = 0f;
     public Button restartBtn;
     public GameObject gameOver;
     public GameObject onPause;
@@ -63,6 +64,8 @@ public class FruitBasketGameController : MonoBehaviour
     private  static float FRUITENDY;
     bool speedControlsVisible = false;
     public  float FRUITSPEED, MOVEDURATION;
+    private float mechMinDuration, mechMaxDuration, mechMinThreshold, mechMaxThreshold;
+
     public GameObject gameSpeedControl, gameOverPanel;
     public TextMeshProUGUI  finalScore;
    
@@ -121,6 +124,7 @@ public class FruitBasketGameController : MonoBehaviour
         arom = AppData.Instance.selectedMechanism.CurrentArom;
         prom = AppData.Instance.selectedMechanism.CurrentProm;
         aprom = AppData.Instance.selectedMechanism.CurrentAProm;
+        setMinMaxDurationOfMech();
 
         detailObjects = GameObject.FindGameObjectsWithTag("detailViewer");
         SetVisibility(false);
@@ -146,12 +150,12 @@ public class FruitBasketGameController : MonoBehaviour
         }
 
         gameSpeed = AppData.Instance.speedData.gameSpeed;
-        Debug.Log("gamespeed");
-        FRUITSPEED = 70f + ((gameSpeed - 10f) / 30f) * 120f;
+        // FRUITSPEED = 70f + ((gameSpeed - 10f) / 30f) * 120f;
 
-        FRUITSPEED = Mathf.Clamp(FRUITSPEED, 70f, 250f);
+        // FRUITSPEED = Mathf.Clamp(FRUITSPEED, 70f, 250f);
+        MOVEDURATION = GetTargetEndTime(gameSpeed);
 
-        MOVEDURATION = 0.5f * (FRUITSTARTY - FRUITENDY) / FRUITSPEED;
+        FRUITSPEED = (FRUITSTARTY - FRUITENDY) / MOVEDURATION;
         celebrationPanel.SetActive(false);
         updateStarCount();
         
@@ -230,6 +234,34 @@ public class FruitBasketGameController : MonoBehaviour
         targetTemp = GameObject.FindGameObjectWithTag("Target");
         TargetPosition = targetTemp != null ? targetTemp.transform.localPosition : null;
 
+    }
+    private void setMinMaxDurationOfMech()
+    {
+        string mech = AppData.Instance.selectedMechanism.name;
+        mechMinDuration = (aprom[1]-aprom[0])/HomerTherapy.MaxSpeed;
+        mechMaxDuration = (aprom[1]-aprom[0])/HomerTherapy.MinSpeed;
+        switch (mech)
+        {
+            case"WFE":
+            case"WURD":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechWFEAndWURD;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechWFEAndWURD;
+                break;
+            case"HOC":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechofHOC;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechOfHOC;
+                break;
+            case"FPS":
+            case"FME1":
+            case"FME2":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechFPSAndFME;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechFPSAndFME;
+                break;
+        }
+        if(mechMinDuration < mechMinThreshold) mechMinDuration= mechMinThreshold;
+        if(mechMaxDuration > mechMaxThreshold) mechMaxDuration = mechMaxThreshold;
+
+        Debug.Log($" mech Min speed : { mechMaxDuration}, max :{mechMinDuration}");
     }
     public void restartGame()
     {
@@ -331,6 +363,8 @@ public class FruitBasketGameController : MonoBehaviour
                 {
                     AppData.Instance.speedData.setGameSpeed(gameSpeed);
                 }
+                    AppData.Instance.speedData.setMoveDuration(MOVEDURATION);
+
 
                 if (AppData.Instance.aanController.stateChange) UpdatePlutoAANTarget();
                 // Change to done only when the AAN Controller is AromMoving or Idle state.
@@ -417,42 +451,42 @@ public class FruitBasketGameController : MonoBehaviour
     }
     public void increaseGameSpeed()
     {
-        if (gameSpeed >= 40.0f) return;
+        if (gameSpeed >= PlutoAANController.MAX_SPEED) return;
 
         gameSpeed += 1.0f;
         gsc.gameSpeedText.text = $"{(int)gameSpeed}";
 
-        UpdateBallSpeedAndDuration();
-        Debug.Log($"gs - {AppData.Instance.speedData.gameSpeed} + {gameSpeed}");
+        UpdateFruitFallSpeedAndDuration();
+        Debug.Log($"gs - {AppData.Instance.speedData.gameSpeed} + {gameSpeed} + {FRUITSPEED}");
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s game speed increased to {gameSpeed} and the Fruit Speed is {FRUITSPEED}");
     }
     public void decreaseGameSpeed()
     {
-        string mech = PlutoComm.MECHANISMS[PlutoComm.mechanism];
-
-        if ((mech != "FME1" && mech != "FME2" && gameSpeed <= 10.0f) ||
-            ((mech == "FME1" || mech == "FME2") && gameSpeed <= 1.0f))
-            return;
+        if (gameSpeed <= PlutoAANController.MIN_SPEED) return;
 
         gameSpeed -= 1.0f;
         gsc.gameSpeedText.text = $"{(int)gameSpeed}";
 
-        UpdateBallSpeedAndDuration();
+        UpdateFruitFallSpeedAndDuration();
+        Debug.Log($"gs - {AppData.Instance.speedData.gameSpeed} + {gameSpeed} + {FRUITSPEED}");
+
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s game speed increased to {gameSpeed} and the Fruit Speed is {FRUITSPEED}");
 
 
 
     }
-
-    private void UpdateBallSpeedAndDuration()
+    float GetTargetEndTime(float gameSpeed)
     {
-        string mech = PlutoComm.MECHANISMS[PlutoComm.mechanism];
-        bool isFME = mech == "FME1" || mech == "FME2";
+        float t = (gameSpeed - HomerTherapy.MinSpeed) / (HomerTherapy.MaxSpeed - HomerTherapy.MinSpeed);
+        t = Mathf.Clamp01(t);
 
-        FRUITSPEED = (isFME ? 90f : 70f) + ((gameSpeed - 10f) / 30f) * 120f;
-        FRUITSPEED = Mathf.Clamp(FRUITSPEED, 50f, 250f); // safety clamp
-        MOVEDURATION = 0.5f * (FRUITSTARTY - FRUITENDY) / FRUITSPEED;
-        Debug.Log($" MD : {MOVEDURATION}");
+        return Mathf.Lerp(mechMaxDuration,mechMinDuration, t);
+    }
+    void UpdateFruitFallSpeedAndDuration()
+    {
+        MOVEDURATION = GetTargetEndTime(gameSpeed);
+
+         FRUITSPEED= (FRUITSTARTY - FRUITENDY) / MOVEDURATION;
     }
     private void SetVisibility(bool state)
     {
@@ -609,22 +643,35 @@ public class FruitBasketGameController : MonoBehaviour
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game resumed");
 
     }
+
+    void OnHatTargetReached()
+    {
+        float now = Time.time;
+
+        if (lastTargetReachTime > 0f)
+        {
+            lastInterTargetDuration = now - lastTargetReachTime;
+            Debug.Log($"fruit → basket duration: {lastInterTargetDuration:F2} sec");
+        }
+
+        lastTargetReachTime = now;
+    }
+    
     public void setSuccess()
     {
+        OnHatTargetReached();
         isSuccess  = true;
         nSuccess++;
     }
     public void setFailure()
     {
+        OnHatTargetReached();
         isFailure = true;
         nFailure++;
     }
 
     public void restart()
     {
-        // isGameFinished = false;
-        // isGameStarted = false;
-        // gameState = GameStates.WAITFORSTART;
          Destroy(gardenerGameObj);
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
@@ -640,6 +687,8 @@ public class FruitBasketGameController : MonoBehaviour
             Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
             AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
             if (AppData.Instance.speedData.gameSpeed != gameSpeed)  AppData.Instance.speedData.setGameSpeed(gameSpeed);
+            AppData.Instance.speedData.setMoveDuration(MOVEDURATION);
+
             // AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
               // Stop the current game trial
                     if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
@@ -701,12 +750,6 @@ public class FruitBasketGameController : MonoBehaviour
     }
     public void updateGUI()
     {
-        // status.text = $"s.no: {AppData.Instance.currentSessionNumber}\n" +
-        //                $"trialNo: {AppData.Instance.selectedMechanism.trialNumberSession}\n" +
-        //                $"CB: {AppData.Instance.CurrentControlBound}\n" +
-        //                $"GS: {(int)gameSpeed}\n" +
-        //                $"TG: {(int)nTargets}" +
-        //                $"MD:{(int)MOVEDURATION}";
 
         onPause.gameObject.SetActive(isGamePaused);
         gameOver.gameObject.SetActive(gameState == GameStates.DONE);
@@ -729,3 +772,5 @@ public class FruitBasketGameController : MonoBehaviour
 
     }
 }
+
+

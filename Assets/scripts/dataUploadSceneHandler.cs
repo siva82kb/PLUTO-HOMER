@@ -259,6 +259,7 @@ public class dataUpload : MonoBehaviour
         // string pythonExecutionPath = @"C:/Users/HOMER_10/AppData/Local/Programs/Python/Python314/pythonw.exe";  //Device-7
         // string pythonExecutionPath = @"C:/Users/HOMER_08/AppData/Local/Programs/Python/Python313/pythonw.exe"; //Device -8
         // string pythonExecutionPath = @"C:/Users/HOMER_11/AppData/Local/Programs/Python/Python314/pythonw.exe";  //Device-9
+
         string pythonExecutionPath = awsManager.pythonExecutionPath;
 
 
@@ -370,13 +371,13 @@ public class dataUpload : MonoBehaviour
         try
         {
             Application.Quit();
-            Process.Start("shutdown", "/s /t 0");
+            // Process.Start("shutdown", "/s /t 0");
 
             #if UNITY_EDITOR
                         UnityEditor.EditorApplication.isPlaying = false;
             #endif
 
-            Process.Start("shutdown", "/s /t 0");
+            // Process.Start("shutdown", "/s /t 0");
         }
         catch (System.Exception ex)
         {

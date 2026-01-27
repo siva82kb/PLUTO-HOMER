@@ -62,8 +62,11 @@ public class summarySceneHandler : MonoBehaviour
     
     public void Start()
     {
+        //debugger
+        // AppData.Instance.Initialize(SceneManager.GetActiveScene().name);
+
         title = "summary";
-        ShowOnlyPrescribedMechanisms();   // 🔥 Hide unused ones
+        ShowOnlyPrescribedMechanisms();   // hide unused ones
         initializeChart();
 
         List<MechanismStats> mechStats = AppData.Instance.userData.ReadMechanismStarStats();
@@ -88,7 +91,7 @@ public class summarySceneHandler : MonoBehaviour
 
             bool isPrescribed = AppData.Instance.userData.mechMoveTimePrsc[mech] > 0;
 
-            obj.SetActive(isPrescribed);   // 🔥 Only show if prescribed
+            obj.SetActive(isPrescribed);   // Only show if prescribed
         }
     }
 
@@ -155,29 +158,28 @@ public class summarySceneHandler : MonoBehaviour
     //To disconnect the Robot 
     public void onPlutoButtonReleased()
     {
-            // SceneManager.LoadScene("DATAUPLOAD");
 
         _actionQueue.Enqueue(() =>
         {
             PlutoComm.stopSensorStream();
 
             ConnectToRobot.disconnect();
-            // try
-            // {
-            //     Application.Quit();
-            //     // Process.Start("shutdown", "/s /t 0");
+            try
+            {
+                Application.Quit();
+                // Process.Start("shutdown", "/s /t 0");
 
-            //     #if UNITY_EDITOR
-            //                 UnityEditor.EditorApplication.isPlaying = false;
-            //     #endif
+                #if UNITY_EDITOR
+                            UnityEditor.EditorApplication.isPlaying = false;
+                #endif
 
-            //     // Process.Start("shutdown", "/s /t 0");
-            // }
-            // catch (System.Exception ex)
-            // {
-            //     //Debug.LogError("Failed to shutdown: " + ex.Message);
-            // }
-            SceneManager.LoadScene("DATAUPLOAD");
+                // Process.Start("shutdown", "/s /t 0");
+            }
+            catch (System.Exception ex)
+            {
+                //Debug.LogError("Failed to shutdown: " + ex.Message);
+            }
+            // SceneManager.LoadScene("DATAUPLOAD");
         });
     }
    
@@ -244,6 +246,7 @@ public class summarySceneHandler : MonoBehaviour
     public void UpdateChartData()
     {
         if (lineChart == null) return;
+        AppLogger.LogInfo("linechart is not null");
 
         lineChart.RemoveData();
         lineChart.EnsureChartComponent<Title>().text = title;
@@ -258,10 +261,12 @@ public class summarySceneHandler : MonoBehaviour
         for (int i = 0; i < sessionDataHandler.summaryDate.Length; i++)
         {
             string dateStr = sessionDataHandler.summaryDate[i];
-            xAxis.data.Add(dateStr);   // Always show labels
+            // xAxis.data.Add(dateStr);   // Always show labels
 
             // Parse date
             DateTime entryDate = DateTime.Parse(dateStr);
+            // Always show labels in the formate of date/Month
+            xAxis.data.Add(entryDate.ToString("dd/MM"));
 
             if (entryDate > today)
             {
@@ -275,7 +280,7 @@ public class summarySceneHandler : MonoBehaviour
                 lineChart.AddData(0, value);
             }
         }
-
+          AppLogger.LogInfo("DataUpdated successfully");
         lineChart.RefreshAllComponent();
     }
 

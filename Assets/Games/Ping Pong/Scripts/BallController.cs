@@ -17,6 +17,9 @@ public class BallController : MonoBehaviour
     //ball's components
     Rigidbody2D rig2D;
     private PongGameController PGC;
+    float enemyHitTime = -1f;
+float lastTravelDuration = 0f;
+
     public AudioClip[] audioClips;
     int rand = 1;
     void Start()
@@ -69,6 +72,8 @@ public class BallController : MonoBehaviour
 
         if (col.gameObject.CompareTag("Enemy"))
         {
+             enemyHitTime = Time.time;
+            
             float y = launchAngle(transform.position,
                                 col.transform.position,
                                 col.collider.bounds.size.y);
@@ -83,6 +88,7 @@ public class BallController : MonoBehaviour
 
             Vector2 launchDir = (reflectedTarget - (Vector2)transform.position).normalized;
             speed = (PGC.gs <= 0) ? speed : PGC.gs;
+            Debug.Log($"s1 : {speed}, speed 2 {PGC.gs}");
 
             initVelocity(launchDir * speed);
         }
@@ -91,7 +97,14 @@ public class BallController : MonoBehaviour
         {
            //  PGC.targetPosition= new Vector2(5.95f, UnityEngine.Random.Range(-4.5f, 4.5f));
 
-            
+            if (enemyHitTime > 0f)
+            {
+                lastTravelDuration = Time.time - enemyHitTime;
+                Debug.Log($"Enemy → Player travel duration: {lastTravelDuration:F2} seconds");
+            }
+
+            enemyHitTime = -1f; // reset
+
             float y = launchAngle(transform.position,
                                 col.transform.position,
                                 col.collider.bounds.size.y);

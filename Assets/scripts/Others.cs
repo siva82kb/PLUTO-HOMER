@@ -39,6 +39,28 @@ public static class HomerTherapy
         { "RNR", 1f }
     };
     
+    // public static readonly float MinSpeedOfMechFPSAndFME = 18.0f;
+    // public static readonly float MaxSpeedOfMechFPSAndFME = 4.5f;
+
+    // public static readonly float MinSpeedOfMechWFEAndWURD = 13.6f;
+    // public static readonly float MaxSpeedOfMechWFEAndWURD = 3.4f;
+    // public static readonly float MinSpeedOfMechOfHOC = 10.0f;
+    // public static readonly float MaxSpeedOfMechofHOC = 2.25f;
+    public static readonly float MaxSpeed = 40.0f;
+    public static readonly float MinSpeed = 10.0f;
+
+    // Dynamically calculated mechanism speeds
+    public static float MaxDurationOfMechFPSAndFME => CalculateMechDuration(PlutoComm.CALIBANGLE[3], MinSpeed);
+    public static float MinDurationOfMechFPSAndFME => CalculateMechDuration(PlutoComm.CALIBANGLE[3], MaxSpeed);
+    public static float MaxDurationOfMechWFEAndWURD => CalculateMechDuration(PlutoComm.CALIBANGLE[1], MinSpeed);
+    public static float MinDurationOfMechWFEAndWURD => CalculateMechDuration(PlutoComm.CALIBANGLE[1], MaxSpeed);
+    public static float MaxDurationOfMechOfHOC => CalculateMechDuration(PlutoComm.CALIBANGLE[4], MinSpeed);
+    public static float MinDurationOfMechofHOC => CalculateMechDuration(PlutoComm.CALIBANGLE[4], MaxSpeed);
+    
+    private static float CalculateMechDuration(float maxangle, float Speed)
+    {
+        return maxangle / Speed;
+    }
     private static float? lastTarget = null;
     private static float threshold = 0f;
 
@@ -61,12 +83,15 @@ public static class HomerTherapy
         TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN,
         TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN,
     };
+
+
     // private static float[] SuccessRateForTrials = new float[] {
     //     85, 90, 90, 87, 84,
     //     79, 79, 79, 79, 79,
     //     79, 79, 81, 83, 85,
     //     85, 85, 85, 85, 85
     // };
+
     // private static TrialType[] TrialTypeForTrials = new TrialType[] {
     //     TrialType.SR85PCTRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN,
     //     TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN,
@@ -140,6 +165,7 @@ public static class HomerTherapy
 public class MechanismSpeed
 {
     public float gameSpeed { get; private set; } = -1f;
+    public float MOVEDURATION{get; private set;}
 
     // private string AppData.Instance.selectedMechanism.name;
 
@@ -166,6 +192,10 @@ public class MechanismSpeed
     {
         gameSpeed = gamespeed;
         updateGameSpeedfromGame(gamespeed);
+    }
+    public void setMoveDuration(float duration)
+    {
+        MOVEDURATION = duration;
     }
     public void EvaluateAndUpdateGameSpeed()
     {
@@ -228,7 +258,7 @@ public class MechanismSpeed
 
             if ((DateTime.Today - lastUpdate.Value).Days >= 3 && sessionDatesBetween.Count >= 2)
             {
-                if (gameSpeed < 40.0f) UpdateGameSpeed();
+                if (gameSpeed < PlutoAANController.MAX_SPEED) UpdateGameSpeed();
                 else
                 {
                     GetLastDateFromMechParams();
@@ -371,6 +401,10 @@ public class PlutoUserData
     public DataTable dTableConfig { private set; get; } = null;
     public DataTable dTableSession { private set; get; } = null;
     public string hospNumber { private set; get; }
+    public int FME1 { private set; get; }
+    public int FME2 { private set; get; }
+
+
     public bool rightHand { private set; get; }
     public DateTime startDate { private set; get; }
     public Dictionary<string, float> mechMoveTimePrsc { get; private set; } // Prescribed movement time
@@ -638,6 +672,9 @@ public class PlutoUserData
         DataRow lastRow = dTableConfig.Rows[dTableConfig.Rows.Count - 1];
         hospNumber = lastRow.Field<string>("HospitalNumber");
         rightHand = lastRow.Field<string>("TrainingSide") == "right";
+        Debug.Log(lastRow.Field<string>("FME1K"));
+        FME1 = int.Parse(lastRow.Field<string>("FME1K"));
+        FME2 = int.Parse(lastRow.Field<string>("FME2K"));
         //AppData.trainingSide = ; // lastRow.Field<string>("TrainingSide");
         startDate = DateTime.ParseExact(lastRow.Field<string>("StartDate"), "dd-MM-yyyy", CultureInfo.InvariantCulture);
         mechMoveTimePrsc = createMoveTimeDictionary();//prescribed time

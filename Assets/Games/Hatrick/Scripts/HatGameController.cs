@@ -58,6 +58,8 @@ public class HatGameController : MonoBehaviour
 
     // Graphics variables.
     private float PLAYSIZE;
+    private float mechMinDuration, mechMaxDuration, mechMinThreshold, mechMaxThreshold;
+
     // public int score = 0;
     private float maxwidth;
     // private float trialTime = 60f;
@@ -142,6 +144,9 @@ public class HatGameController : MonoBehaviour
     public TextMeshProUGUI starCount;
     public GameObject GameOverStar,gameOverPanel , starLabel;
     public int _starCount;
+    float lastTargetReachTime = -1f;
+    float lastInterTargetDuration = 0f;
+
 
     private void Awake()
     {
@@ -154,6 +159,41 @@ public class HatGameController : MonoBehaviour
             Destroy(gameObject);
         }
         PLAYSIZE = Camera.main.orthographicSize * Camera.main.aspect;
+    }
+    private void setMinMaxDurationOfMech()
+    {
+        string mech = AppData.Instance.selectedMechanism.name;
+        mechMinDuration = (aprom[1]-aprom[0])/HomerTherapy.MaxSpeed;
+        mechMaxDuration = (aprom[1]-aprom[0])/HomerTherapy.MinSpeed;
+        switch (mech)
+        {
+            case"WFE":
+            case"WURD":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechWFEAndWURD;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechWFEAndWURD;
+                break;
+            case"HOC":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechofHOC;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechOfHOC;
+                break;
+            case"FPS":
+            case"FME1":
+            case"FME2":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechFPSAndFME;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechFPSAndFME;
+                break;
+        }
+        if(mechMinDuration < mechMinThreshold) mechMinDuration= mechMinThreshold;
+        if(mechMaxDuration > mechMaxThreshold) mechMaxDuration = mechMaxThreshold;
+
+        Debug.Log($" mech Min speed : { mechMaxDuration}, max :{mechMinDuration}");
+    }
+    float GetTargetEndTime(float gameSpeed)
+    {
+        float t = (gameSpeed - HomerTherapy.MinSpeed) / (HomerTherapy.MaxSpeed - HomerTherapy.MinSpeed);
+        t = Mathf.Clamp01(t);
+
+        return Mathf.Lerp(mechMaxDuration,mechMinDuration, t);
     }
 
     void Start()
@@ -201,6 +241,19 @@ public class HatGameController : MonoBehaviour
         }
         
     }
+    void OnHatTargetReached()
+    {
+        float now = Time.time;
+
+        if (lastTargetReachTime > 0f)
+        {
+            lastInterTargetDuration = now - lastTargetReachTime;
+            Debug.Log($"Hat → Hat duration: {lastInterTargetDuration:F2} sec");
+        }
+
+        lastTargetReachTime = now;
+    }
+
     private void initializeGameSpeedController()
     {
         // Hide game speed control initially
@@ -246,8 +299,8 @@ public class HatGameController : MonoBehaviour
             Debug.Log("Speed controls " + (speedControlsVisible ? "enabled" : "disabled"));
         }
 
-        Debug.Log($" ball speed : {BALLSPEED}");
-        Debug.Log($" ball speed : {gameState}--{changeScene}");
+        // Debug.Log($" ball speed : {BALLSPEED}");
+        // Debug.Log($" ball speed : {gameState}--{changeScene}");
 
         
 
@@ -269,12 +322,15 @@ public class HatGameController : MonoBehaviour
     }
 
     public void BallCaught() {
+        OnHatTargetReached();
         isBallCaught = true;
         isBallMissed = false;
         nSuccess++;
     }
 
     public void BallMissed() {
+        OnHatTargetReached();
+
         isBallCaught = false;
         isBallMissed = true;
         nFailure++;
@@ -294,32 +350,26 @@ public class HatGameController : MonoBehaviour
 
     public void increaseGameSpeed()
     {
-        if (gameSpeed >= 40.0f) return;
+        if (gameSpeed >= PlutoAANController.MAX_SPEED) return;
 
         gameSpeed += 1.0f;
         gsc.gameSpeedText.text = $"{(int)gameSpeed}";
 
-        UpdateBallSpeedAndDuration();
+        UpdateBallSpeedAndMoveDuration();
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s game speed increased to {gameSpeed}, Ball speed is {BALLSPEED}");
 
         Debug.Log($"gs - {AppData.Instance.speedData.gameSpeed} + {gameSpeed}");
     }
+
     public void decreaseGameSpeed()
     {
-        string mech = PlutoComm.MECHANISMS[PlutoComm.mechanism];
-
-        if ((mech != "FME1" && mech != "FME2" && gameSpeed <= 10.0f) ||
-            ((mech == "FME1" || mech == "FME2") && gameSpeed <= 1.0f))
-            return;
+        if (gameSpeed <= PlutoAANController.MIN_SPEED) return;
 
         gameSpeed -= 1.0f;
         gsc.gameSpeedText.text = $"{(int)gameSpeed}";
 
-        UpdateBallSpeedAndDuration();
+        UpdateBallSpeedAndMoveDuration();
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s game speed decreased to {gameSpeed}, Ball speed is {BALLSPEED}");
-
-        
-
     }
     private void SetVisibility(bool state)
     {
@@ -328,16 +378,6 @@ public class HatGameController : MonoBehaviour
             if (obj != null)
                 obj.SetActive(state);
         }
-    }
-
-    private void UpdateBallSpeedAndDuration()
-    {
-        string mech = PlutoComm.MECHANISMS[PlutoComm.mechanism];
-        bool isFME = mech == "FME1" || mech == "FME2";
-
-        BALLSPEED = (isFME ? 0.7f : 1.2f) + ((gameSpeed - 10f) / 30f) * 1.3f;
-        BALLSPEED = Mathf.Clamp(BALLSPEED, 0.7f, 3.5f); // safety clamp
-        MOVEDURATION = 0.5f * (BALLSTARTY - BALLENDY) / BALLSPEED;
     }
 
     public void StartGame()
@@ -366,12 +406,6 @@ public class HatGameController : MonoBehaviour
         nSuccess = 0;
         nFailure = 0;
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game started");
-
-        // Disable buttons except the pause button.
-        // StartButton.SetActive(false);
-        // PauseButton.SetActive(true);
-        // ResumeButton.SetActive(false);
-        //  gameSpeed = AppData.Instance.speedData.gameSpeed;
     }
 
     public void PauseGame()
@@ -381,9 +415,6 @@ public class HatGameController : MonoBehaviour
         isGamePaused = true;
         Time.timeScale = 0;
         ShowPaused();
-        // PauseButton.SetActive(false);
-        // ResumeButton.SetActive(true);
-        // ExitButton.SetActive(false);
     }
 
     public void ResumeGame()
@@ -419,14 +450,9 @@ public class HatGameController : MonoBehaviour
 
     private void RunGameStateMachine()
     {
-        // Check if the game is to be paused or unpaused.
-        // Debug.Log("Game Update");
-        // if (isGamePaused) PauseGame();
-        // else if (gameState == GameStates.PAUSED) ResumeGame();
-
         // Run the game timer
         if (IsGamePlaying()) triaTimeLeft -= Time.deltaTime;
-        Debug.Log(isGameStarted);
+
         // Act according to the current game state.
         bool isTimeUp = triaTimeLeft <= 0;
         switch (gameState)
@@ -515,6 +541,7 @@ public class HatGameController : MonoBehaviour
                 {
                     AppData.Instance.speedData.setGameSpeed(gameSpeed);
                 }
+                AppData.Instance.speedData.setMoveDuration(MOVEDURATION);
                 
                 if (AppData.Instance.aanController.stateChange) UpdatePlutoAANTarget();
                 // Change to done only when the AAN Controller is AromMoving or Idle state.
@@ -638,16 +665,9 @@ public class HatGameController : MonoBehaviour
         player.transform.localScale = scale;
         if(AppData.Instance.selectedGame.isAchievedToday())starLabel.GetComponent<Image>().color = Color.white;
 
-        // // Intialize text
-        // timeLeftText = GameObject.FindGameObjectWithTag("TimeLeftText").GetComponent<TextMeshProUGUI>();
-        // ScoreText = GameObject.FindGameObjectWithTag("ScoreText").GetComponent<TextMeshProUGUI>();
         reminderPanel = GameObject.FindGameObjectWithTag("ReminderPanel");
 
 
-        // Enable the buttons
-        // StartButton.SetActive(true);
-        // PauseButton.SetActive(false);
-        // ResumeButton.SetActive(false);
 
         // Initailize camera
         maxwidth = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width, Screen.height, 0)).x - 0.5f;
@@ -668,17 +688,15 @@ public class HatGameController : MonoBehaviour
         prom = AppData.Instance.selectedMechanism.CurrentProm;
         aprom = AppData.Instance.selectedMechanism.CurrentAProm;
 
+        setMinMaxDurationOfMech();
+        gameSpeed = AppData.Instance.speedData.gameSpeed; // degrees/sec
+
+        MOVEDURATION = GetTargetEndTime(gameSpeed);
 
         // Attach PLUTO button event.
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
 
-        gameSpeed = AppData.Instance.speedData.gameSpeed; // degrees/sec
-        //if (gameSpeed < 10.0f) gameSpeed = 10.0f;
-        float ballSpeed = 1.2f + ((gameSpeed - 10f) / 30f) * 1.3f;
-        Debug.Log($"bc:{ballSpeed}");
-        BALLSPEED = Mathf.Clamp(ballSpeed, 0.7f, 2.5f); 
-        Debug.Log(AppData.Instance.speedData.gameSpeed);
-        MOVEDURATION = 0.5f * (BALLSTARTY - BALLENDY) / BALLSPEED;
+        BALLSPEED = (BALLSTARTY - BALLENDY)/MOVEDURATION;
         celebrationPanel.SetActive(false);
 
     }
@@ -723,8 +741,9 @@ public class HatGameController : MonoBehaviour
                     }
             Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
             if (AppData.Instance.speedData.gameSpeed != gameSpeed)  AppData.Instance.speedData.setGameSpeed(gameSpeed);
-             gameState = GameStates.DONE;
-             Time.timeScale = 1f;
+            AppData.Instance.speedData.setMoveDuration(MOVEDURATION);
+            gameState = GameStates.DONE;
+            Time.timeScale = 1f;
             SceneManager.LoadScene(prevScene);
             AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game exit");
              
@@ -754,14 +773,17 @@ public class HatGameController : MonoBehaviour
         SuccessRateBanner.SetActive(false);
     }
 
+    void UpdateBallSpeedAndMoveDuration()
+    {
+        MOVEDURATION = GetTargetEndTime(gameSpeed);
+
+        BALLSPEED = (BALLSTARTY-BALLENDY ) / MOVEDURATION;
+    }
+
     public void ShowFinished()
     {
-        // finalScore.text = $"{score:D3}";
-        // finalScore.text = $"{nSuccess:D3}";
         finalScore.text = $"{AppData.Instance.selectedGame.cummulativeHits:D4}";
-
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game finished");
-
 
         foreach (GameObject g in finishObjects)
         {

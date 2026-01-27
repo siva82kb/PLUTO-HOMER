@@ -81,7 +81,7 @@ public class PROMsceneHandler : MonoBehaviour
         cText.text = AppData.Instance.selectedMechanism.IsMechanism("HOC")  ? "Closed" : "";
 
         // Handle the right and left sides differently.
-        (_rinx, _linx) = AppData.Instance.trainingSide == "right" ? (1, 0) : (0, 1);
+        (_rinx, _linx) = AppData.Instance.IsTrainingSide("RIGHT") ? (1, 0) : (0, 1);
         rText.text = DirectionText[PlutoComm.mechanism - 1][_rinx];
         lText.text = DirectionText[PlutoComm.mechanism - 1][_linx];
         

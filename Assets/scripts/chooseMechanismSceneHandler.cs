@@ -91,7 +91,6 @@ public class MechanismSceneHandler : MonoBehaviour
             Toggle toggleComponent = child.GetComponent<Toggle>();
             bool isPrescribed = AppData.Instance.userData.mechMoveTimePrsc[toggleComponent.name] > 0;
             
-
             bool isDone = AppData.Instance.userData.getTodayMoveTimeForMechanism(toggleComponent.name)>= AppData.Instance.userData.mechMoveTimePrsc[toggleComponent.name];
             // Debug.Log($" done : {isDone}, x-{AppData.Instance.userData.getTodayMoveTimeForMechanism(toggleComponent.name)} y-{AppData.Instance.userData.mechMoveTimePrsc[toggleComponent.name]} ");
             // Hide the component if it has no prescribed time.
@@ -109,7 +108,7 @@ public class MechanismSceneHandler : MonoBehaviour
                 if (toggleComponent.gameObject.name == "FME1")
                 {
                     // Ensure the index is within bounds of the knobs array
-                    int spriteIndex = AppData.Instance.userData.FME1 - 1;
+                    int spriteIndex = AppData.Instance.userData.FME1;
                     if (spriteIndex >= 0 && spriteIndex < knobs.Length)
                     {
                         if (fme1FillImage != null) 
@@ -126,7 +125,7 @@ public class MechanismSceneHandler : MonoBehaviour
                 if (toggleComponent.gameObject.name == "FME2")
                 {
                     // Ensure the index is within bounds of the knobs array
-                    int spriteIndex = AppData.Instance.userData.FME2 - 1;
+                    int spriteIndex = AppData.Instance.userData.FME2;
                     if (spriteIndex >= 0 && spriteIndex < knobs.Length)
                     {
                         if (fme2FillImage != null) 

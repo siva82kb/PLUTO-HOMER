@@ -94,7 +94,7 @@ public class FruitBasketGameController : MonoBehaviour
     public TextMeshProUGUI yesterdayScoreTxt;
     public TextMeshProUGUI todayScoreTxt;
     public TextMeshProUGUI starCount;
-    public GameObject GameOverStar, starLabel;
+    public GameObject GameOverStar, starLabel, instructionPanel;
     public int _starCount;
     private int[] scores;
   
@@ -116,6 +116,8 @@ public class FruitBasketGameController : MonoBehaviour
 
         FRUITSTARTY = (canvasRect.rect.height / 2f) - 50;//just below screen start 
         FRUITENDY = -(canvasRect.rect.height / 2f) + 120f;//just above the screen end
+
+        instructionPanel.SetActive(false);
 
         // Attach PLUTO button event.
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
@@ -272,7 +274,11 @@ public class FruitBasketGameController : MonoBehaviour
     }
     public void runStateMachine()
     {
-        if (isGamePlaying()) trialTimeLeft -= Time.deltaTime;
+        // if (isGamePlaying()) trialTimeLeft -= Time.deltaTime;
+        if (isGamePlaying() && trialTimeLeft > 0f)
+        {
+            trialTimeLeft -= Time.deltaTime;
+        }
         bool isTimeUp = trialTimeLeft < 0;
         switch (gameState)
         {
@@ -364,6 +370,7 @@ public class FruitBasketGameController : MonoBehaviour
                     AppData.Instance.speedData.setGameSpeed(gameSpeed);
                 }
                     AppData.Instance.speedData.setMoveDuration(MOVEDURATION);
+                 instructionPanel.SetActive(true);
 
 
                 if (AppData.Instance.aanController.stateChange) UpdatePlutoAANTarget();
@@ -375,7 +382,8 @@ public class FruitBasketGameController : MonoBehaviour
                    
                     float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
                     Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
-
+                    instructionPanel.SetActive(false);
+                    
                     // AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
                       // Stop the current game trial
                     if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
@@ -415,7 +423,7 @@ public class FruitBasketGameController : MonoBehaviour
                                 SceneManager.LoadScene("CHMECH");
                                 return;
                             }
-                            finalScore.text = $"{AppData.Instance.selectedGame.cummulativeHits:D4}";
+                            // finalScore.text = $"{AppData.Instance.selectedGame.cummulativeHits:D4}";
 
                             // gameOverPanel.SetActive(true);
                             // finalScore.text = $"{nSuccess:D3}";
@@ -759,7 +767,7 @@ public class FruitBasketGameController : MonoBehaviour
                         ? "PRESS PLUTO BUTTON TO START GAME"
                         : "";
 
-        timertxt.text = $"Timer:{trialTimeLeft.ToString("F0")}s";
+        timertxt.text = $"Timer:{Mathf.Max(0, Mathf.CeilToInt(trialTimeLeft)):D2}s";
         scoreTxt.text = $"Score:{nSuccess:D2}";
     }
     private void onPlutoButtonReleased()

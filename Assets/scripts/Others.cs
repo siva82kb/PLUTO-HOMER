@@ -407,6 +407,7 @@ public class PlutoUserData
 
     public bool rightHand { private set; get; }
     public DateTime startDate { private set; get; }
+    public DateTime endDate { private set; get;}
     public Dictionary<string, float> mechMoveTimePrsc { get; private set; } // Prescribed movement time
     public Dictionary<string, float> mechMoveTimePrev { get; private set; } // Previous movement time 
     public Dictionary<string, float> mechMoveTimeCurr { get; private set; } // Current movement time
@@ -670,13 +671,15 @@ public class PlutoUserData
     private void parseTherapyConfigData()
     {
         DataRow lastRow = dTableConfig.Rows[dTableConfig.Rows.Count - 1];
-        hospNumber = lastRow.Field<string>("HospitalNumber");
+        hospNumber = lastRow.Field<string>("HomerId");
         rightHand = lastRow.Field<string>("TrainingSide") == "right";
         Debug.Log(lastRow.Field<string>("FME1K"));
         FME1 = int.Parse(lastRow.Field<string>("FME1K"));
         FME2 = int.Parse(lastRow.Field<string>("FME2K"));
         //AppData.trainingSide = ; // lastRow.Field<string>("TrainingSide");
         startDate = DateTime.ParseExact(lastRow.Field<string>("StartDate"), "dd-MM-yyyy", CultureInfo.InvariantCulture);
+        endDate = DateTime.ParseExact(lastRow.Field<string>("endDate"), "dd-MM-yyyy", CultureInfo.InvariantCulture);
+
         mechMoveTimePrsc = createMoveTimeDictionary();//prescribed time
         for (int i = 0; i < PlutoDefs.Mechanisms.Length; i++)
         {
@@ -1010,7 +1013,7 @@ public class PlutoUserData
 
         int score1 = GetScoreForDate(date1, gameName);
         int score2 = GetScoreForDate(date2, gameName);
-        Debug.Log($"{score1},{score2} from getfuntion");
+        Debug.Log($"{score1} - {date1},{score2} - {date2} from getfuntion");
         return new[] { score1, score2 };
     }
 

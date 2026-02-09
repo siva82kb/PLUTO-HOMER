@@ -71,7 +71,7 @@ public class HatGameController : MonoBehaviour
     bool paramSet = false;
     
     // Game timing related variables
-    private float triaTimeLeft;
+    private float trialTimeLeft;
     private float lastHighScore;
 
     // Game score related variables.
@@ -142,7 +142,7 @@ public class HatGameController : MonoBehaviour
     public TextMeshProUGUI yesterdayScoreTxt;
     public TextMeshProUGUI todayScoreTxt;
     public TextMeshProUGUI starCount;
-    public GameObject GameOverStar,gameOverPanel , starLabel;
+    public GameObject GameOverStar,gameOverPanel , starLabel, instructionPanel;
     public int _starCount;
     float lastTargetReachTime = -1f;
     float lastInterTargetDuration = 0f;
@@ -204,6 +204,7 @@ public class HatGameController : MonoBehaviour
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
         finishObjects = GameObject.FindGameObjectsWithTag("ShowOnFinish");
         detailObjects = GameObject.FindGameObjectsWithTag("detailViewer");
+        instructionPanel.SetActive(false);
 
         // Do not show the paused and finished objects at the start.
         HidePaused();
@@ -399,7 +400,7 @@ public class HatGameController : MonoBehaviour
         AppData.Instance.aanController.ResetTrial();
 
         // Initialize game variables.
-        triaTimeLeft = HomerTherapy.TrialDuration;
+        trialTimeLeft = HomerTherapy.TrialDuration;
 
         // Reset score related variables.
         nTargets = 0;
@@ -451,10 +452,14 @@ public class HatGameController : MonoBehaviour
     private void RunGameStateMachine()
     {
         // Run the game timer
-        if (IsGamePlaying()) triaTimeLeft -= Time.deltaTime;
+        // if (IsGamePlaying()) trialTimeLeft -= Time.deltaTime;
+        if (IsGamePlaying() && trialTimeLeft > 0f)
+        {
+            trialTimeLeft -= Time.deltaTime;
+        }
 
         // Act according to the current game state.
-        bool isTimeUp = triaTimeLeft <= 0;
+        bool isTimeUp = trialTimeLeft <= 0;
         switch (gameState)
         {
             case GameStates.WAITING:
@@ -536,6 +541,8 @@ public class HatGameController : MonoBehaviour
                 AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
                 // Set AAN target if needed.
                 isGameFinished = true;
+                instructionPanel.SetActive(true);
+
                 AppData.Instance.previousSuccessRates =null;
                 if (AppData.Instance.speedData.gameSpeed != gameSpeed)
                 {
@@ -548,10 +555,11 @@ public class HatGameController : MonoBehaviour
                 if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AROMMOVING
                     || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.IDLE)
                 {
-                    float gameTime = HomerTherapy.TrialDuration - triaTimeLeft;
+                    float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
                     Debug.Log($" Scores : {scores[0]}  + {nSuccess} + {scores[1]} ++ ");
                     Debug.Log($" scor : {AppData.Instance.selectedGame.isAchievedToday()}");
-             
+                    instructionPanel.SetActive(false);
+
                     Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
                     // AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
                       // Stop the current game trial
@@ -703,7 +711,7 @@ public class HatGameController : MonoBehaviour
 
     private void UpdateText()
     {
-        timeLeftText.text = $"Timer:{(int)triaTimeLeft}s";
+        timeLeftText.text = $"Timer:{Mathf.Max(0, Mathf.CeilToInt(trialTimeLeft)):D2}s";
         ScoreText.text = $"Score:{nSuccess:D2}";
     }
 
@@ -717,7 +725,7 @@ public class HatGameController : MonoBehaviour
         {
             gameState = GameStates.STOP;
             AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
-            float gameTime = HomerTherapy.TrialDuration - triaTimeLeft;
+            float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
                 // Stop the current game trial
                     if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
                     {
@@ -782,7 +790,7 @@ public class HatGameController : MonoBehaviour
 
     public void ShowFinished()
     {
-        finalScore.text = $"{AppData.Instance.selectedGame.cummulativeHits:D4}";
+        // finalScore.text = $"{AppData.Instance.selectedGame.cummulativeHits:D4}";
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game finished");
 
         foreach (GameObject g in finishObjects)

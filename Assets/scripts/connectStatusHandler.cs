@@ -95,7 +95,7 @@ public class connectStatusHandler : MonoBehaviour
                 else
                 {
                     // Normal flow: load DataUpload
-                    // SceneManager.LoadScene("DATAUPLOAD");
+                    SceneManager.LoadScene("DATAUPLOAD");
                 }
                 // CloseAppLogger();
                 // SceneManager.LoadScene("DATAUPLOAD");

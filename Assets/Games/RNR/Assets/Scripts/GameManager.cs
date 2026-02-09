@@ -80,8 +80,9 @@ public class GameManager : MonoBehaviour
 
     private float rainTimer = 0f, convertedAngle=0f;
     private float highlightTimer = 0f;
-
-    private float rainDurationToGrow = 0.2f;    // needs 1s of rain
+    float maxRainDuration = 0.5f;   // slow game → longer rain
+    float minRainDuration = 0.15f;  // fast game → shorter rain
+    private float rainDurationToGrow = 0f;    // needs 1s of rain
     public float highlightDuration;     // highlighted for 3s
     private bool hasGrownThisCycle = false, runOnce = false;
     private SeedController lastHighlighted = null; // store last seed
@@ -101,7 +102,7 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI yesterdayScoreTxt;
     public TextMeshProUGUI todayScoreTxt;
     public TextMeshProUGUI starCount;
-    public GameObject GameOverStar, starLabel;
+    public GameObject GameOverStar, starLabel, instructionPanel;
     public int _starCount;
     private int[] scores;
 
@@ -125,6 +126,7 @@ public class GameManager : MonoBehaviour
         GameObject cloudObj = Instantiate(cloudPrefab, new Vector3(0, 3.5f, 0), Quaternion.identity);
         playerCloud = cloudObj.GetComponent<CloudController>();
         PLAYSIZE = Camera.main.orthographicSize * Camera.main.aspect;
+        instructionPanel.SetActive(false);
 
 
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
@@ -202,13 +204,25 @@ public class GameManager : MonoBehaviour
 
         HidePaused();
     }
-    private float CalculateHighlightDuration(float mechanismSpeed)
+    private float CalculateHighlightDuration()
     {
         // rainDurationToGrow = 0.2f;
-
+        
+        CalculateRainDurationToGrow();
         float  duration = GetTargetEndTime(gameSpeed);
         return duration;
     }
+    private void CalculateRainDurationToGrow()
+    {
+        float minSpeed = 10f;
+        float maxSpeed = 40f;
+
+
+
+        float t = Mathf.InverseLerp(HomerTherapy.MinSpeed, HomerTherapy.MaxSpeed, gameSpeed);
+        rainDurationToGrow= Mathf.Lerp(maxRainDuration, minRainDuration, t);
+    }
+
 
     void Update()
     {
@@ -310,7 +324,8 @@ public class GameManager : MonoBehaviour
 
         // Score.text = $"Score : {score}";
         Score.text = $"Score:{(int)score}";
-        Timer.text = $"Timer:{(int)trialTimeLeft:D2}s";
+        // Timer.text = $"Timer:{(int)trialTimeLeft:D2}s";
+        Timer.text = $"Timer:{Mathf.Max(0, Mathf.CeilToInt(trialTimeLeft)):D2}s";
     }
 
     void FixedUpdate()
@@ -329,7 +344,7 @@ public class GameManager : MonoBehaviour
 
         gameSpeed += 1.0f;
         gsc.gameSpeedText.text = $"{gameSpeed:F2}";
-        highlightDuration = CalculateHighlightDuration(gameSpeed);
+        highlightDuration = CalculateHighlightDuration();
 
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s  game speed decreased to {gameSpeed} - HightlightDuration decreased - set to {highlightDuration}");
    
@@ -340,7 +355,7 @@ public class GameManager : MonoBehaviour
 
         gameSpeed -= 1.0f;
         gsc.gameSpeedText.text = $"{gameSpeed:F2}";
-        highlightDuration = CalculateHighlightDuration(gameSpeed);
+        highlightDuration = CalculateHighlightDuration();
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s  game speed decreased to {gameSpeed} - HightlightDuration decreased - set to {highlightDuration}");
     }
     private void SetVisibility(bool state)
@@ -370,7 +385,7 @@ public class GameManager : MonoBehaviour
 
 
         gameSpeed = AppData.Instance.speedData.gameSpeed; // degrees/sec
-        highlightDuration = CalculateHighlightDuration(gameSpeed);
+        highlightDuration = CalculateHighlightDuration();
         // Attach PLUTO button event.
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
         reminderPanel.SetActive(false);
@@ -424,7 +439,11 @@ public class GameManager : MonoBehaviour
 
     private void RunGameStateMachine()
     {
-        if (IsGamePlaying()) trialTimeLeft -= Time.deltaTime;
+        if (IsGamePlaying() && trialTimeLeft > 0f)
+        {
+            trialTimeLeft -= Time.deltaTime;
+        }
+
         bool isTimeUp = trialTimeLeft <= 0;
 
         switch (gameState)
@@ -533,6 +552,8 @@ public class GameManager : MonoBehaviour
                 AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
                 // Set AAN target if needed.
                 isGameFinished = true;
+                instructionPanel.SetActive(true);
+
                 AppData.Instance.previousSuccessRates =null;
                 if (AppData.Instance.speedData.gameSpeed != gameSpeed)
                 {
@@ -547,8 +568,8 @@ public class GameManager : MonoBehaviour
                     || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.IDLE)
                 {
                     float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
-                    Debug.Log($" Scores : {scores[0]}  + {nSuccess} + {scores[1]} ++ ");
-                    Debug.Log($" scor : {AppData.Instance.selectedGame.isAchievedToday()}");
+                    instructionPanel.SetActive(false);
+
                                   
                     Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
 
@@ -739,7 +760,7 @@ public class GameManager : MonoBehaviour
     public void ShowFinished()
     {
         // Time.timeScale = 0;
-        finalScore.text = $"{AppData.Instance.selectedGame.cummulativeHits:D4}";
+        // finalScore.text = $"{AppData.Instance.selectedGame.cummulativeHits:D4}";
         AppLogger.LogInfo($" {AppData.Instance.selectedGameName} - Game finished");
         // RestartButton.SetActive(true);
         foreach (GameObject g in finishObjects) g.SetActive(true);

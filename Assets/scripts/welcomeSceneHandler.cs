@@ -32,7 +32,7 @@ public class welcomSceneHandler : MonoBehaviour
 
         if (!Directory.Exists(DataManager.basePath)) 
         {
-            SceneManager.LoadScene("GETCONFIG");
+            SceneManager.LoadScene("CONFIG");
             return;
         }
 
@@ -51,13 +51,19 @@ public class welcomSceneHandler : MonoBehaviour
 
         if (!File.Exists(DataManager.configFile)) 
         {
-            SceneManager.LoadScene("GETCONFIG");
+            SceneManager.LoadScene("CONFIG");
             return;
         }
 
         
         // Initialize.
         AppData.Instance.Initialize(SceneManager.GetActiveScene().name);
+
+        if ((DateTime.Today - AppData.Instance.userData.startDate).TotalDays >= 15)
+        {
+            SceneManager.LoadScene("CONFIG");
+        }
+
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");
         daySummaries = AppData.Instance.userData.CalculateMoveTimePerDay();
@@ -95,6 +101,12 @@ public class welcomSceneHandler : MonoBehaviour
         if (changeScene == true ) {
             LoadTargetScene();
             changeScene = false;
+        }
+        if (Input.GetKey(KeyCode.LeftControl) &&
+            Input.GetKey(KeyCode.LeftShift) &&
+            Input.GetKeyDown(KeyCode.C)) // magic key combo
+        {
+            SceneManager.LoadScene("CONFIG");
         }
     }
 

@@ -86,7 +86,7 @@ public class PongGameController : MonoBehaviour
     static float bottomBound = -6F;
     public GameObject aromLeft;
     public GameObject aromRight;
-    private float triaTimeLeft;
+    private float trialTimeLeft;
     private float moveTimeLeft;
     public float gs;
 
@@ -107,7 +107,7 @@ public class PongGameController : MonoBehaviour
     public TextMeshProUGUI yesterdayScoreTxt;
     public TextMeshProUGUI todayScoreTxt;
     public TextMeshProUGUI starCount;
-    public GameObject GameOverStar,starLabel;
+    public GameObject GameOverStar,starLabel, instructionPanel;
     public int _starCount;
     private int[] scores;
     private void Awake()
@@ -198,6 +198,8 @@ public class PongGameController : MonoBehaviour
         hideFinished();
         showPaused();
         SetVisibility(false);
+        instructionPanel.SetActive(false);
+
         
         updateStarCount();
         celebrationPanel.SetActive(false);
@@ -401,7 +403,7 @@ public class PongGameController : MonoBehaviour
         else
         {
             gameState = GameStates.STOP;
-            float gameTime = HomerTherapy.TrialDuration - triaTimeLeft;
+            float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
                                    
             Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
             AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
@@ -512,7 +514,7 @@ public class PongGameController : MonoBehaviour
     public void showFinished()
     {
         // finalScore.text = $"{nSuccess:D3}";
-        finalScore.text = $"{AppData.Instance.selectedGame.cummulativeHits:D4}";
+        // finalScore.text = $"{AppData.Instance.selectedGame.cummulativeHits:D4}";
 
         foreach (GameObject g in finishObjects)
         {
@@ -549,11 +551,14 @@ public class PongGameController : MonoBehaviour
         else if (gameState == GameStates.PAUSED) resumeGame();
 
         // Run the game timer
-        if (IsGamePlaying()) triaTimeLeft -= Time.deltaTime;
+        if (IsGamePlaying() && trialTimeLeft > 0f)
+        {
+            trialTimeLeft -= Time.deltaTime;
+        }
        // Debug.Log(isGameStarted);
         UpdateText();
         // Act according to the current game state.
-        bool isTimeUp = triaTimeLeft <= 0;
+        bool isTimeUp = trialTimeLeft <= 0;
         switch (gameState)
         {
             case GameStates.WAITING:
@@ -644,6 +649,7 @@ public class PongGameController : MonoBehaviour
                 // Update AANController.
                 AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
                 // Set AAN target if needed.
+                instructionPanel.SetActive(true);
 
                 AppData.Instance.previousSuccessRates =null;
                 if (AppData.Instance.speedData.gameSpeed != gameSpeed)
@@ -658,9 +664,9 @@ public class PongGameController : MonoBehaviour
                 if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AROMMOVING
                     || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.IDLE) 
                 {
-                    float gameTime = HomerTherapy.TrialDuration - triaTimeLeft;
-                    Debug.Log($" Scores : {scores[0]}  + {nSuccess} + {scores[1]} ++ ");
-                    Debug.Log($" scor : {AppData.Instance.selectedGame.isAchievedToday()}");
+                    float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
+                    instructionPanel.SetActive(false);
+
                                     
                     Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
                     // Stop the current game trial
@@ -839,7 +845,7 @@ public class PongGameController : MonoBehaviour
         AppData.Instance.aanController.ResetTrial();
         
         // Initialize game variables.
-        triaTimeLeft = HomerTherapy.TrialDuration;
+        trialTimeLeft = HomerTherapy.TrialDuration;
 
         // Reset score related variables.
         nTargets = 0;
@@ -872,7 +878,7 @@ public class PongGameController : MonoBehaviour
     }
     private void UpdateText()
     {
-        timeLeftText.text = $"Timer:{(int)triaTimeLeft}s";
+        timeLeftText.text = $"Timer:{Mathf.Max(0, Mathf.CeilToInt(trialTimeLeft)):D2}s";
         // gameSpeedViewer.text = $"GS :{(int)gameSpeed}";
         //core.text = $"Score: {nSuccess}";
     }

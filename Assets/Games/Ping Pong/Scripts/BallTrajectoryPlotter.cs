@@ -21,6 +21,7 @@ public class BallTrajectoryPlotter : MonoBehaviour
     public float ballDistance;
 
     public bool ishittingplayer;
+    private ToggleGameObject toggleSwitch;
 
     private void Awake()
     {
@@ -30,12 +31,23 @@ public class BallTrajectoryPlotter : MonoBehaviour
     private void Start()
     {
         //drawTraj();
+         if (toggleSwitch == null)
+    {
+        toggleSwitch = FindObjectOfType<ToggleGameObject>();
+    }
     }
 
     private void FixedUpdate()
     {
+        if (toggleSwitch == null)
+            return;
         ballVelocity = GetComponent<Rigidbody2D>().velocity;
         //Debug.Log(transform.position.x);
+        if (!toggleSwitch.trajON)
+        {
+            lineRenderer.positionCount = 0; // CLEAR IMMEDIATELY
+            return;
+        }
 
         if (transform.position.x < 5 && ballVelocity.x > 0 && transform.position.x > -5)
         {

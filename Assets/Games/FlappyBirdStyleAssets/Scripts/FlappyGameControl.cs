@@ -58,7 +58,7 @@ public class FlappyGameControl : MonoBehaviour
     public Vector3? TargetPosition { get; private set; }
     public Vector3 PlayerPosition { get; private set; }
     private float PLAYSIZE;
-    private float triaTimeLeft;
+    private float trialTimeLeft;
     
     public int nTargets = 0;
     public int nSuccess = 0;
@@ -119,7 +119,7 @@ public class FlappyGameControl : MonoBehaviour
     public TextMeshProUGUI yesterdayScoreTxt;
     public TextMeshProUGUI todayScoreTxt;
     public TextMeshProUGUI starCount;
-    public GameObject GameOverStar, starLabel;
+    public GameObject GameOverStar, starLabel, instructionPanel;
     public int _starCount;
     private int[] scores;
     private float mechMinDuration, mechMaxDuration, mechMinThreshold, mechMaxThreshold;
@@ -148,6 +148,7 @@ public class FlappyGameControl : MonoBehaviour
         if(AppData.Instance.selectedGame.isAchievedToday())starLabel.GetComponent<Image>().color = Color.white;
 
         gameOverPanel.SetActive(false);
+        instructionPanel.SetActive(false);
         // Intialize game logic variables
         gameState = GameStates.WAITING;
         // Clear even flags.
@@ -446,7 +447,7 @@ public class FlappyGameControl : MonoBehaviour
 
     void UpdateGameTimerUI()
     {
-        timerObject.specifiedValue = Mathf.Clamp(100 * (90 - triaTimeLeft) / 90f, 0, 100);
+        timerObject.specifiedValue = Mathf.Clamp(100 * (90 - trialTimeLeft) / 90f, 0, 100);
     }
      private IEnumerator ShowForSeconds(GameObject obj, float seconds)
     {
@@ -515,7 +516,7 @@ public class FlappyGameControl : MonoBehaviour
 
     public void BirdScored()
     {
-        if (triaTimeLeft < 0 && !birdDied)
+        if (trialTimeLeft < 0 && !birdDied)
         {
             gameOver = true;
             score = 0;
@@ -568,7 +569,7 @@ public class FlappyGameControl : MonoBehaviour
         AppData.Instance.aanController.ResetTrial();
         
         // Initialize game variables.
-        triaTimeLeft = HomerTherapy.TrialDuration;
+        trialTimeLeft = HomerTherapy.TrialDuration;
       //  Debug.Log($"trial time left :{triaTimeLeft}");
         // Reset score related variables.
         nTargets = 0;
@@ -603,15 +604,20 @@ public class FlappyGameControl : MonoBehaviour
     private void RunGameStateMachine()
     {
         // Check if the game is to be paused or unpaused.
-       // Debug.Log($"Game Update : {gameState}");
+        // Debug.Log($"Game Update : {gameState}");
         if (isGamePaused) PauseGame();
         else if (gameState == GameStates.PAUSED) ResumeGame();
 
         // Run the game timer
-        if (IsGamePlaying()) triaTimeLeft -= Time.deltaTime;
+        // if (IsGamePlaying()) trialTimeLeft -= Time.deltaTime;
+
+        if (IsGamePlaying() && trialTimeLeft > 0f)
+        {
+            trialTimeLeft -= Time.deltaTime;
+        }
         // Debug.Log(isGameStarted);
         // Act according to the current game state.
-        bool isTimeUp = triaTimeLeft <= 0;
+        bool isTimeUp = trialTimeLeft <= 0;
         switch (gameState)
         {
             case GameStates.WAITING:
@@ -693,6 +699,8 @@ public class FlappyGameControl : MonoBehaviour
                 // Trial complete.
                 // Update AANController.
                 AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
+                instructionPanel.SetActive(true);
+
                 // Set AAN target if needed.
                 isGameFinished = true;
                 AppData.Instance.previousSuccessRates =null;
@@ -709,30 +717,32 @@ public class FlappyGameControl : MonoBehaviour
                 if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AROMMOVING
                     || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.IDLE)
                 {
-                    float gameTime = HomerTherapy.TrialDuration - triaTimeLeft;
+                    float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
+                    instructionPanel.SetActive(false);
+
                                            
                     Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
                     // Stop the current game trial
-            if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
-            {
-                AppData.Instance.selectedGame.updateCummulativeStars();
-                celebrationPanel.SetActive(true);
-            }
-            AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+                    if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
+                    {
+                        AppData.Instance.selectedGame.updateCummulativeStars();
+                        celebrationPanel.SetActive(true);
+                    }
+                    AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
             
-            gameOverPanel.SetActive(!celebrationPanel.gameObject.activeSelf);
+                    gameOverPanel.SetActive(!celebrationPanel.gameObject.activeSelf);
             
-            if (gameOverPanel.gameObject.activeSelf)
-            {
-                GameOverStar.SetActive(AppData.Instance.selectedGame.isAchievedToday());
-                yesterdayScoreTxt.text = $"{scores[1]:D4}";
-                todayScoreTxt.text = $"{(scores[0]+nSuccess):D4}";
-            }
-            if (celebrationPanel.gameObject.activeSelf)
-            {
-                updateStarCount();
-                scoreComparisonTxt.text = $"{(scores[0] + nSuccess).ToString("D3")}";
-            }
+                    if (gameOverPanel.gameObject.activeSelf)
+                    {
+                        GameOverStar.SetActive(AppData.Instance.selectedGame.isAchievedToday());
+                        yesterdayScoreTxt.text = $"{scores[1]:D4}";
+                        todayScoreTxt.text = $"{(scores[0]+nSuccess):D4}";
+                    }
+                    if (celebrationPanel.gameObject.activeSelf)
+                    {
+                        updateStarCount();
+                        scoreComparisonTxt.text = $"{(scores[0] + nSuccess).ToString("D3")}";
+                    }
                     // AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
                     gameState = GameStates.DONE;
                     lastHighScore = AppData.Instance.successRate * (PlutoAANController.MAXCONTROLBOUND - AppData.Instance.CurrentControlBound);
@@ -743,7 +753,7 @@ public class FlappyGameControl : MonoBehaviour
                             // SceneManager.LoadScene(SceneManager.GetActiveScene().name);
                             // ShowFinished();
                             AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game finished");
-                            finalScore.text = $"{AppData.Instance.selectedGame.cummulativeHits:D4}";
+                            // finalScore.text = $"{AppData.Instance.selectedGame.cummulativeHits:D4}";
 
                     }
                     if (AppData.Instance.selectedMechanism.trialNumberDay == AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
@@ -759,7 +769,7 @@ public class FlappyGameControl : MonoBehaviour
 
     private void UpdateText()
     {
-        timeLeftText.text = $"Timer:{(int)triaTimeLeft}s";
+        timeLeftText.text = $"Timer:{Mathf.Max(0, Mathf.CeilToInt(trialTimeLeft)):D2}s";
         ScoreText.text = $"Score:{nSuccess}";
     }
 
@@ -802,7 +812,7 @@ public class FlappyGameControl : MonoBehaviour
         else
         {
             gameState = GameStates.STOP;
-            float gameTime = HomerTherapy.TrialDuration - triaTimeLeft;
+            float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
             
             Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
             AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);

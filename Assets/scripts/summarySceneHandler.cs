@@ -26,14 +26,12 @@ public class summarySceneHandler : MonoBehaviour
     public GameObject FME1star;
     public GameObject FME2star;
     public GameObject TOTstar;
-
-
-    public GameObject WFE;
-    public GameObject WURD;
-    public GameObject FPS;
-    public GameObject HOC;
-    public GameObject FME1;
-    public GameObject FME2;
+    // public GameObject WFE;
+    // public GameObject WURD;
+    // public GameObject FPS;
+    // public GameObject HOC;
+    // public GameObject FME1;
+    // public GameObject FME2;
 
     int[] cummulativeScores;
     public Transform WFEStarParent;
@@ -59,19 +57,113 @@ public class summarySceneHandler : MonoBehaviour
     public TextMeshProUGUI TOTStarText;
     private int totalstar;
 
+    public Image[] mechimages;
+
+    [Header("Mechanism List Parent")]
+    public RectTransform mechanismList;
+
+    [Header("Mechanism Rows (Images)")]
+    public GameObject WFE;
+    public GameObject WURD;
+    public GameObject FPS;
+    public GameObject HOC;
+    public GameObject FME1;
+    public GameObject FME2;
+
+    [Header("Star Colors")]
+    [SerializeField] private Color starEmpty = Color.black;
+    [SerializeField] private Color starFilled = new Color(1f, 0.84f, 0f);
+
+    private Dictionary<string, GameObject> mechMap;
+
+
     
+    // public void Start()
+    // {
+    //     //debugger
+    //     // AppData.Instance.Initialize(SceneManager.GetActiveScene().name);
+
+    //     title = "summary";
+    //     ShowOnlyPrescribedMechanisms();   // hide unused ones
+    //     initializeChart();
+
+    //     List<MechanismStats> mechStats = AppData.Instance.userData.ReadMechanismStarStats();
+
+    //     mechMap = new Dictionary<string, GameObject>()
+    //     {
+    //         { "WFE", WFE },
+    //         { "WURD", WURD },
+    //         { "FPS", FPS },
+    //         { "HOC", HOC },
+    //         { "FME1", FME1 },
+    //         { "FME2", FME2 }
+    //     };
+
+    //     // UpdateMechanismRows();
+    //     displayMechanismStars(mechStats);
+    // }
+
     public void Start()
+{
+    title = "Unlock Your Potential Through Play";
+    initializeChart();
+
+    List<MechanismStats> mechStats =
+        AppData.Instance.userData.ReadMechanismStarStats();
+
+    mechMap = new Dictionary<string, GameObject>()
     {
-        //debugger
-        // AppData.Instance.Initialize(SceneManager.GetActiveScene().name);
+        { "WFE", WFE },
+        { "WURD", WURD },
+        { "FPS", FPS },
+        { "HOC", HOC },
+        { "FME1", FME1 },
+        { "FME2", FME2 }
+    };
 
-        title = "summary";
-        ShowOnlyPrescribedMechanisms();   // hide unused ones
-        initializeChart();
+    UpdateMechanismRows(mechStats);
+    displayMechanismStars(mechStats);
+}
 
-        List<MechanismStats> mechStats = AppData.Instance.userData.ReadMechanismStarStats();
-        displayMechanismStars(mechStats);
+    private Dictionary<string, MechanismStats> BuildStatLookup(List<MechanismStats> stats)
+    {
+        Dictionary<string, MechanismStats> map = new Dictionary<string, MechanismStats>();
+        foreach (var s in stats)
+            map[s.Mechanism] = s;
+
+        return map;
     }
+    private void UpdateMechanismRows(List<MechanismStats> stats)
+{
+    var statMap = BuildStatLookup(stats);
+
+    foreach (var mech in mechMap)
+    {
+        string mechName = mech.Key;
+        GameObject row = mech.Value;
+
+        bool isPrescribed =
+            AppData.Instance.userData.mechMoveTimePrsc[mechName] > 0;
+
+        row.SetActive(isPrescribed);
+        if (!isPrescribed) continue;
+
+        // ⭐ Use TodayStars FROM THE LIST
+        if (!statMap.TryGetValue(mechName, out MechanismStats mechStat))
+            continue;
+
+        Transform starsParent = row.transform.Find("Stars");
+        if (starsParent != null)
+        {
+            UpdateStars(starsParent, mechStat.TodayStars);
+        }
+    }
+
+    // Force vertical stretch of remaining rows
+    LayoutRebuilder.ForceRebuildLayoutImmediate(mechanismList);
+}
+
+
     private void ShowOnlyPrescribedMechanisms()
     {
         Dictionary<string, GameObject> mechObjects = new Dictionary<string, GameObject>()
@@ -129,7 +221,7 @@ public class summarySceneHandler : MonoBehaviour
             totalstar=s.CumulativeStars;
 
             TOTStarText.text = $"{s.CumulativeStars:D3}";
-            compTOTStarText.text=$"{s.CumulativeStars:D3}/{s.CumulativeStarsYesterday:D3}";
+            compTOTStarText.text=$"{s.CumulativeStarsYesterday:D3}";
         }
         if(totalstar>0)TOTstar.GetComponent<Image>().color = Color.white;
 
@@ -155,6 +247,8 @@ public class summarySceneHandler : MonoBehaviour
         UpdateChartData();
        
     }
+    
+   
     //To disconnect the Robot 
     public void onPlutoButtonReleased()
     {
@@ -164,22 +258,22 @@ public class summarySceneHandler : MonoBehaviour
             PlutoComm.stopSensorStream();
 
             ConnectToRobot.disconnect();
-            try
-            {
-                Application.Quit();
-                // Process.Start("shutdown", "/s /t 0");
+            // try
+            // {
+            //     Application.Quit();
+            //     // Process.Start("shutdown", "/s /t 0");
 
-                #if UNITY_EDITOR
-                            UnityEditor.EditorApplication.isPlaying = false;
-                #endif
+            //     #if UNITY_EDITOR
+            //                 UnityEditor.EditorApplication.isPlaying = false;
+            //     #endif
 
-                // Process.Start("shutdown", "/s /t 0");
-            }
-            catch (System.Exception ex)
-            {
-                //Debug.LogError("Failed to shutdown: " + ex.Message);
-            }
-            // SceneManager.LoadScene("DATAUPLOAD");
+            //     // Process.Start("shutdown", "/s /t 0");
+            // }
+            // catch (System.Exception ex)
+            // {
+            //     //Debug.LogError("Failed to shutdown: " + ex.Message);
+            // }
+            SceneManager.LoadScene("DATAUPLOAD");
         });
     }
    
@@ -285,5 +379,18 @@ public class summarySceneHandler : MonoBehaviour
     }
 
 
+
+    private void UpdateStars(Transform starsParent, int todayStars)
+    {
+        todayStars = Mathf.Clamp(todayStars, 0, 5);
+
+        for (int i = 0; i < starsParent.childCount; i++)
+        {
+            Image star = starsParent.GetChild(i).GetComponent<Image>();
+            if (star == null) continue;
+
+            star.color = i < todayStars ? starFilled : starEmpty;
+        }
+    }
 
 }

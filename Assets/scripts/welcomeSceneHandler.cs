@@ -107,6 +107,7 @@ public class welcomSceneHandler : MonoBehaviour
             Input.GetKeyDown(KeyCode.C)) // magic key combo
         {
             SceneManager.LoadScene("CONFIG");
+            Debug.Log("Key pressed");
         }
     }
 

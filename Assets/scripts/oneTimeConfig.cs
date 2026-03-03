@@ -1,20 +1,23 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using System.Data;
 using System.Globalization;
+using SimpleJSON; // Make sure you have SimpleJSON in your project
 
 public class OneTimeConfig : MonoBehaviour
 {
+    // ... (keep all your existing variable declarations)
     public TMP_InputField homerIdField;
     public TMP_InputField startDateField;
     public TMP_InputField endDateField;
     public TMP_Dropdown groupField;
-
     public TMP_InputField wfeField;
     public TMP_InputField wurdField;
     public TMP_InputField fpsField;
@@ -22,25 +25,24 @@ public class OneTimeConfig : MonoBehaviour
     
     // FME1 components - Time input + Image selection
     public TMP_InputField fme1TimeField;
-    public Image fme1PreviewImage; // Display selected image
-    public Button fme1SelectButton; // Button to open popup
+    public Image fme1PreviewImage;
+    public Button fme1SelectButton;
     
     // FME2 components - Time input + Image selection
     public TMP_InputField fme2TimeField;
-    public Image fme2PreviewImage; // Display selected image
-    public Button fme2SelectButton; // Button to open popup
+    public Image fme2PreviewImage;
+    public Button fme2SelectButton;
     
     // Popup components
     public GameObject imageSelectionPopup;
-    public Transform imageGridContainer; // GridLayoutGroup parent for images
-    public GameObject imageButtonPrefab; // Prefab with Button + Image
+    public Transform imageGridContainer;
+    public GameObject imageButtonPrefab;
     public TextMeshProUGUI popupTitle;
     
     // Text displays for selected images
-    public TextMeshProUGUI fme1SelectedText;
-    public TextMeshProUGUI fme2SelectedText, loginButtonText;
+    public TextMeshProUGUI fme1SelectedText, fme2SelectedText, loginButtonText;
     
-    // Sprites for the 12 mechanism images (assign in inspector)
+    // Sprites for the 12 mechanism images
     public Sprite[] mechanismSprites = new Sprite[12];
     
     public TMP_Dropdown affectedSideDropdown;
@@ -49,123 +51,61 @@ public class OneTimeConfig : MonoBehaviour
     public TextMeshProUGUI totalDurationText;
     public TMP_Text msg;
 
-    // Variables to store selected indices (0-11)
     private int selectedFME1Index = -1;
     private int selectedFME2Index = -1;
-    
-    // Track which FME we're selecting for (1 or 2)
-    private int selectingForFME = 0; // 0 = none, 1 = FME1, 2 = FME2
-
-    // Selection colors
+    private int selectingForFME = 0;
     private Color defaultPreviewColor = new Color(1, 1, 1, 0.3f);
     private Color selectedPreviewColor = Color.black;
     private DateTime startDate, endDate;
 
+    // Verification Panel - NEW
+    public GameObject verifyPanel;
+    public GameObject popUpPanel;
+    public TMP_Dropdown verifyLocation;
+    public TMP_InputField HOMERID;
+    public TextMeshProUGUI popUpConfirmationPatientID;
+    public TextMeshProUGUI messageText;
+    public Button popupOk;
+    public Button popupCancel;
+    public Button verifyButton;
+
+    // AWS Configuration - NEW
+    private string awsBucketName = "homerclouds";
+    private string homerDetailsFileName = "homerIdDetails.json";
+    private string awsProfile = "default"; // AWS CLI profile
+
+    // Patient Data - NEW
+    private string currentPatientID;
+    private string currentLocation;
+    private string currentTrainingSide;
+
     private void Start()
     {
+        // Initialize verification panel (hidden by default)
+        if (verifyPanel != null)
+            verifyPanel.SetActive(false);
+        if (popUpPanel != null)
+            popUpPanel.SetActive(false);
+
         // Automatically set startDateField and endDateField
         startDate = DateTime.Now;
         endDate = startDate.AddDays(30);
 
-         if (File.Exists(DataManager.configFile))
+        if (File.Exists(DataManager.configFile))
         {
-            DataTable configData = DataManager.loadCSV(DataManager.configFile);
-
-            DataRow lastRow = configData.Rows[configData.Rows.Count - 1];
-            string hospNumber = lastRow.Field<string>("HomerId");
-            bool rightHand = lastRow.Field<string>("TrainingSide") == "right";
-            Debug.Log(lastRow.Field<string>("FME1K"));
-            int FME1 = int.Parse(lastRow.Field<string>("FME1K"));
-            int FME2 = int.Parse(lastRow.Field<string>("FME2K"));
-            //AppData.trainingSide = ; // lastRow.Field<string>("TrainingSide");
-            // startDate = DateTime.ParseExact(lastRow.Field<string>("StartDate"), "dd-MM-yyyy", CultureInfo.InvariantCulture);
-            endDate = DateTime.ParseExact(lastRow.Field<string>("endDate"), "dd-MM-yyyy", CultureInfo.InvariantCulture);
-
-            homerIdField.text = hospNumber;
-            affectedSideDropdown.options[affectedSideDropdown.value].text = rightHand ? "right":"left";
-            location.options[location.value].text = lastRow.Field<string>("Location");
-        
-            wfeField.text =lastRow.Field<string>("WFE");
-            wurdField.text= lastRow.Field<string>("WURD");
-            fpsField.text= lastRow.Field<string>("FPS");
-            hocField.text= lastRow.Field<string>("HOC");
-            fme1TimeField.text= lastRow.Field<string>("FME1");
-            fme2TimeField.text= lastRow.Field<string>("FME2");
-            totalDurationText.text= lastRow.Field<string>("TotalTime");
-
-            loginButtonText.text ="Login";
-
-            if (fme1PreviewImage != null && FME1 < mechanismSprites.Length && FME1>=0)
-            {
-                selectedFME1Index= FME1;
-                fme1PreviewImage.sprite = mechanismSprites[FME1];
-                fme1PreviewImage.color = selectedPreviewColor;
-                if (fme1SelectedText != null)
-                {
-                    
-                    fme1SelectedText.text = FME1 >= 0 ? 
-                        $"Selected: Knob {FME1}" : 
-                        "Click to select FME1 knob";
-                }
-        
-
-            }
-            else
-            {
-                if (fme1PreviewImage != null)
-                {
-                    fme1PreviewImage.color = defaultPreviewColor;
-                    fme1PreviewImage.sprite = null;
-                }
-                if (fme1SelectedText != null)
-                {
-                    fme1SelectedText.text = FME1 >= 0 ? 
-                        $"Selected: Knob {FME1}" : 
-                        "Click to select FME1 knob";
-                }
-            }
-            // Update FME2 preview
-            if (fme2PreviewImage != null && FME2 < mechanismSprites.Length && FME2>=0)
-            {
-                fme2PreviewImage.sprite = mechanismSprites[ FME2];
-                fme2PreviewImage.color = selectedPreviewColor;
-                selectedFME2Index= FME2;
-
-
-                if (fme2SelectedText != null)
-                {
-                    fme2SelectedText.text = FME2 >= 0 ? 
-                        $"Selected: Knob {FME2}" : 
-                        "Click to select FME2 knob";
-                }
-            }
-            else
-            {
-                if (fme2PreviewImage != null)
-                {
-                    fme2PreviewImage.color = defaultPreviewColor;
-                    fme2PreviewImage.sprite = null;
-                }
-                 if (fme2SelectedText != null)
-                {
-                    fme2SelectedText.text = FME2 >= 0 ? 
-                        $"Selected: Knob {FME2}" : 
-                        "Click to select FME2 knob";
-                }
-            }
-
+            LoadExistingConfig();
         }
         else
         {
-                    // Initialize preview images
-        InitializePreviewImages();
-            
+            InitializePreviewImages();
+            verifyPanel.SetActive(true);
+
         }
         
         startDateField.text = startDate.ToString("dd-MM-yyyy");
         endDateField.text = endDate.ToString("dd-MM-yyyy");
 
-        // Add listeners for time fields
+        // Add listeners
         wfeField.onValueChanged.AddListener(delegate { UpdateTotalDuration(); });
         wurdField.onValueChanged.AddListener(delegate { UpdateTotalDuration(); });
         fpsField.onValueChanged.AddListener(delegate { UpdateTotalDuration(); });
@@ -173,17 +113,293 @@ public class OneTimeConfig : MonoBehaviour
         fme1TimeField.onValueChanged.AddListener(delegate { UpdateTotalDuration(); });
         fme2TimeField.onValueChanged.AddListener(delegate { UpdateTotalDuration(); });
 
-        // Add listeners for FME selection buttons
         fme1SelectButton.onClick.AddListener(() => OpenImageSelectionPopup(1));
         fme2SelectButton.onClick.AddListener(() => OpenImageSelectionPopup(2));
-
-
         
-        // Initialize popup (but don't show it yet)
         InitializeImageSelectionPopup();
-        
-        // Close popup initially
         imageSelectionPopup.SetActive(false);
+
+        // Add verify button listener - NEW
+        if (verifyButton != null){
+            verifyButton.onClick.AddListener(OnVerifyButtonClick);
+            Debug.Log($"Verify ButtonInitialized");
+            }
+        if (popupOk != null)
+            popupOk.onClick.AddListener(OnPopupOkClick);
+        if (popupCancel != null)
+            popupCancel.onClick.AddListener(OnPopupCancelClick);
+    }
+
+    // Called when verify button is clicked
+private void OnVerifyButtonClick()
+{
+    Debug.Log("Verify button clicked");
+    
+    if (HOMERID == null)
+    {
+        Debug.LogError("HOMERID is not assigned in the Inspector!");
+        return;
+    }
+    
+    if (string.IsNullOrWhiteSpace(HOMERID.text))
+    {
+        Debug.Log("Homer ID is empty");
+        msg.text = "Please enter Homer ID";
+        return;
+    }
+
+    Debug.Log($"Homer ID entered: {HOMERID.text}");
+    
+    currentPatientID = HOMERID.text;
+    currentLocation = location.options[location.value].text;
+    currentTrainingSide = affectedSideDropdown.options[affectedSideDropdown.value].text;
+
+    Debug.Log($"Current Patient ID: {currentPatientID}, Location: {currentLocation}, Side: {currentTrainingSide}");
+
+    if (homerIdField == null)
+    {
+        Debug.LogError("HOMERID TextMeshProUGUI is not assigned!");
+    }
+    else
+    {
+        homerIdField.text = currentPatientID;
+    }
+
+    if (verifyPanel == null)
+    {
+        Debug.LogError("verifyPanel is not assigned!");
+    }
+    else
+    {
+        verifyPanel.SetActive(true);
+        Debug.Log("Verify panel activated");
+    }
+    
+    // Start verification process
+    StartCoroutine(VerifyHomerID(currentPatientID, currentLocation));
+}
+    // NEW: Coroutine to verify HomerID from AWS
+    private IEnumerator VerifyHomerID(string homerID, string location)
+    {
+        messageText.text = "Verifying HomerID...";
+        
+        // Construct S3 path
+        string s3Path = $"s3://{awsBucketName}/{location}/HOCMCV231/Pluto/{homerDetailsFileName}";
+        
+        // Download file from S3 using AWS CLI
+        string tempFilePath = Path.Combine(Application.temporaryCachePath, "HomerDetails_temp.json");
+        
+        // Use AWS CLI to download the file
+        string arguments = $"s3 cp {s3Path} \"{tempFilePath}\" --profile {awsProfile}";
+        
+        System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
+        startInfo.FileName = "aws";
+        startInfo.Arguments = arguments;
+        startInfo.RedirectStandardOutput = true;
+        startInfo.RedirectStandardError = true;
+        startInfo.UseShellExecute = false;
+        startInfo.CreateNoWindow = true;
+
+        using (System.Diagnostics.Process process = new System.Diagnostics.Process())
+        {
+            process.StartInfo = startInfo;
+            process.Start();
+            
+            string output = process.StandardOutput.ReadToEnd();
+            string error = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+
+            yield return null;
+
+            if (process.ExitCode != 0)
+            {
+                Debug.LogError($"AWS CLI Error: {error}");
+                messageText.text = "Error connecting to AWS. Check internet connection.";
+                yield break;
+            }
+        }
+
+        // Check if file was downloaded successfully
+        if (File.Exists(tempFilePath))
+        {
+            string jsonContent = File.ReadAllText(tempFilePath);
+            ProcessHomerDetails(jsonContent, homerID);
+            
+            // Clean up temp file
+            File.Delete(tempFilePath);
+        }
+        else
+        {
+            messageText.text = $"Could not find HomerDetails for location: {location}";
+        }
+    }
+
+    // NEW: Process the HomerDetails JSON - FIXED VERSION
+    private void ProcessHomerDetails(string jsonContent, string searchHomerID)
+    {
+        var json = JSON.Parse(jsonContent);
+        
+        if (json == null || json["details"] == null)
+        {
+            messageText.text = "Invalid HomerDetails format";
+            return;
+        }
+
+        var details = json["details"].AsArray;
+        bool found = false;
+
+        // FIX: Correct way to iterate through JSON array in SimpleJSON
+        for (int i = 0; i < details.Count; i++)
+        {
+            var item = details[i];
+            string homerID = item["homerID"];
+            string hospID = item["hospitalId"];
+            if (homerID == searchHomerID)
+            {
+                found = true;
+                
+                // Check status for Pluto
+                var status = item["status"];
+                bool isActive = false;
+                
+                if (status != null && !status.IsNull)
+                {
+                    // Check if status is an object with "pluto" field
+                    if (status["pluto"] != null && !status["pluto"].IsNull)
+                    {
+                        isActive = status["pluto"].Value.ToLower() == "active";
+                    }
+                    // Check if status is directly a string
+                    else if (status.IsString)
+                    {
+                        isActive = status.Value.ToLower() == "active";
+                    }
+                    // Check if status is an object (like in your JSON structure)
+                    else if (status.IsObject)
+                    {
+                        // Check if "pluto" exists in the status object
+                        var plutoStatus = status["pluto"];
+                        if (plutoStatus != null && !plutoStatus.IsNull)
+                        {
+                            isActive = plutoStatus.Value.ToLower() == "active";
+                        }
+                    }
+                }
+
+                if (isActive)
+                {
+                    // Already activated
+                    messageText.text = $"HomerID {searchHomerID} is already activated. Cannot assign to new patient.";
+                    popUpPanel.SetActive(false);
+                }
+                else
+                {
+                    // Not activated - show popup with patient ID
+                    popUpConfirmationPatientID.text = $"HomerID : {searchHomerID} is assigned to Patient id: {hospID}, Are you sure?";;
+                    messageText.text = "";
+                    popUpPanel.SetActive(true);
+                }
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            messageText.text = $"HomerID {searchHomerID} not found in the system";
+        }
+    }
+
+    // NEW: Called when OK button is clicked in popup
+    private void OnPopupOkClick()
+    {
+        popUpPanel.SetActive(false);
+        verifyPanel.SetActive(false);
+        
+        // Set the saved values back to fields
+        homerIdField.text = currentPatientID;
+        affectedSideDropdown.value = GetDropdownIndexForSide(currentTrainingSide);
+        location.value = GetDropdownIndexForLocation(currentLocation);
+        
+        // Proceed to configuration scene
+        // saveConfig();
+    }
+
+    // NEW: Called when Cancel button is clicked in popup
+    private void OnPopupCancelClick()
+    {
+        popUpPanel.SetActive(false);
+        verifyPanel.SetActive(true);
+        
+        // Clear fields
+        homerIdField.text = "";
+        messageText.text = "Verification cancelled";
+    }
+
+    // NEW: Helper to get dropdown index for training side
+    private int GetDropdownIndexForSide(string side)
+    {
+        for (int i = 0; i < affectedSideDropdown.options.Count; i++)
+        {
+            if (affectedSideDropdown.options[i].text.ToLower() == side.ToLower())
+                return i;
+        }
+        return 0;
+    }
+
+    // NEW: Helper to get dropdown index for location
+    private int GetDropdownIndexForLocation(string loc)
+    {
+        for (int i = 0; i < location.options.Count; i++)
+        {
+            if (location.options[i].text.ToLower() == loc.ToLower())
+                return i;
+        }
+        return 0;
+    }
+
+    // Modified: Load existing config method
+    private void LoadExistingConfig()
+    {
+        DataTable configData = DataManager.loadCSV(DataManager.configFile);
+        DataRow lastRow = configData.Rows[configData.Rows.Count - 1];
+        
+        string hospNumber = lastRow.Field<string>("HomerID");
+        bool rightHand = lastRow.Field<string>("TrainingSide") == "right";
+        int FME1 = int.Parse(lastRow.Field<string>("FME1K"));
+        int FME2 = int.Parse(lastRow.Field<string>("FME2K"));
+        endDate = DateTime.ParseExact(lastRow.Field<string>("endDate"), "dd-MM-yyyy", CultureInfo.InvariantCulture);
+
+        homerIdField.text = hospNumber;
+        affectedSideDropdown.value = rightHand ? 0 : 1;
+        location.value = GetDropdownIndexForLocation(lastRow.Field<string>("Location"));
+    
+        wfeField.text = lastRow.Field<string>("WFE");
+        wurdField.text = lastRow.Field<string>("WURD");
+        fpsField.text = lastRow.Field<string>("FPS");
+        hocField.text = lastRow.Field<string>("HOC");
+        fme1TimeField.text = lastRow.Field<string>("FME1");
+        fme2TimeField.text = lastRow.Field<string>("FME2");
+        totalDurationText.text = lastRow.Field<string>("TotalTime");
+
+        loginButtonText.text = "Login";
+
+        if (fme1PreviewImage != null && FME1 < mechanismSprites.Length && FME1 >= 0)
+        {
+            selectedFME1Index = FME1;
+            fme1PreviewImage.sprite = mechanismSprites[FME1];
+            fme1PreviewImage.color = selectedPreviewColor;
+            if (fme1SelectedText != null)
+                fme1SelectedText.text = FME1 >= 0 ? $"Selected: Knob {FME1 + 1}" : "Click to select FME1 knob";
+        }
+
+        if (fme2PreviewImage != null && FME2 < mechanismSprites.Length && FME2 >= 0)
+        {
+            fme2PreviewImage.sprite = mechanismSprites[FME2];
+            fme2PreviewImage.color = selectedPreviewColor;
+            selectedFME2Index = FME2;
+            if (fme2SelectedText != null)
+                fme2SelectedText.text = FME2 >= 0 ? $"Selected: Knob {FME2 + 1}" : "Click to select FME2 knob";
+        }
     }
 
     private void InitializePreviewImages()
@@ -451,27 +667,17 @@ public class OneTimeConfig : MonoBehaviour
         if (string.IsNullOrWhiteSpace(endDateField.text)) emptyFields.Add("End Date");
 
         // Check FME selections
-        string fme1T = string.IsNullOrEmpty(fme1TimeField.text)? "0": fme1TimeField.text;
-        Debug.Log($"TIME {fme1T}");
-
+        string fme1T = string.IsNullOrEmpty(fme1TimeField.text) ? "0" : fme1TimeField.text;
         if (int.Parse(fme1T) > 0)
         {
-        if (selectedFME1Index == -1) emptyFields.Add("FME1 Image");
-        Debug.Log($"TIME {fme1T}");
-
+            if (selectedFME1Index == -1) emptyFields.Add("FME1 Image");
         }
 
-        string fme2T = string.IsNullOrEmpty(fme2TimeField.text)? "0": fme2TimeField.text;
-        Debug.Log($"TIME {fme2T}");
-
+        string fme2T = string.IsNullOrEmpty(fme2TimeField.text) ? "0" : fme2TimeField.text;
         if (int.Parse(fme2T) > 0)
         {
-        if (selectedFME2Index == -1) emptyFields.Add("FME2 Image");
-        Debug.Log($"TIME {fme1T}");
-
+            if (selectedFME2Index == -1) emptyFields.Add("FME2 Image");
         }
-        // if (string.IsNullOrWhiteSpace(fme1TimeField.text)) emptyFields.Add("FME1 Time");
-        // if (string.IsNullOrWhiteSpace(fme2TimeField.text)) emptyFields.Add("FME2 Time");
 
         if (emptyFields.Count > 0)
         {
@@ -482,11 +688,12 @@ public class OneTimeConfig : MonoBehaviour
         }
 
         // Check if FMEs are the same
-        if (selectedFME1Index == selectedFME2Index && selectedFME2Index != -1f)
+        if (selectedFME1Index == selectedFME2Index && selectedFME2Index != -1)
         {
             msg.text = "FME1 and FME2 cannot be the same image!";
             return;
         }
+
         string homerID = homerIdField.text;
         AppData.Instance.setUser(homerID);
         string startDate = startDateField.text;
@@ -499,8 +706,8 @@ public class OneTimeConfig : MonoBehaviour
         string hoc = string.IsNullOrEmpty(hocField.text) ? "0" : hocField.text;
         
         // FME times
-        string fme1Time = string.IsNullOrEmpty(fme1TimeField.text)? "0": fme1TimeField.text;
-        string fme2Time = string.IsNullOrEmpty(fme2TimeField.text)? "0": fme2TimeField.text;
+        string fme1Time = string.IsNullOrEmpty(fme1TimeField.text) ? "0" : fme1TimeField.text;
+        string fme2Time = string.IsNullOrEmpty(fme2TimeField.text) ? "0" : fme2TimeField.text;
         
         // FME selected indices (1-12 for display, 0-11 for mechanism index)
         string fme1 = (selectedFME1Index + 1).ToString(); // Display number (1-12)
@@ -516,27 +723,27 @@ public class OneTimeConfig : MonoBehaviour
         string group = "Experimental";
 
         // Updated headers to include all fields
-        string headers = "HomerId,StartDate,EndDate,TotalTime,WFE,WURD,FPS,HOC,FME1,FME2,TrainingSide,Location,Group,FME1K,FME2K";
+        string headers = "HomerID,StartDate,EndDate,TotalTime,WFE,WURD,FPS,HOC,FME1,FME2,TrainingSide,Location,Group,FME1K,FME2K";
         string data = $"{homerID},{startDate},{endDate},{totalDuration},{wfe},{wurd},{fps},{hoc},{fme1Time},{fme2Time},{trainingSide},{Location},{group},{fme1k},{fme2k}";
 
-        string directoryPath = Path.Combine(Application.dataPath,"data",AppData.Instance.userID,"data");
+        string directoryPath = Path.Combine(Application.dataPath, "data", AppData.Instance.userID, "data");
         string datapath = Path.Combine(directoryPath, "configdata.csv");
         
         // Ensure directory exists
         if (!Directory.Exists(directoryPath))
             Directory.CreateDirectory(directoryPath);
 
-         if (!File.Exists(datapath))
-            {
-                File.WriteAllText(datapath, headers + Environment.NewLine);
-                Debug.Log("Data saved to CSV: " + datapath);
-            }
-            File.AppendAllText(datapath, data + Environment.NewLine);
-            SceneManager.LoadScene("MAIN");
-        
+        if (!File.Exists(datapath))
+        {
+            File.WriteAllText(datapath, headers + Environment.NewLine);
+            Debug.Log("Data saved to CSV: " + datapath);
+        }
+        File.AppendAllText(datapath, data + Environment.NewLine);
+        SceneManager.LoadScene("MAIN");
     }
 
-    public void LoginScreen(){
+    public void LoginScreen()
+    {
         SceneManager.LoadScene("LOGIN");
     }
 }

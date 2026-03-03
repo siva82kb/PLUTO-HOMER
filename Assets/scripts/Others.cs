@@ -671,7 +671,7 @@ public class PlutoUserData
     private void parseTherapyConfigData()
     {
         DataRow lastRow = dTableConfig.Rows[dTableConfig.Rows.Count - 1];
-        hospNumber = lastRow.Field<string>("HomerId");
+        hospNumber = lastRow.Field<string>("HomerID");
         rightHand = lastRow.Field<string>("TrainingSide") == "right";
         Debug.Log(lastRow.Field<string>("FME1K"));
         FME1 = int.Parse(lastRow.Field<string>("FME1K"));

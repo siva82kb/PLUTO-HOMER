@@ -27,6 +27,7 @@ public class OneTimeConfig : MonoBehaviour
     public TMP_InputField fme1TimeField;
     public Image fme1PreviewImage;
     public Button fme1SelectButton;
+    public GameObject fme1Image, fme2Image;
     
     // FME2 components - Time input + Image selection
     public TMP_InputField fme2TimeField;
@@ -86,7 +87,10 @@ public class OneTimeConfig : MonoBehaviour
             verifyPanel.SetActive(false);
         if (popUpPanel != null)
             popUpPanel.SetActive(false);
-
+        if(fme1Image!= null)
+            fme1Image.SetActive(false);
+        if(fme2Image!= null)
+            fme2Image.SetActive(false);
         // Automatically set startDateField and endDateField
         startDate = DateTime.Now;
         endDate = startDate.AddDays(30);
@@ -112,6 +116,8 @@ public class OneTimeConfig : MonoBehaviour
         hocField.onValueChanged.AddListener(delegate { UpdateTotalDuration(); });
         fme1TimeField.onValueChanged.AddListener(delegate { UpdateTotalDuration(); });
         fme2TimeField.onValueChanged.AddListener(delegate { UpdateTotalDuration(); });
+                fme1TimeField.onValueChanged.AddListener(delegate { displayFMEOption(); });
+        fme2TimeField.onValueChanged.AddListener(delegate { displayFMEOption(); });
 
         fme1SelectButton.onClick.AddListener(() => OpenImageSelectionPopup(1));
         fme2SelectButton.onClick.AddListener(() => OpenImageSelectionPopup(2));
@@ -130,55 +136,54 @@ public class OneTimeConfig : MonoBehaviour
             popupCancel.onClick.AddListener(OnPopupCancelClick);
     }
 
+
     // Called when verify button is clicked
-private void OnVerifyButtonClick()
-{
-    Debug.Log("Verify button clicked");
-    
-    if (HOMERID == null)
+    private void OnVerifyButtonClick()
     {
-        Debug.LogError("HOMERID is not assigned in the Inspector!");
-        return;
-    }
-    
-    if (string.IsNullOrWhiteSpace(HOMERID.text))
-    {
-        Debug.Log("Homer ID is empty");
-        msg.text = "Please enter Homer ID";
-        return;
-    }
+        Debug.Log("Verify button clicked");
+        
+        if (HOMERID == null)
+        {
+            Debug.LogError("HOMERID is not assigned in the Inspector!");
+            return;
+        }
+        
+        if (string.IsNullOrWhiteSpace(HOMERID.text))
+        {
+            Debug.Log("Homer ID is empty");
+            msg.text = "Please enter Homer ID";
+            return;
+        }
 
-    Debug.Log($"Homer ID entered: {HOMERID.text}");
-    
-    currentPatientID = HOMERID.text;
-    currentLocation = location.options[location.value].text;
-    currentTrainingSide = affectedSideDropdown.options[affectedSideDropdown.value].text;
+        Debug.Log($"Homer ID entered: {HOMERID.text}");
+        
+        currentPatientID = HOMERID.text;
+        currentLocation = verifyLocation.options[verifyLocation.value].text;
+        // Don't set currentTrainingSide from dropdown here - it will come from the cloud
+        currentTrainingSide = ""; // Initialize as empty, will be set from cloud data
 
-    Debug.Log($"Current Patient ID: {currentPatientID}, Location: {currentLocation}, Side: {currentTrainingSide}");
+        if (homerIdField == null)
+        {
+            Debug.LogError("HOMERID TextMeshProUGUI is not assigned!");
+        }
+        else
+        {
+            homerIdField.text = currentPatientID;
+        }
 
-    if (homerIdField == null)
-    {
-        Debug.LogError("HOMERID TextMeshProUGUI is not assigned!");
+        if (verifyPanel == null)
+        {
+            Debug.LogError("verifyPanel is not assigned!");
+        }
+        else
+        {
+            verifyPanel.SetActive(true);
+            Debug.Log("Verify panel activated");
+        }
+        
+        // Start verification process
+        StartCoroutine(VerifyHomerID(currentPatientID, currentLocation));
     }
-    else
-    {
-        homerIdField.text = currentPatientID;
-    }
-
-    if (verifyPanel == null)
-    {
-        Debug.LogError("verifyPanel is not assigned!");
-    }
-    else
-    {
-        verifyPanel.SetActive(true);
-        Debug.Log("Verify panel activated");
-    }
-    
-    // Start verification process
-    StartCoroutine(VerifyHomerID(currentPatientID, currentLocation));
-}
-    // NEW: Coroutine to verify HomerID from AWS
     private IEnumerator VerifyHomerID(string homerID, string location)
     {
         messageText.text = "Verifying HomerID...";
@@ -234,7 +239,33 @@ private void OnVerifyButtonClick()
         }
     }
 
-    // NEW: Process the HomerDetails JSON - FIXED VERSION
+
+    // NEW: Helper to get dropdown index for training side
+    private int GetDropdownIndexForSide(string side)
+    {
+        if (string.IsNullOrEmpty(side))
+        {
+            Debug.LogWarning("Side is null or empty, returning default index 0");
+            return 0;
+        }
+        
+        Debug.Log($"Looking for side: '{side}' in dropdown options");
+        
+        for (int i = 0; i < affectedSideDropdown.options.Count; i++)
+        {
+            string optionText = affectedSideDropdown.options[i].text;
+            Debug.Log($"Comparing with dropdown option {i}: '{optionText}'");
+            
+            if (optionText.ToLower().Trim() == side.ToLower().Trim())
+            {
+                Debug.Log($"Found match at index {i}");
+                return i;
+            }
+        }
+        
+        Debug.LogWarning($"Side '{side}' not found in dropdown, returning default index 0");
+        return 0;
+    }
     private void ProcessHomerDetails(string jsonContent, string searchHomerID)
     {
         var json = JSON.Parse(jsonContent);
@@ -248,15 +279,27 @@ private void OnVerifyButtonClick()
         var details = json["details"].AsArray;
         bool found = false;
 
-        // FIX: Correct way to iterate through JSON array in SimpleJSON
         for (int i = 0; i < details.Count; i++)
         {
             var item = details[i];
             string homerID = item["homerID"];
-            string hospID = item["hospitalId"];
+            
             if (homerID == searchHomerID)
             {
                 found = true;
+                
+            string hospID = item["hospitalId"];
+            string trainSide = item["trainingSide"];
+            string group = item["group"];
+           
+            if (group.ToLower() != "experimental")
+            {
+                messageText.text = $"HomerID {searchHomerID} is not an Experimental Group. Group: {group}";
+                return;
+            }
+                
+                // Store the training side for later use
+                currentTrainingSide = trainSide;
                 
                 // Check status for Pluto
                 var status = item["status"];
@@ -294,8 +337,9 @@ private void OnVerifyButtonClick()
                 }
                 else
                 {
-                    // Not activated - show popup with patient ID
-                    popUpConfirmationPatientID.text = $"HomerID : {searchHomerID} is assigned to Patient id: {hospID}, Are you sure?";;
+                    // Not activated - show popup with patient ID and training side
+                    popUpConfirmationPatientID.text = $"HomerID : {searchHomerID} is assigned to Patient id: {hospID}\nTraining Side: {trainSide}\n\nAre you sure?";
+                    Debug.Log($"Training side from cloud: {trainSide}");
                     messageText.text = "";
                     popUpPanel.SetActive(true);
                 }
@@ -308,7 +352,6 @@ private void OnVerifyButtonClick()
             messageText.text = $"HomerID {searchHomerID} not found in the system";
         }
     }
-
     // NEW: Called when OK button is clicked in popup
     private void OnPopupOkClick()
     {
@@ -335,16 +378,6 @@ private void OnVerifyButtonClick()
         messageText.text = "Verification cancelled";
     }
 
-    // NEW: Helper to get dropdown index for training side
-    private int GetDropdownIndexForSide(string side)
-    {
-        for (int i = 0; i < affectedSideDropdown.options.Count; i++)
-        {
-            if (affectedSideDropdown.options[i].text.ToLower() == side.ToLower())
-                return i;
-        }
-        return 0;
-    }
 
     // NEW: Helper to get dropdown index for location
     private int GetDropdownIndexForLocation(string loc)
@@ -382,6 +415,7 @@ private void OnVerifyButtonClick()
         totalDurationText.text = lastRow.Field<string>("TotalTime");
 
         loginButtonText.text = "Login";
+        displayFMEOption();
 
         if (fme1PreviewImage != null && FME1 < mechanismSprites.Length && FME1 >= 0)
         {
@@ -647,6 +681,26 @@ private void OnVerifyButtonClick()
         totalDuration += ParseField(fme2TimeField);
 
         totalDurationText.text = totalDuration.ToString();
+    }
+    private void displayFMEOption()
+    {
+        if(ParseField(fme1TimeField) > 0)
+        {
+            fme1Image.SetActive(true);
+        }
+        else
+        {
+            fme1Image.SetActive(false);
+            
+        }
+        if(ParseField(fme2TimeField) > 0)
+        {
+            fme2Image.SetActive(true);
+        }
+        else
+        {
+            fme2Image.SetActive(false);
+        }
     }
 
     private int ParseField(TMP_InputField field)

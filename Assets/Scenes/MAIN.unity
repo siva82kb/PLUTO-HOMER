@@ -4294,7 +4294,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f4e0c8eb7d276c43aec2a585307c2a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mutedSceneIndices: 0a0000000c0000000d0000000e0000001000000011000000
+  mutedSceneIndices: 090000000a0000000b0000000c0000000d0000000e0000000f000000
   fadeDuration: 1.5
 --- !u!1 &1769402987
 GameObject:

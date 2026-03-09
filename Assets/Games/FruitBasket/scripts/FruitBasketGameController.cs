@@ -359,88 +359,137 @@ public class FruitBasketGameController : MonoBehaviour
                     }
                 }
                 break;
-            case GameStates.STOP:
+            // case GameStates.STOP:
               
-                AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
-                // Set AAN target if needed.
+            //     AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
+            //     // Set AAN target if needed.
 
-                AppData.Instance.previousSuccessRates = null;
-                if (AppData.Instance.speedData.gameSpeed != gameSpeed)
-                {
-                    AppData.Instance.speedData.setGameSpeed(gameSpeed);
-                }
-                    AppData.Instance.speedData.setMoveDuration(MOVEDURATION);
-                 instructionPanel.SetActive(true);
+            //     AppData.Instance.previousSuccessRates = null;
+            //     if (AppData.Instance.speedData.gameSpeed != gameSpeed)
+            //     {
+            //         AppData.Instance.speedData.setGameSpeed(gameSpeed);
+            //     }
+            //         AppData.Instance.speedData.setMoveDuration(MOVEDURATION);
+            //      instructionPanel.SetActive(true);
 
 
-                if (AppData.Instance.aanController.stateChange) UpdatePlutoAANTarget();
-                // Change to done only when the AAN Controller is AromMoving or Idle state.
-                if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AROMMOVING
-                    || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.IDLE)
-                {
+            //     if (AppData.Instance.aanController.stateChange) UpdatePlutoAANTarget();
+            //     // Change to done only when the AAN Controller is AromMoving or Idle state.
+            //     if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AROMMOVING
+            //         || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.IDLE)
+            //     {
 
                    
-                    float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
-                    Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
-                    instructionPanel.SetActive(false);
+            //         float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
+            //         Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
+            //         instructionPanel.SetActive(false);
                     
-                    // AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
-                      // Stop the current game trial
-                    if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
-                    {
-                        AppData.Instance.selectedGame.updateCummulativeStars();
-                        celebrationPanel.SetActive(true);
-                    }
-                    AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+            //         // AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+            //           // Stop the current game trial
+            //         if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
+            //         {
+            //             AppData.Instance.selectedGame.updateCummulativeStars();
+            //             celebrationPanel.SetActive(true);
+            //         }
+            //         AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
                     
-                    gameOverPanel.SetActive(!celebrationPanel.gameObject.activeSelf);
+            //         gameOverPanel.SetActive(!celebrationPanel.gameObject.activeSelf);
                     
-                    if (gameOverPanel.gameObject.activeSelf)
-                    {
-                        GameOverStar.SetActive(AppData.Instance.selectedGame.isAchievedToday());
-                        yesterdayScoreTxt.text = $"{scores[1]:D4}";
-                        todayScoreTxt.text = $"{(scores[0]+nSuccess):D4}";
-                    }
-                    if (celebrationPanel.gameObject.activeSelf)
-                    {
-                        updateStarCount();
-                        scoreComparisonTxt.text = $"{(scores[0] + nSuccess).ToString("D3")}";
-                    }
-                     lastHighScore = AppData.Instance.successRate * (PlutoAANController.MAXCONTROLBOUND - AppData.Instance.CurrentControlBound);
-                    if (AppData.Instance.previousSuccessRates == null)
-                    {
-                        Debug.Log($" LHS : {lastHighScore} -- {Others.highestSuccessRate}");
-                        // if (lastHighScore > Others.highestSuccessRate)
-                        // {
-                        //     StartCoroutine(ShowForSeconds(HSC, 1.3f));
-                        // }
-                        // else
-                        // {
-                            AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(AppData.Instance.selectedMechanism.name, AppData.Instance.selectedGameName);
-                            if (AppData.Instance.selectedMechanism.trialNumberDay == AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
-                            {
-                                AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game finished and changed to Choose Mechanism scene due to allocated trials has over.");
-                                SceneManager.LoadScene("CHMECH");
-                                return;
-                            }
-                            // finalScore.text = $"{AppData.Instance.selectedGame.cummulativeHits:D4}";
+            //         if (gameOverPanel.gameObject.activeSelf)
+            //         {
+            //             GameOverStar.SetActive(AppData.Instance.selectedGame.isAchievedToday());
+            //             yesterdayScoreTxt.text = $"{scores[1]:D4}";
+            //             todayScoreTxt.text = $"{(scores[0]+nSuccess):D4}";
+            //         }
+            //         if (celebrationPanel.gameObject.activeSelf)
+            //         {
+            //             updateStarCount();
+            //             scoreComparisonTxt.text = $"{(scores[0] + nSuccess).ToString("D3")}";
+            //         }
+            //          lastHighScore = AppData.Instance.successRate * (PlutoAANController.MAXCONTROLBOUND - AppData.Instance.CurrentControlBound);
+            //         if (AppData.Instance.previousSuccessRates == null)
+            //         {
+            //             Debug.Log($" LHS : {lastHighScore} -- {Others.highestSuccessRate}");
+            //             // if (lastHighScore > Others.highestSuccessRate)
+            //             // {
+            //             //     StartCoroutine(ShowForSeconds(HSC, 1.3f));
+            //             // }
+            //             // else
+            //             // {
+            //                 AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(AppData.Instance.selectedMechanism.name, AppData.Instance.selectedGameName);
+            //                 if (AppData.Instance.selectedMechanism.trialNumberDay == AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
+            //                 {
+            //                     AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game finished and changed to Choose Mechanism scene due to allocated trials has over.");
+            //                     SceneManager.LoadScene("CHMECH");
+            //                     return;
+            //                 }
+            //                 // finalScore.text = $"{AppData.Instance.selectedGame.cummulativeHits:D4}";
 
-                            // gameOverPanel.SetActive(true);
-                            // finalScore.text = $"{nSuccess:D3}";
+            //                 // gameOverPanel.SetActive(true);
+            //                 // finalScore.text = $"{nSuccess:D3}";
 
-                            AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game finished");
+            //                 AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game finished");
 
                             
-                            // SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-                        // }
+            //                 // SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            //             // }
                        
 
-                    }
+            //         }
                     
-                    endGame();
+            //         endGame();
 
                    
+            //     }
+            //     break;
+            
+            case GameStates.STOP:
+                AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
+                
+                if (AppData.Instance.aanController.stateChange) 
+                    UpdatePlutoAANTarget();
+                
+                // Add delay when game is over but not in AROM-moving state
+                if (AppData.Instance.aanController.state != PlutoAANController.PlutoAANState.AROMMOVING)
+                {
+                    // Calculate delay based on game speed
+                    float endGameDelay = 0f;
+                    if (Mathf.Approximately(gameSpeed, 40f))
+                        endGameDelay = 5f;
+                    else if (Mathf.Approximately(gameSpeed, 10f))
+                        endGameDelay = 12f;
+                    else
+                        endGameDelay = Mathf.Lerp(12f, 5f, (gameSpeed - 10f) / 30f); // Linear interpolation for other speeds
+                    
+                    // Use eventDelayTimer for the countdown
+                    if (eventDelayTimer <= 0f)
+                    {
+                        eventDelayTimer = endGameDelay;
+                    }
+                    else
+                    {
+                        eventDelayTimer -= Time.deltaTime;
+                        if (eventDelayTimer <= 0f)
+                        {
+                            // Delay completed - proceed with ending the game
+                            ProceedToGameEnd();
+                        }
+                        else
+                        {
+                            // Still waiting - don't proceed to game end yet
+                            break;
+                        }
+                    }
                 }
+                 if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AROMMOVING 
+                    || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.IDLE
+                )
+                {
+                    ProceedToGameEnd();
+                }
+                
+                // Original logic for when state is AROMMOVING or after delay completes
+               
                 break;
             case GameStates.DONE:
            
@@ -779,6 +828,64 @@ public class FruitBasketGameController : MonoBehaviour
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- PLUTO button Pressed");
 
     }
+
+    private void ProceedToGameEnd()
+{
+    AppData.Instance.previousSuccessRates = null;
+    if (AppData.Instance.speedData.gameSpeed != gameSpeed)
+    {
+        AppData.Instance.speedData.setGameSpeed(gameSpeed);
+    }
+    AppData.Instance.speedData.setMoveDuration(MOVEDURATION);
+    instructionPanel.SetActive(true);
+
+    float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
+    Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
+    instructionPanel.SetActive(false);
+    
+    // Stop the current game trial
+    if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
+    {
+        AppData.Instance.selectedGame.updateCummulativeStars();
+        celebrationPanel.SetActive(true);
+    }
+    AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+    
+    gameOverPanel.SetActive(!celebrationPanel.gameObject.activeSelf);
+    
+    if (gameOverPanel.gameObject.activeSelf)
+    {
+        GameOverStar.SetActive(AppData.Instance.selectedGame.isAchievedToday());
+        yesterdayScoreTxt.text = $"{scores[1]:D4}";
+        todayScoreTxt.text = $"{(scores[0] + nSuccess):D4}";
+    }
+    if (celebrationPanel.gameObject.activeSelf)
+    {
+        updateStarCount();
+        scoreComparisonTxt.text = $"{(scores[0] + nSuccess).ToString("D3")}";
+    }
+    
+    lastHighScore = AppData.Instance.successRate * (PlutoAANController.MAXCONTROLBOUND - AppData.Instance.CurrentControlBound);
+    
+    if (AppData.Instance.previousSuccessRates == null)
+    {
+        Debug.Log($" LHS : {lastHighScore} -- {Others.highestSuccessRate}");
+        AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(
+            AppData.Instance.selectedMechanism.name, 
+            AppData.Instance.selectedGameName);
+            
+        if (AppData.Instance.selectedMechanism.trialNumberDay == AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
+        {
+            AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game finished and changed to Choose Mechanism scene due to allocated trials has over.");
+            SceneManager.LoadScene("CHMECH");
+            return;
+        }
+        
+        AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game finished");
+    }
+    
+    endGame();
+}
 }
 
 

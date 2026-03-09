@@ -4,7 +4,7 @@ using System.IO;
 using System.Data;
 using UnityEngine;
 using System.Text;
-
+using SimpleJSON;
 
 /*
  * Summary Data Class
@@ -128,6 +128,27 @@ public static class DataManager
         Directory.CreateDirectory(logPath);
         Directory.CreateDirectory(controlGainPath);
     }
+    public static string getLapConfig()
+    {
+        string lapConfigPath = @"C:/lapconfig.json";
+
+
+        if (!File.Exists(lapConfigPath)) return "";
+
+        var json = JSON.Parse(File.ReadAllText(lapConfigPath));
+
+        var mars = json["pluto"];  
+
+        string comport = mars["comport"];
+
+        string pythonpath = mars["pythonpath"];
+
+        awsManager.pythonExecutionPath = FixPath(pythonpath);
+
+        return comport;
+
+    }
+ 
 
     public static DataTable loadCSV(string filePath)
     {

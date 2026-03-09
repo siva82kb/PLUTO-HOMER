@@ -7,9 +7,7 @@ public class AudioPersist : MonoBehaviour
     private static AudioPersist instance;
     private AudioSource audioSource;
 
-    // Scene build indices where music should fade out
-    // [SerializeField] private int[] mutedSceneIndices = { 10, 12, 13, 14, 16, 17 };
-    [SerializeField] private int[] mutedSceneIndices = { 10, 12, 13, 14, 16, 17 };
+    [SerializeField] private int[] mutedSceneIndices = { 9, 10, 11, 12, 13, 14, 15 };
 
 
     // Fade speed controls

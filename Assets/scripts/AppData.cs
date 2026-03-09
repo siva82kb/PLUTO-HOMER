@@ -20,7 +20,7 @@ public partial class AppData
      * CONSTANT FIXED VARIABLES.
      */
     // COM Port for the device
-    public const string COMPort = "COM21";// D1- COM6 ,D2 - COM4, D5 - COM5, D7 - COM4, D8 - COM5, D9 - COM5 
+    public static string COMPort = DataManager.getLapConfig();// D1- COM6 ,D2 - COM4, D5 - COM5, D7 - COM4, D8 - COM5, D9 - COM5 
 
 
     // What is this used for?

@@ -15,7 +15,8 @@ public static class awsManager
     
     // public static string pythonExecutionPath = @"C:/Program Files/Python312/pythonw.exe";
     // public static string pythonExecutionPath = @"C:/Program Files/Python313/pythonw.exe";// device-2, device - 1
-    public static string pythonExecutionPath = @"C:/Program Files/Python314/pythonw.exe"; //device 10
+    // public static string pythonExecutionPath = @"C:/Program Files/Python314/pythonw.exe"; //device 10
+    public static string pythonExecutionPath;
     // public static  string pythonExecutionPath = @"C:/Users/HOMER_10/AppData/Local/Programs/Python/Python314/pythonw.exe";  //Device-7
     // public static  string pythonExecutionPath = @"C:/Users/HOMER_08/AppData/Local/Programs/Python/Python313/pythonw.exe"; //Device -8
     // public static string pythonExecutionPath = @"C:/Users/HOMER_11/AppData/Local/Programs/Python/Python314/pythonw.exe"; //Device-9

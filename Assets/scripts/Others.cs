@@ -349,6 +349,9 @@ public class MechanismSpeed
         gameSpeed = DefaultMechanismSpeeds[AppData.Instance.selectedMechanism.name];
         using (var writer = new StreamWriter(mechParamsCsvPath, false))
         {
+            writer.WriteLine($":Location: {AppData.Instance.userData.GetDeviceLocation()}");
+            writer.WriteLine($":Device: PLUTO");
+            writer.WriteLine($":User: {AppData.Instance.userData.hospNumber}");
             writer.WriteLine("DateTime,Mode,Speed");
             writer.WriteLine($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")},{speedChMode[0]},{gameSpeed}");
             AppLogger.LogInfo($"{AppData.Instance.selectedMechanism.name} - Mech and Game speed initiated to {gameSpeed} deg/sec in {speedChMode[0]}");
@@ -673,9 +676,9 @@ public class PlutoUserData
         DataRow lastRow = dTableConfig.Rows[dTableConfig.Rows.Count - 1];
         hospNumber = lastRow.Field<string>("HomerID");
         rightHand = lastRow.Field<string>("TrainingSide") == "right";
-        Debug.Log(lastRow.Field<string>("FME1K"));
-        FME1 = int.Parse(lastRow.Field<string>("FME1K"));
-        FME2 = int.Parse(lastRow.Field<string>("FME2K"));
+        Debug.Log(lastRow.Field<string>("FME1ID"));
+        FME1 = int.Parse(lastRow.Field<string>("FME1ID"));
+        FME2 = int.Parse(lastRow.Field<string>("FME2ID"));
         //AppData.trainingSide = ; // lastRow.Field<string>("TrainingSide");
         startDate = DateTime.ParseExact(lastRow.Field<string>("StartDate"), "dd-MM-yyyy", CultureInfo.InvariantCulture);
         endDate = DateTime.ParseExact(lastRow.Field<string>("endDate"), "dd-MM-yyyy", CultureInfo.InvariantCulture);
@@ -1557,6 +1560,10 @@ public class ROM
         {
             using (var writer = new StreamWriter(fileName, false, Encoding.UTF8))
             {
+                // Write the preheader details
+                writer.WriteLine($":Location: {AppData.Instance.userData.GetDeviceLocation()}");
+                writer.WriteLine($":Device: PLUTO");
+                writer.WriteLine($":User: {AppData.Instance.userData.hospNumber}");
                 writer.WriteLine(string.Join(",", FILEHEADER));
             }
         }

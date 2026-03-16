@@ -166,7 +166,9 @@ public partial class AppData
         // Write pre-header and header information
         rawDataString.AppendLine($":Device: PLUTO");
         rawDataString.AppendLine($":Location: {userData.GetDeviceLocation()}");
+        rawDataString.AppendLine($":User: {userData.hospNumber}");
         rawDataString.AppendLine($":Mechanism: {selectedMechanism.name}");
+        rawDataString.AppendLine($":GameSpeed: {speedData.gameSpeed}");
         rawDataString.AppendLine($":Game: {selectedGameName}");
         rawDataString.AppendLine($":TrialType: {trialType}");
         rawDataString.AppendLine($":TrialStartTime: {trialStartTime:yyyy-MM-ddTHH:mm:ss}");
@@ -219,7 +221,8 @@ public partial class AppData
             rawDataString.Append($"{GetGameState()},");
             rawDataString.Append($"{aanController.targetPosition:F3},");
             rawDataString.Append($"{aanController.initialPosition:F3},");
-            rawDataString.Append($"{aanController.state}");
+            rawDataString.Append($"{aanController.state},");
+            rawDataString.Append($"{annotation}");
 
             // End of line
             rawDataString.Append("\n");
@@ -229,7 +232,6 @@ public partial class AppData
     private void WriteTrialDataToRawDataFile()
     {
         AppLogger.LogInfo($"Writing to: {trialRawDataFile}");
-        AppLogger.LogInfo($"File exists before write? {File.Exists(trialRawDataFile)}");
         
         string _dir = Path.GetDirectoryName(trialRawDataFile);
         if (!Directory.Exists(_dir)) Directory.CreateDirectory(_dir);
@@ -243,7 +245,6 @@ public partial class AppData
             rawDataString.Clear();
             rawDataString = null;
         }
-        AppLogger.LogInfo($"File exists before write? {File.Exists(trialRawDataFile)}");
 
     }
 

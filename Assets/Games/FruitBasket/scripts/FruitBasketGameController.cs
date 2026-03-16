@@ -108,6 +108,8 @@ public class FruitBasketGameController : MonoBehaviour
     }
     void Start()
     {
+        AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
+        AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
         initializeGameSpeedController();
         if(AppData.Instance.selectedGame.isAchievedToday())starLabel.GetComponent<Image>().color = Color.white;
 
@@ -163,7 +165,8 @@ public class FruitBasketGameController : MonoBehaviour
         
         scores = GameFuncs.GetScores();
         Debug.Log($"{scores[0]}/{scores[1]}");
-        AppLogger.LogInfo($"scores - yesterDayScore:{scores[1]} | TodayScore{scores[0]}");
+        AppLogger.LogInfo($"YesterDay's Score: {scores[1]} | Today's Score: {scores[0]}");
+
         
         if (AppData.Instance.selectedMechanism.trialNumberDay >= AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
         {
@@ -269,7 +272,7 @@ public class FruitBasketGameController : MonoBehaviour
     {
         gameOverPanel.SetActive(false);
         string currentSceneName = SceneManager.GetActiveScene().name;
-        AppLogger.LogInfo($"The Game is restarted {currentSceneName}");
+        // AppLogger.LogInfo($"The Game is restarted {currentSceneName}");
         SceneManager.LoadScene(currentSceneName);
     }
     public void runStateMachine()
@@ -338,7 +341,7 @@ public class FruitBasketGameController : MonoBehaviour
                 break;
 
             case GameStates.PAUSE:
-                AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game paused");
+                // AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game paused");
                 break;
             case GameStates.SUCCESS:
             case GameStates.FAILURE:
@@ -516,6 +519,8 @@ public class FruitBasketGameController : MonoBehaviour
         UpdateFruitFallSpeedAndDuration();
         Debug.Log($"gs - {AppData.Instance.speedData.gameSpeed} + {gameSpeed} + {FRUITSPEED}");
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s game speed increased to {gameSpeed} and the Fruit Speed is {FRUITSPEED}");
+        AppData.Instance.annotation=$"GS: {gameSpeed} | MT: {MOVEDURATION:F2}";
+
     }
     public void decreaseGameSpeed()
     {
@@ -528,6 +533,8 @@ public class FruitBasketGameController : MonoBehaviour
         Debug.Log($"gs - {AppData.Instance.speedData.gameSpeed} + {gameSpeed} + {FRUITSPEED}");
 
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s game speed increased to {gameSpeed} and the Fruit Speed is {FRUITSPEED}");
+        AppData.Instance.annotation=$"GS: {gameSpeed} | MT: {MOVEDURATION:F2}";
+
 
 
 
@@ -683,6 +690,8 @@ public class FruitBasketGameController : MonoBehaviour
         previosState = gameState;
         gameState = GameStates.PAUSE;
         Time.timeScale = 0f;
+                AppLogger.LogInfo("Game Paused");
+
     }
     public void resumeGame()
     {
@@ -690,6 +699,8 @@ public class FruitBasketGameController : MonoBehaviour
         Time.timeScale = 1f;
         isGamePaused = false;
         PlutoComm.sendHeartbeat();
+                AppLogger.LogInfo("Game Resumed");
+
 
         if ((PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME1") && (PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME2"))
         {
@@ -697,7 +708,7 @@ public class FruitBasketGameController : MonoBehaviour
             PlutoComm.setControlBound(AppData.Instance.CurrentControlBound);
             PlutoComm.setControlDir(0);
         }
-        AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game resumed");
+        // AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game resumed");
 
     }
 
@@ -735,6 +746,8 @@ public class FruitBasketGameController : MonoBehaviour
     public void exitGame()
     {if(gameState == GameStates.DONE || gameState == GameStates.WAITFORSTART || gameState == GameStates.PAUSE){
             Time.timeScale = 1f;
+            AppLogger.LogInfo("Exit Game");
+
             SceneManager.LoadScene(prevScene);
         }
         else
@@ -751,6 +764,8 @@ public class FruitBasketGameController : MonoBehaviour
                     if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
                     {
                         AppData.Instance.selectedGame.updateCummulativeStars();
+                AppLogger.LogInfo($"Beat yesterday's score - {AppData.Instance.selectedGameName} game. 1 star added. Stars: {AppData.Instance.selectedGame.cummulativeStars:D2}");      
+
                         celebrationPanel.SetActive(true);
                     }
                     AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
@@ -771,7 +786,9 @@ public class FruitBasketGameController : MonoBehaviour
             gameState = GameStates.DONE;
             Time.timeScale = 1f;
             SceneManager.LoadScene(prevScene);
-        AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game exit");
+        // AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game exit");
+            AppLogger.LogInfo("Exit Game");
+
 
         }
     }
@@ -825,7 +842,7 @@ public class FruitBasketGameController : MonoBehaviour
         else if (gameState != GameStates.STOP && gameState != GameStates.DONE) isGamePaused = !isGamePaused;
         else if (gameState == GameStates.DONE && isGameFinished) changeScene = true;
         
-        AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- PLUTO button Pressed");
+        AppLogger.LogInfo("PLUTO button pressed");
 
     }
 
@@ -874,18 +891,25 @@ public class FruitBasketGameController : MonoBehaviour
             AppData.Instance.selectedMechanism.name, 
             AppData.Instance.selectedGameName);
             
-        if (AppData.Instance.selectedMechanism.trialNumberDay == AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
-        {
-            AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game finished and changed to Choose Mechanism scene due to allocated trials has over.");
-            SceneManager.LoadScene("CHMECH");
-            return;
-        }
+    if (AppData.Instance.selectedMechanism.trialNumberDay == AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
+    {
+        AppLogger.LogInfo("Game over and changed to Choose Mechanism scene due to allocated trials has over.");
+        SceneManager.LoadScene("CHMECH");
+    }
         
-        AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game finished");
+        AppLogger.LogInfo("Game Over");
     }
     
     endGame();
 }
+
+private void OnDestroy()
+    {
+        if (ConnectToRobot.isPLUTO)
+        {
+            PlutoComm.OnButtonReleased -= onPlutoButtonReleased;
+        }
+    }
 }
 
 

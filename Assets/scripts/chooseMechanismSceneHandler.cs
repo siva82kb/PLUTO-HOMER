@@ -48,7 +48,7 @@ public class MechanismSceneHandler : MonoBehaviour
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");
         Debug.Log(PlutoComm.MECHANISMS[PlutoComm.mechanism]);
-        AppLogger.SetCurrentMechanism(PlutoComm.MECHANISMS[PlutoComm.mechanism]);
+        AppLogger.SetCurrentMechanism(null);
 
         // Update timescale
         Time.timeScale = Time.timeScale == 0 ? 1 : Time.timeScale;

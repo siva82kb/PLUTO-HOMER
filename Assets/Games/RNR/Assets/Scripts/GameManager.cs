@@ -121,6 +121,8 @@ public class GameManager : MonoBehaviour
     }
     void Start()
     {
+        AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
+        AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
         initializeGame();
         if(AppData.Instance.selectedGame.isAchievedToday())starLabel.GetComponent<Image>().color = Color.white;
         GameObject cloudObj = Instantiate(cloudPrefab, new Vector3(0, 3.5f, 0), Quaternion.identity);
@@ -141,7 +143,7 @@ public class GameManager : MonoBehaviour
         
         scores = GameFuncs.GetScores();
         Debug.Log($"{scores[0]}/{scores[1]}");
-        AppLogger.LogInfo($"scores - yesterDayScore:{scores[1]} | TodayScore{scores[0]}");
+        AppLogger.LogInfo($"YesterDay's Score: {scores[1]} | Today's Score: {scores[0]}");
 
         //arom
         aromLeft.transform.position = new Vector3(
@@ -347,7 +349,8 @@ public class GameManager : MonoBehaviour
         highlightDuration = CalculateHighlightDuration();
 
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s  game speed decreased to {gameSpeed} - HightlightDuration decreased - set to {highlightDuration}");
-   
+        AppData.Instance.annotation=$"GS: {gameSpeed} | MT: {highlightDuration:F2}";
+    
     }
     public void decreaseGameSpeed()
     {
@@ -356,6 +359,7 @@ public class GameManager : MonoBehaviour
         gameSpeed -= 1.0f;
         gsc.gameSpeedText.text = $"{gameSpeed:F2}";
         highlightDuration = CalculateHighlightDuration();
+        AppData.Instance.annotation=$"GS: {gameSpeed} | MT: {highlightDuration:F2}";
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s  game speed decreased to {gameSpeed} - HightlightDuration decreased - set to {highlightDuration}");
     }
     private void SetVisibility(bool state)
@@ -426,7 +430,7 @@ public class GameManager : MonoBehaviour
     {
         HideFinished();
         string currentSceneName = SceneManager.GetActiveScene().name;
-        AppLogger.LogInfo($"The Game is restarted {currentSceneName}");
+        // AppLogger.LogInfo($"The Game is restarted {currentSceneName}");
         SceneManager.LoadScene(currentSceneName);
     }
 
@@ -538,7 +542,7 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameStates.PAUSED:
-                AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- Game Paused");
+                // AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- Game Paused");
                 break;
 
             // case GameStates.STOP:
@@ -724,6 +728,8 @@ public class GameManager : MonoBehaviour
     if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
     {
         AppData.Instance.selectedGame.updateCummulativeStars();
+                AppLogger.LogInfo($"Beat yesterday's score - {AppData.Instance.selectedGameName} game. 1 star added. Stars: {AppData.Instance.selectedGame.cummulativeStars:D2}");      
+
         celebrationPanel.SetActive(true);
     }
     AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
@@ -764,7 +770,7 @@ public class GameManager : MonoBehaviour
     
     if (AppData.Instance.selectedMechanism.trialNumberDay == AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
     {
-        AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game finished and changed to Choose Mechanism scene due to allocated trials has over.");
+        AppLogger.LogInfo("Game over and changed to Choose Mechanism scene due to allocated trials has over.");
         SceneManager.LoadScene("CHMECH");
     }
 }
@@ -883,7 +889,7 @@ public class GameManager : MonoBehaviour
     {
         // Time.timeScale = 0;
         // finalScore.text = $"{AppData.Instance.selectedGame.cummulativeHits:D4}";
-        AppLogger.LogInfo($" {AppData.Instance.selectedGameName} - Game finished");
+        AppLogger.LogInfo("Game Over");
         // RestartButton.SetActive(true);
         foreach (GameObject g in finishObjects) g.SetActive(true);
     }
@@ -901,6 +907,15 @@ public class GameManager : MonoBehaviour
         isPaused = true;
         Time.timeScale = 0;
         showPaused();
+                AppLogger.LogInfo("Game Paused");
+
+    }
+    private void OnDestroy()
+    {
+        if (ConnectToRobot.isPLUTO)
+        {
+            PlutoComm.OnButtonReleased -= onPlutoButtonReleased;
+        }
     }
 
     public void EndGame()
@@ -928,6 +943,8 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 1;
         ExitButton.SetActive(true);
         reminderPanel.SetActive(false);
+                AppLogger.LogInfo("Game Resumed");
+
 
          // Send PLUTO heartbeat
         PlutoComm.sendHeartbeat();
@@ -938,7 +955,7 @@ public class GameManager : MonoBehaviour
             PlutoComm.setControlBound(AppData.Instance.CurrentControlBound);
             PlutoComm.setControlDir(0);
         }
-        AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- game resumed");
+        // AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- game resumed");
     }
 
     public void TargetReached()
@@ -999,7 +1016,10 @@ public class GameManager : MonoBehaviour
     {
         if(gameState == GameStates.DONE || gameState == GameStates.WAITING ){
             Time.timeScale = 1f;
+            AppLogger.LogInfo("Exit Game");
+
             SceneManager.LoadScene(exitScene);
+
         }
         else
         {
@@ -1036,6 +1056,7 @@ public class GameManager : MonoBehaviour
             gameState = GameStates.DONE;
             Time.timeScale = 1f;
             SceneManager.LoadScene(exitScene);
+            AppLogger.LogInfo("Exit Game");
         }
     
     }

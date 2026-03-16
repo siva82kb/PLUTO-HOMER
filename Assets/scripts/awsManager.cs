@@ -83,8 +83,6 @@ public static void RunAWSpythonScript()
     {
         string uploadFilePath = Path.Combine(filePathUploadStatus, "uploadStatus.txt");
         File.WriteAllText(uploadFilePath, $"{Path.Combine(Application.dataPath, "data", AppData.Instance.userID)},{status},{DeviceName},{AppData.Instance.userData.hospNumber},{AppData.Instance.userData.GetDeviceLocation()}");
-        Debug.Log($"hosp Num : {AppData.Instance.userData.hospNumber}");
-        AppLogger.LogInfo($"hosp Num : {AppData.Instance.userData.hospNumber}");
 
         if (!File.Exists(Path.Combine(filePathUploadStatus, "uploadProgress.txt")))
         {

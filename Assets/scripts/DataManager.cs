@@ -54,7 +54,7 @@ public static class DataManager
         "AssistMode", "DesiredSuccessRate", "SuccessRate", "CurrentControlBound", "NextControlBound","MoveTime",
         "CurrentTargets", "CurrentHits", "CurrentMisses",
         "CummulativeTargets", "CummulativeHits", "CummulativeMisses",
-         "currentStar","CummulativeStars"
+         "CurrentStar","CummulativeStars"
     };
 
     // Raw data header.    
@@ -64,7 +64,9 @@ public static class DataManager
         "Button", "Angle", "Torque", "Desired", "Control", "ControlBound", "ControlDir", "Target", 
         "Error", "ErrorDiff", "ErrorSum",
         "GamePlayerX", "GamePlayerY", "GameTargetX", "GameTargetY", "GameState",
-        "AanTargetPosition", "AanInitialPosition", "AanState"
+        "AanTargetPosition", "AanInitialPosition", "AanState", 
+        "Annotation",
+        "Miscellaneous"
     };
 
     // Date format strict.
@@ -108,10 +110,7 @@ public static class DataManager
     {
         directoryPathConfig = FixPath(basePath + "/configuration");
         sessionPath = FixPath(Path.Combine(basePath, "sessions"));
-        gamePath = FixPath(Path.Combine(basePath, "gameparams"));
         mechPath = FixPath(Path.Combine(basePath, "mechparams"));
-        aanAdaptPath = FixPath(Path.Combine(basePath, "aanadapt"));
-        aanExecPath = FixPath(Path.Combine(basePath, "aanexec"));
         rawPath = FixPath(Path.Combine(basePath, "rawdata"));
         romPath = FixPath(Path.Combine(basePath, "rom"));
         logPath = FixPath(Path.Combine(basePath, "applog"));
@@ -119,10 +118,7 @@ public static class DataManager
         sessionFile = FixPath(Path.Combine(sessionPath, "sessions.csv"));
         // Check if the directory exists
         Directory.CreateDirectory(sessionPath);
-        Directory.CreateDirectory(gamePath);
         Directory.CreateDirectory(mechPath);
-        Directory.CreateDirectory(aanAdaptPath);
-        Directory.CreateDirectory(aanExecPath);
         Directory.CreateDirectory(rawPath);
         Directory.CreateDirectory(romPath);
         Directory.CreateDirectory(logPath);
@@ -201,8 +197,9 @@ public static class DataManager
             using (var writer = new StreamWriter(DataManager.sessionFile, false, Encoding.UTF8))
             {
                 // Write the preheader details
-                writer.WriteLine($":Device: {device}");
                 writer.WriteLine($":Location: {location}");
+                writer.WriteLine($":Device: {device}");
+                writer.WriteLine($":User: {AppData.Instance.userID}");
                 writer.WriteLine(String.Join(",", header));
             }
             AppLogger.LogWarning("Sessions.csv file not founds. Created one.");
@@ -307,7 +304,7 @@ public static class AppLogger
             if (logWriter != null)
             {
                 string _user = AppData.Instance.userData != null ? AppData.Instance.userData.hospNumber : "";
-                string _msg = $"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} {InBraces(_user), -10} {InBraces(currentScene), -12} {InBraces(currentMechanism), -8} {InBraces(currentGame), -8} >> {message}";
+                string _msg = $"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} {InBraces(_user), -12} {InBraces(currentScene), -16} {InBraces(currentMechanism), -8} {InBraces(currentGame), -10} >> {message}";
                 logWriter.WriteLine(_msg);
                 logWriter.Flush();
                 if (DEBUG) Debug.Log(_msg);

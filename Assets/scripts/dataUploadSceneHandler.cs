@@ -13,7 +13,7 @@ using System.Threading;
 using TMPro;
  
 using UnityEngine;
-
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 using XCharts.Runtime;
@@ -45,6 +45,8 @@ public class dataUpload : MonoBehaviour
     {
 
         Debug.Log($"status : {DataManager.status}");
+        AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
+    AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
 
         StartCoroutine(CheckUploadStatusRoutine());
 
@@ -69,6 +71,7 @@ public class dataUpload : MonoBehaviour
         dataStatus.text = message;
 
         numFiles.text = $"Files To Upload : {totalFiles.ToString()}";
+
  
         if (message == "DONE")
 
@@ -95,6 +98,8 @@ public class dataUpload : MonoBehaviour
             hasUploaded = true;
 
             Debug.Log("Upload started...");
+            AppLogger.LogInfo($"Upload started...");
+
 
             RunPythonUploader();
 
@@ -105,6 +110,8 @@ public class dataUpload : MonoBehaviour
         {
 
             Debug.Log("Upload completed. Shutting down...");
+            AppLogger.LogInfo($"Upload completed. Shutting down...");
+
 
             ShutdownSystem();
 
@@ -115,6 +122,8 @@ public class dataUpload : MonoBehaviour
         {
  
             Debug.Log("Upload completed. Shutting down...");
+            AppLogger.LogInfo($"Upload completed. Shutting down...");
+
 
             ShutdownSystem();
 
@@ -141,6 +150,8 @@ public class dataUpload : MonoBehaviour
                 hasUploaded = true;
 
                 Debug.Log("Upload started...");
+            AppLogger.LogInfo($"Upload started....");
+
 
                 RunPythonUploader();
 
@@ -163,6 +174,7 @@ public class dataUpload : MonoBehaviour
             {
  
                 Debug.Log("Upload completed. Shutting down...");
+            AppLogger.LogInfo($"Upload completed. Shutting down...");
 
                 ShutdownSystem();
 
@@ -185,6 +197,7 @@ public class dataUpload : MonoBehaviour
         {
 
             Debug.LogError("File not found: " + DataManager.GetUploadStatusFile);
+            AppLogger.LogError($"File not found:  { DataManager.GetUploadStatusFile}");
 
             return;
 
@@ -268,6 +281,8 @@ public class dataUpload : MonoBehaviour
         {
 
             Debug.LogError("Python script not found: " + pythonScriptPath);
+            AppLogger.LogError($"Python script not found: {pythonScriptPath}");
+
 
             return;
 
@@ -332,6 +347,8 @@ public class dataUpload : MonoBehaviour
         if (e.Data.StartsWith("TOTAL_FILES:"))
         {
             totalFiles = int.Parse(e.Data.Split(':')[1]);
+            AppLogger.LogInfo($"Files To Upload : {totalFiles.ToString()}");
+
             return; // Skip showing in UI text
         }
         if (e.Data.StartsWith("COMMAND:"))
@@ -348,11 +365,13 @@ public class dataUpload : MonoBehaviour
         {
             progress = 100f;
             Debug.Log("Upload complete!");
+            AppLogger.LogInfo("Upload Completed");
             message = e.Data;
         }
         else if (e.Data.StartsWith("ERROR"))
         {
             Debug.LogError(e.Data);
+            AppLogger.LogError($"{e.Data}");
             message = e.Data;
             ShutdownSystem();
         }

@@ -141,6 +141,9 @@ public class HatGameControllerCV : MonoBehaviour
 
     void Start()
     {
+
+        AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
+        AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
         InitializeGame();
         // Initialize the game objects.
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
@@ -256,7 +259,7 @@ public class HatGameControllerCV : MonoBehaviour
     public void StartGame()
     {
         // Start new trial.
-        AppData.Instance.StartNewTrial();
+        // AppData.Instance.StartNewTrial();
         // Put PLUTO in the AAN mode.
         if ((PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME1") && (PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME2"))
         {
@@ -291,6 +294,8 @@ public class HatGameControllerCV : MonoBehaviour
         PauseButton.SetActive(false);
         ResumeButton.SetActive(true);
         ExitButton.SetActive(false);
+        AppLogger.LogInfo("Game Paused");
+
     }
 
     public void ResumeGame()
@@ -304,6 +309,8 @@ public class HatGameControllerCV : MonoBehaviour
         ResumeButton.SetActive(false);
         ExitButton.SetActive(true);
         PlutoComm.sendHeartbeat();
+        AppLogger.LogInfo("Game Resumed");
+
         if ((PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME1") && (PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME2"))
         {
             PlutoComm.setControlType("POSITIONAAN");
@@ -391,7 +398,7 @@ public class HatGameControllerCV : MonoBehaviour
                 {
                     float gameTime = HomerTherapy.TrialDuration - triaTimeLeft;
                     Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
-                    AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+                    // AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
                     gameState = GameStates.DONE;
                     if (AppData.Instance.previousSuccessRates == null)
                     {
@@ -523,6 +530,8 @@ public class HatGameControllerCV : MonoBehaviour
         {
             Time.timeScale = 1f;
             SceneManager.LoadScene(prevScene);
+            AppLogger.LogInfo("Exit ControlGain Scene");
+
               saveControlGain();
         }
         else
@@ -531,10 +540,13 @@ public class HatGameControllerCV : MonoBehaviour
             AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
             float gameTime = HomerTherapy.TrialDuration - triaTimeLeft;
             Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
-            AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+            // AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
             gameState = GameStates.DONE;
             Time.timeScale = 1f;
             saveControlGain();
+            AppLogger.LogInfo("Exit ControlGain Scene");
+
+
             SceneManager.LoadScene(prevScene);
         }
     }
@@ -588,8 +600,16 @@ public class HatGameControllerCV : MonoBehaviour
         // This can mean different things depending on the game state.
         if (gameState == GameStates.WAITING) isGameStarted = true;
         else if (gameState != GameStates.STOP) isGamePaused = !isGamePaused;
-    }
+                AppLogger.LogInfo("PLUTO Button pressed");
 
+    }
+    private void OnDestroy()
+    {
+        if (ConnectToRobot.isPLUTO)
+        {
+            PlutoComm.OnButtonReleased -= onPlutoButtonReleased;
+        }
+    }
     private void createCGFile()
     {
         string filePath = DataManager.GetMechControlGainFileName(AppData.Instance.selectedMechanism.name);
@@ -597,6 +617,9 @@ public class HatGameControllerCV : MonoBehaviour
         {
             using (var writer = new StreamWriter(filePath, false, Encoding.UTF8))
             {
+                writer.WriteLine($":Location: {AppData.Instance.userData.GetDeviceLocation()}");
+                writer.WriteLine($":Device: PLUTO");
+                writer.WriteLine($":User:{AppData.Instance.userData.hospNumber}");
                 writer.WriteLine("DateTime,ControlGain");
             }
         }

@@ -188,6 +188,8 @@ public class PongGameController : MonoBehaviour
 
     void Start()
     {
+        AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
+        AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
         InitializeGame();
         if(AppData.Instance.selectedGame.isAchievedToday())starLabel.GetComponent<Image>().color = Color.white;
         initializeGameSpeedController();
@@ -205,7 +207,8 @@ public class PongGameController : MonoBehaviour
         celebrationPanel.SetActive(false);
         scores = GameFuncs.GetScores();
         Debug.Log($"{scores[0]}/{scores[1]}");
-        AppLogger.LogInfo($"scores - yesterDayScore:{scores[1]} | TodayScore{scores[0]}");
+
+        AppLogger.LogInfo($"YesterDay's Score: {scores[1]} | Today's Score: {scores[0]}");
         playSize = Camera.main.orthographicSize;
         GameObject ballClone;
         ballClone = Instantiate(ball, this.transform.position, this.transform.rotation) as GameObject;
@@ -284,10 +287,14 @@ public class PongGameController : MonoBehaviour
             if (!isPaused)
             {
                 pauseGame();
+                AppLogger.LogInfo("Game Paused");
+
             }
             else
             {
                 resumeGame();
+                AppLogger.LogInfo("Game Resumed");
+
                 isGameStarted = true;
             }
             isButtonPressed = false;
@@ -347,6 +354,7 @@ public class PongGameController : MonoBehaviour
 
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s game speed increased to {gameSpeed}, Ball speed is {ballSpeed.speed}, Enemy Speed is {enemy.speedDefault}");
         UpdateBallSpeedAndMoveDuration();
+        AppData.Instance.annotation=$"GS: {gameSpeed} | MT: {MOVEDURATION:F2}";
 
     }
     public void decreaseGameSpeed()
@@ -358,6 +366,8 @@ public class PongGameController : MonoBehaviour
 
         UpdateBallSpeedAndMoveDuration();
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s game speed decreased to {gameSpeed}, Ball speed is {ballSpeed.speed}");
+        AppData.Instance.annotation=$"GS: {gameSpeed} | MT: {MOVEDURATION:F2}";
+
 
 
     }
@@ -390,7 +400,7 @@ public class PongGameController : MonoBehaviour
             PlutoComm.setControlBound(AppData.Instance.CurrentControlBound);
             PlutoComm.setControlDir(0);
         }
-        AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- game resumed");
+        // AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- game resumed");
         
     }
 
@@ -399,6 +409,8 @@ public class PongGameController : MonoBehaviour
         if(gameState == GameStates.DONE || gameState == GameStates.WAITING){
             Time.timeScale = 1f;
             SceneManager.LoadScene(prevScene);
+            AppLogger.LogInfo("Exit Game");
+
         }
         else
         {
@@ -414,6 +426,7 @@ public class PongGameController : MonoBehaviour
             if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
             {
                 AppData.Instance.selectedGame.updateCummulativeStars();
+                AppLogger.LogInfo($"Beat yesterday's score - {AppData.Instance.selectedGameName} game. 1 star added. Stars: {AppData.Instance.selectedGame.cummulativeStars:D2}");      
                 celebrationPanel.SetActive(true);
             }
             AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
@@ -435,7 +448,9 @@ public class PongGameController : MonoBehaviour
             gameState = GameStates.DONE;
             Time.timeScale = 1f;
             SceneManager.LoadScene(prevScene);
-            AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- Exit from game");
+            // AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- Exit from game");
+            AppLogger.LogInfo("Exit Game");
+
             
         }
     }
@@ -469,7 +484,8 @@ public class PongGameController : MonoBehaviour
         // playerScore = enemyScore = 0;
         // hideFinished();
         string currentSceneName = SceneManager.GetActiveScene().name;
-        AppLogger.LogInfo($"The Game is restarted {currentSceneName}");
+        // AppLogger.LogInfo($"The Game is restarted {currentSceneName}");
+
         SceneManager.LoadScene(currentSceneName);
 
     }
@@ -528,7 +544,7 @@ public class PongGameController : MonoBehaviour
         //     currSR.text = $"Current Success Rate : {AppData.Instance.previousSuccessRates[1]}%";
         // }
         gameOverText.text = (playerScore >= enemyScore) ? "GAME OVER!\nPLAYER WON!" : "GAME OVER!\nENEMY WON!";
-        AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- game finished");
+        AppLogger.LogInfo("Game Over");
          
     }
 
@@ -565,7 +581,7 @@ public class PongGameController : MonoBehaviour
                 showPaused();
                 // Check of game has been started.
                 if (isGameStarted) gameState = GameStates.START;
-                Debug.Log($" gamestate x1: {gameState} + {isGameStarted}");
+                // Debug.Log($" gamestate x1: {gameState} + {isGameStarted}");
 
                 break;
             case GameStates.START:
@@ -639,7 +655,7 @@ public class PongGameController : MonoBehaviour
                 
                 break;
             case GameStates.PAUSED:
-                AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- game paused");
+                // AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- game paused");
 
                 //Debug.Log(isGamePaused);
                 break;
@@ -831,9 +847,11 @@ public class PongGameController : MonoBehaviour
     gameState = GameStates.DONE;
     lastHighScore = AppData.Instance.successRate * (PlutoAANController.MAXCONTROLBOUND - AppData.Instance.CurrentControlBound);
     
+     
+    
     if (AppData.Instance.selectedMechanism.trialNumberDay == AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
     {
-        AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game finished and changed to Choose Mechanism scene due to allocated trials has over.");
+        AppLogger.LogInfo("Game over and changed to Choose Mechanism scene due to allocated trials has over.");
         SceneManager.LoadScene("CHMECH");
     }
     
@@ -903,7 +921,7 @@ public class PongGameController : MonoBehaviour
     private void onPlutoButtonReleased()
     {
         isButtonPressed = true;
-        AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- pluto button pressed");
+        AppLogger.LogInfo("PLUTO button pressed");
 
     }
 
@@ -997,5 +1015,12 @@ public class PongGameController : MonoBehaviour
         timeLeftText.text = $"Timer:{Mathf.Max(0, Mathf.CeilToInt(trialTimeLeft)):D2}s";
         // gameSpeedViewer.text = $"GS :{(int)gameSpeed}";
         //core.text = $"Score: {nSuccess}";
+    }
+     private void OnDestroy()
+    {
+        if (ConnectToRobot.isPLUTO)
+        {
+            PlutoComm.OnButtonReleased -= onPlutoButtonReleased;
+        }
     }
 }

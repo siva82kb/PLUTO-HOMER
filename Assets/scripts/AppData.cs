@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -22,7 +23,7 @@ public partial class AppData
     // COM Port for the device
     public static string COMPort = DataManager.getLapConfig();// D1- COM6 ,D2 - COM4, D5 - COM5, D7 - COM4, D8 - COM5, D9 - COM5 
 
-
+    public string annotation{ get; set;}="";
     // What is this used for?
     public string _dataLogDir = null;
 
@@ -85,6 +86,11 @@ public partial class AppData
 
         // Set sesstion start time.
         startTime = DateTime.Now;
+         if (Directory.GetDirectories(DataManager.basePath).Length == 1)
+        {
+            // If so, set the user ID to the name of that folder.
+            AppData.Instance.setUser(Path.GetFileName(Directory.GetDirectories(DataManager.basePath)[0]));
+        }
 
         // Create file structure.
         DataManager.CreateFileStructure();

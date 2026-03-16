@@ -189,7 +189,7 @@ public class OneTimeConfig : MonoBehaviour
         messageText.text = "Verifying HomerID...";
         
         // Construct S3 path
-        string s3Path = $"s3://{awsBucketName}/{location}/HOCMCV231/Pluto/{homerDetailsFileName}";
+        string s3Path = $"s3://{awsBucketName}/{location}/{homerDetailsFileName}";
         
         // Download file from S3 using AWS CLI
         string tempFilePath = Path.Combine(Application.temporaryCachePath, "HomerDetails_temp.json");
@@ -398,8 +398,8 @@ public class OneTimeConfig : MonoBehaviour
         
         string hospNumber = lastRow.Field<string>("HomerID");
         bool rightHand = lastRow.Field<string>("TrainingSide") == "right";
-        int FME1 = int.Parse(lastRow.Field<string>("FME1K"));
-        int FME2 = int.Parse(lastRow.Field<string>("FME2K"));
+        int FME1 = int.Parse(lastRow.Field<string>("FME1ID"));
+        int FME2 = int.Parse(lastRow.Field<string>("FME2ID"));
         endDate = DateTime.ParseExact(lastRow.Field<string>("endDate"), "dd-MM-yyyy", CultureInfo.InvariantCulture);
 
         homerIdField.text = hospNumber;
@@ -768,8 +768,8 @@ public class OneTimeConfig : MonoBehaviour
         string fme2 = (selectedFME2Index + 1).ToString(); // Display number (1-12)
         
         // Mechanism index numbers (0-11)
-        string fme1k = selectedFME1Index.ToString();
-        string fme2k = selectedFME2Index.ToString();
+        string fme1id = selectedFME1Index.ToString();
+        string fme2id = selectedFME2Index.ToString();
         
         string totalDuration = totalDurationText.text;
         string trainingSide = affectedSideDropdown.options[affectedSideDropdown.value].text;
@@ -777,8 +777,8 @@ public class OneTimeConfig : MonoBehaviour
         string group = "Experimental";
 
         // Updated headers to include all fields
-        string headers = "HomerID,StartDate,EndDate,TotalTime,WFE,WURD,FPS,HOC,FME1,FME2,TrainingSide,Location,Group,FME1K,FME2K";
-        string data = $"{homerID},{startDate},{endDate},{totalDuration},{wfe},{wurd},{fps},{hoc},{fme1Time},{fme2Time},{trainingSide},{Location},{group},{fme1k},{fme2k}";
+        string headers = "HomerID,StartDate,EndDate,TotalTime,WFE,WURD,FPS,HOC,FME1,FME2,FME1ID,FME2ID,TrainingSide,Location,Group";
+        string data = $"{homerID},{startDate},{endDate},{totalDuration},{wfe},{wurd},{fps},{hoc},{fme1Time},{fme2Time},{fme1id},{fme2id},{trainingSide},{Location},{group}";
 
         string directoryPath = Path.Combine(Application.dataPath, "data", AppData.Instance.userID, "data");
         string datapath = Path.Combine(directoryPath, "configdata.csv");

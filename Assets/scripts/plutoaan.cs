@@ -130,7 +130,7 @@ public class PlutoAANController
 
         // Logging files
         execFileName = null;
-        adaptFileName = DataManager.GetAanAdaptFileName(mechanismName);
+        // adaptFileName = DataManager.GetAanAdaptFileName(mechanismName);
 
         // Execution related variables
         initialPosition = 0;
@@ -584,7 +584,7 @@ public static class PlutoAanLogger
             {
                 string _user = AppData.Instance.userData != null ? AppData.Instance.userData.hospNumber : "";
                 string _trialno = AppData.Instance.selectedMechanism != null ? AppData.Instance.selectedMechanism.trialNumberDay.ToString() : "";
-                string _msg = $"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} {InBraces(_user), -10} {InBraces(AppLogger.currentScene), -12} {InBraces(AppLogger.currentMechanism), -8} {InBraces(AppLogger.currentGame), -8} {InBraces(_trialno), -4} >> {message}";
+                string _msg = $"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} {InBraces(_user), -12} {InBraces(AppLogger.currentScene), -16} {InBraces(AppLogger.currentMechanism), -8} {InBraces(AppLogger.currentGame), -10} {InBraces(_trialno), -4} >> {message}";
                 logWriter.WriteLine(_msg);
                 logWriter.Flush();
                 if (DEBUG) UnityEngine.Debug.Log(_msg);

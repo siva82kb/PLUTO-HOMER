@@ -105,6 +105,8 @@ public class summarySceneHandler : MonoBehaviour
 
     public void Start()
 {
+     AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
+    AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
     title = "Unlock Your Potential Through Play";
     initializeChart();
 
@@ -123,7 +125,10 @@ public class summarySceneHandler : MonoBehaviour
 
     UpdateMechanismRows(mechStats);
     displayMechanismStars(mechStats);
+    PlutoComm.OnButtonReleased += onPlutoButtonReleased;
+
 }
+
 
     private Dictionary<string, MechanismStats> BuildStatLookup(List<MechanismStats> stats)
     {
@@ -229,12 +234,13 @@ public class summarySceneHandler : MonoBehaviour
 
     void Update()
     {
+        PlutoComm.sendHeartbeat();
+
         while (_actionQueue.TryDequeue(out var action))
         {
             action.Invoke(); 
         }
 
-        PlutoComm.OnButtonReleased += onPlutoButtonReleased;
     }
 
     public void mechanismClicked(Button button)
@@ -252,27 +258,13 @@ public class summarySceneHandler : MonoBehaviour
     //To disconnect the Robot 
     public void onPlutoButtonReleased()
     {
+        PlutoComm.stopSensorStream();
+
 
         _actionQueue.Enqueue(() =>
         {
-            PlutoComm.stopSensorStream();
-
+            
             ConnectToRobot.disconnect();
-            // try
-            // {
-            //     Application.Quit();
-            //     // Process.Start("shutdown", "/s /t 0");
-
-            //     #if UNITY_EDITOR
-            //                 UnityEditor.EditorApplication.isPlaying = false;
-            //     #endif
-
-            //     // Process.Start("shutdown", "/s /t 0");
-            // }
-            // catch (System.Exception ex)
-            // {
-            //     //Debug.LogError("Failed to shutdown: " + ex.Message);
-            // }
             SceneManager.LoadScene("DATAUPLOAD");
         });
     }
@@ -340,7 +332,7 @@ public class summarySceneHandler : MonoBehaviour
     public void UpdateChartData()
     {
         if (lineChart == null) return;
-        AppLogger.LogInfo("linechart is not null");
+        // AppLogger.LogInfo("linechart is not null");
 
         lineChart.RemoveData();
         lineChart.EnsureChartComponent<Title>().text = title;

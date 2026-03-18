@@ -77,8 +77,8 @@ public class SessionDataHandler
         {
             var row = configTable.Rows[configTable.Rows.Count - 1];
 
-            StartDate = DateTime.ParseExact(row["StartDate"].ToString(), "dd-MM-yyyy", CultureInfo.InvariantCulture);
-            EndDate = DateTime.ParseExact(row["EndDate"].ToString(), "dd-MM-yyyy", CultureInfo.InvariantCulture);
+            StartDate = DateTime.ParseExact(row["StartDate"].ToString(), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture);
+            EndDate = DateTime.ParseExact(row["EndDate"].ToString(), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture);
 
             
         }
@@ -117,7 +117,7 @@ public class SessionDataHandler
 
         for (int i = 0; i < totalDays; i++)
         {
-            DateTime current = StartDate.AddDays(i);
+            DateTime current = StartDate.AddDays(i).Date;
 
             summaryDate[i] = current.ToString(DATEFORMAT);
 

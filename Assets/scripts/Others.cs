@@ -680,8 +680,8 @@ public class PlutoUserData
         FME1 = int.Parse(lastRow.Field<string>("FME1ID"));
         FME2 = int.Parse(lastRow.Field<string>("FME2ID"));
         //AppData.trainingSide = ; // lastRow.Field<string>("TrainingSide");
-        startDate = DateTime.ParseExact(lastRow.Field<string>("StartDate"), "dd-MM-yyyy", CultureInfo.InvariantCulture);
-        endDate = DateTime.ParseExact(lastRow.Field<string>("endDate"), "dd-MM-yyyy", CultureInfo.InvariantCulture);
+        startDate = DateTime.ParseExact(lastRow.Field<string>("StartDate"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture);
+        endDate = DateTime.ParseExact(lastRow.Field<string>("endDate"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture);
 
         mechMoveTimePrsc = createMoveTimeDictionary();//prescribed time
         for (int i = 0; i < PlutoDefs.Mechanisms.Length; i++)

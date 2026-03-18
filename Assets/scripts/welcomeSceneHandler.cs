@@ -67,7 +67,7 @@ public class welcomSceneHandler : MonoBehaviour
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");
         daySummaries = AppData.Instance.userData.CalculateMoveTimePerDay();
-        AppData.Instance.userData.ReadFile();
+        //AppData.Instance.userData.ReadFile();
         Debug.Log($"status : {DataManager.status}");
 
         

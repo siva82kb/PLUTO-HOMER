@@ -48,6 +48,7 @@ public class ChooseGameSceneHandler : MonoBehaviour
 
         ImgBanner1.SetActive(!isFME);
         ImgBanner2.SetActive(!isFME);
+        AppLogger.SetCurrentGame(null);
         
         // If no mechanism is selected, got to the scene to choose mechanism.
         if (AppData.Instance.selectedMechanism == null)

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -9,6 +10,7 @@ using UnityEngine;
 /*
  * HOMER PLUTO Application Data Class.
  */
+ 
 public partial class AppData
 {
     // Singleton
@@ -19,9 +21,9 @@ public partial class AppData
      * CONSTANT FIXED VARIABLES.
      */
     // COM Port for the device
-    public const string COMPort = "COM47";
+    public static string COMPort = DataManager.getLapConfig();// D1- COM6 ,D2 - COM4, D5 - COM5, D7 - COM4, D8 - COM5, D9 - COM5 
 
-
+    public string annotation{ get; set;}="";
     // What is this used for?
     public string _dataLogDir = null;
 
@@ -84,6 +86,11 @@ public partial class AppData
 
         // Set sesstion start time.
         startTime = DateTime.Now;
+         if (Directory.GetDirectories(DataManager.basePath).Length == 1)
+        {
+            // If so, set the user ID to the name of that folder.
+            AppData.Instance.setUser(Path.GetFileName(Directory.GetDirectories(DataManager.basePath)[0]));
+        }
 
         // Create file structure.
         DataManager.CreateFileStructure();
@@ -181,12 +188,17 @@ public partial class AppData
         selectedGameName = gameName;
         previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(selectedMechanism.name, selectedGameName);
         int[] cuScores = Instance.userData.readCummulativeHitsMissesForGameMovement(selectedGameName, selectedMechanism?.name);
+         //Read the Cummulative stars from the session data
+        int[] starCount = Instance.userData.readStarCounts(gameName);
+        UnityEngine.Debug.Log($"{starCount[0]}/{starCount[1]}stars");
         // Set the selected game.
         selectedGame = new PlutoGame(gName: selectedGameName,
                                     mName: selectedMechanism?.name,
                                     gCuTargets: cuScores[0],
                                     gCuHits: cuScores[1],
-                                    gCuMisses: cuScores[2]);
+                                    gCuMisses: cuScores[2],
+                                    gCuStars: starCount[0],
+                                    TodayStars: starCount[1]);
         
         // // Cannot set game before selecting mechanism.
         // if (selectedMechanism == null) 
@@ -223,5 +235,8 @@ public partial class AppData
     public string trainingSide => userData?.rightHand == true ? "RIGHT" : "LEFT";
     
     // Check training size.
+    
     public bool IsTrainingSide(string side) => string.Equals(trainingSide, side, StringComparison.OrdinalIgnoreCase);
+    // public void reloadSessionDetails() => Instance.userData.readParseSessionData(DataManager.sessionFile);
+
 }

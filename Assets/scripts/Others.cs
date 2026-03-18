@@ -39,6 +39,28 @@ public static class HomerTherapy
         { "RNR", 1f }
     };
     
+    // public static readonly float MinSpeedOfMechFPSAndFME = 18.0f;
+    // public static readonly float MaxSpeedOfMechFPSAndFME = 4.5f;
+
+    // public static readonly float MinSpeedOfMechWFEAndWURD = 13.6f;
+    // public static readonly float MaxSpeedOfMechWFEAndWURD = 3.4f;
+    // public static readonly float MinSpeedOfMechOfHOC = 10.0f;
+    // public static readonly float MaxSpeedOfMechofHOC = 2.25f;
+    public static readonly float MaxSpeed = 40.0f;
+    public static readonly float MinSpeed = 10.0f;
+
+    // Dynamically calculated mechanism speeds
+    public static float MaxDurationOfMechFPSAndFME => CalculateMechDuration(PlutoComm.CALIBANGLE[3], MinSpeed);
+    public static float MinDurationOfMechFPSAndFME => CalculateMechDuration(PlutoComm.CALIBANGLE[3], MaxSpeed);
+    public static float MaxDurationOfMechWFEAndWURD => CalculateMechDuration(PlutoComm.CALIBANGLE[1], MinSpeed);
+    public static float MinDurationOfMechWFEAndWURD => CalculateMechDuration(PlutoComm.CALIBANGLE[1], MaxSpeed);
+    public static float MaxDurationOfMechOfHOC => CalculateMechDuration(PlutoComm.CALIBANGLE[4], MinSpeed);
+    public static float MinDurationOfMechofHOC => CalculateMechDuration(PlutoComm.CALIBANGLE[4], MaxSpeed);
+    
+    private static float CalculateMechDuration(float maxangle, float Speed)
+    {
+        return maxangle / Speed;
+    }
     private static float? lastTarget = null;
     private static float threshold = 0f;
 
@@ -61,12 +83,15 @@ public static class HomerTherapy
         TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN,
         TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN,
     };
+
+
     // private static float[] SuccessRateForTrials = new float[] {
     //     85, 90, 90, 87, 84,
     //     79, 79, 79, 79, 79,
     //     79, 79, 81, 83, 85,
     //     85, 85, 85, 85, 85
     // };
+
     // private static TrialType[] TrialTypeForTrials = new TrialType[] {
     //     TrialType.SR85PCTRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN,
     //     TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN, TrialType.TRAIN,
@@ -140,6 +165,7 @@ public static class HomerTherapy
 public class MechanismSpeed
 {
     public float gameSpeed { get; private set; } = -1f;
+    public float MOVEDURATION{get; private set;}
 
     // private string AppData.Instance.selectedMechanism.name;
 
@@ -166,6 +192,10 @@ public class MechanismSpeed
     {
         gameSpeed = gamespeed;
         updateGameSpeedfromGame(gamespeed);
+    }
+    public void setMoveDuration(float duration)
+    {
+        MOVEDURATION = duration;
     }
     public void EvaluateAndUpdateGameSpeed()
     {
@@ -228,7 +258,7 @@ public class MechanismSpeed
 
             if ((DateTime.Today - lastUpdate.Value).Days >= 3 && sessionDatesBetween.Count >= 2)
             {
-                if (gameSpeed < 40.0f) UpdateGameSpeed();
+                if (gameSpeed < PlutoAANController.MAX_SPEED) UpdateGameSpeed();
                 else
                 {
                     GetLastDateFromMechParams();
@@ -319,6 +349,9 @@ public class MechanismSpeed
         gameSpeed = DefaultMechanismSpeeds[AppData.Instance.selectedMechanism.name];
         using (var writer = new StreamWriter(mechParamsCsvPath, false))
         {
+            writer.WriteLine($":Location: {AppData.Instance.userData.GetDeviceLocation()}");
+            writer.WriteLine($":Device: PLUTO");
+            writer.WriteLine($":User: {AppData.Instance.userData.hospNumber}");
             writer.WriteLine("DateTime,Mode,Speed");
             writer.WriteLine($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")},{speedChMode[0]},{gameSpeed}");
             AppLogger.LogInfo($"{AppData.Instance.selectedMechanism.name} - Mech and Game speed initiated to {gameSpeed} deg/sec in {speedChMode[0]}");
@@ -371,14 +404,18 @@ public class PlutoUserData
     public DataTable dTableConfig { private set; get; } = null;
     public DataTable dTableSession { private set; get; } = null;
     public string hospNumber { private set; get; }
+    public int FME1 { private set; get; }
+    public int FME2 { private set; get; }
+
+
     public bool rightHand { private set; get; }
     public DateTime startDate { private set; get; }
+    public DateTime endDate { private set; get;}
     public Dictionary<string, float> mechMoveTimePrsc { get; private set; } // Prescribed movement time
     public Dictionary<string, float> mechMoveTimePrev { get; private set; } // Previous movement time 
     public Dictionary<string, float> mechMoveTimeCurr { get; private set; } // Current movement time
     public bool isExceeded { private set; get; }
-
-
+    public const string DATETIME = "DateTime";
     // Total movement times.
     public float totalMoveTimePrsc
     {
@@ -637,10 +674,15 @@ public class PlutoUserData
     private void parseTherapyConfigData()
     {
         DataRow lastRow = dTableConfig.Rows[dTableConfig.Rows.Count - 1];
-        hospNumber = lastRow.Field<string>("HospitalNumber");
+        hospNumber = lastRow.Field<string>("HomerID");
         rightHand = lastRow.Field<string>("TrainingSide") == "right";
+        Debug.Log(lastRow.Field<string>("FME1ID"));
+        FME1 = int.Parse(lastRow.Field<string>("FME1ID"));
+        FME2 = int.Parse(lastRow.Field<string>("FME2ID"));
         //AppData.trainingSide = ; // lastRow.Field<string>("TrainingSide");
-        startDate = DateTime.ParseExact(lastRow.Field<string>("StartDate"), "dd-MM-yyyy", CultureInfo.InvariantCulture);
+        startDate = DateTime.ParseExact(lastRow.Field<string>("StartDate"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture);
+        endDate = DateTime.ParseExact(lastRow.Field<string>("endDate"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture);
+
         mechMoveTimePrsc = createMoveTimeDictionary();//prescribed time
         for (int i = 0; i < PlutoDefs.Mechanisms.Length; i++)
         {
@@ -858,8 +900,277 @@ public class PlutoUserData
         return cuScores;
     }
 
+    public int[] ReadCumulativeHitsForAllGames()
+    {
+        string[] games = { "PONG", "TUK", "HAT", "FRUITCH", "RNR" };
+        string[] mechanisms = { "WFE", "WURD", "FPS", "HOC", "FME1", "FME2" };  // change if different
+
+        int[] cumulativeHitsArray = new int[games.Length];
+
+        for (int i = 0; i < games.Length; i++)
+        {
+            string gameName = games[i];
+            int totalHits = 0;
+
+            foreach (string mech in mechanisms)
+            {
+                var lastRow = dTableSession.AsEnumerable()?
+                    .Where(row => row.Field<string>("GameName") == gameName &&
+                                row.Field<string>("Mechanism") == mech)
+                    .LastOrDefault();
+
+                if (lastRow != null)
+                {
+                    totalHits += Convert.ToInt32(lastRow.Field<string>("CummulativeHits"));
+                }
+            }
+
+            cumulativeHitsArray[i] = totalHits;
+            AppLogger.LogInfo($"Game '{gameName}' total cumulative hits from all mechanisms = {totalHits}");
+        }
+
+        return cumulativeHitsArray;
+    }
+
+    public int[] readStarCounts(string gameName)
+    {
+        var lastRow = dTableSession.AsEnumerable()?
+            .Where(row => row.Field<string>("GameName") == gameName &&
+                        row.Field<string>("Mechanism") == AppData.Instance.selectedMechanism.name)
+            .LastOrDefault();
+
+        if (lastRow == null)
+        {
+            AppLogger.LogInfo($"No data found for game '{gameName}' and mechanism '{AppData.Instance.selectedMechanism.name}'. Stars set to 0.");
+            return new int[] { 0, 0 };
+        }
+
+        int cumulativeStars = Convert.ToInt32(lastRow.Field<string>("CummulativeStars"));
+        DateTime today = DateTime.Today;
+
+        int currentStarCount = dTableSession.AsEnumerable()
+            .Where(row =>
+                row.Field<string>("GameName") == gameName &&
+                row.Field<string>("Mechanism") == AppData.Instance.selectedMechanism.name &&
+                DateTime.ParseExact(row.Field<string>(DATETIME).Trim(),
+                                    DataManager.DATEFORMAT,
+                                    CultureInfo.InvariantCulture).Date == today.Date)
+            .Sum(row => Convert.ToInt32(row.Field<string>("currentStar")));
+
+        return new int[] { cumulativeStars, currentStarCount };
+    }
+
+    public int[] getLastTwoDifferentDatesScore(String gameName)
+    {
+        // AppData.Instance.reloadSessionDetails();
+        var table = AppData.Instance.userData.dTableSession;
+
+        if (table == null || table.Rows.Count == 0)
+            return new[] { 0, 0 };
+
+       
+        var lastRow = table.Rows[table.Rows.Count - 1];
+        DateTime lastDate = DateTime.ParseExact(lastRow.Field<string>(DATETIME),DataManager.DATEFORMAT,CultureInfo.InvariantCulture);
+        Debug.Log($"{lastDate}");
+    
+        //confirms only lastDate and Today data Comparison
+        if (lastDate.Date != DateTime.Today.Date)
+        {
+            int score = GetScoreForDate(lastDate, gameName);
+            return new[] { 0,score}; 
+        }
+
+        //collect all dates
+        List<DateTime> allDates = new List<DateTime>();
+
+        foreach (var row in table.AsEnumerable())
+        {
+            string dateStr = row.Field<string>(DATETIME);
+
+            if (DateTime.TryParseExact(
+                    dateStr,
+                    DataManager.DATEFORMAT,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out DateTime dt))
+            {
+                allDates.Add(dt.Date);
+            }
+        }
+
+        if (allDates.Count == 0)
+            return new[] { 0, 0 };
+
+        var distinctDates = allDates
+            .Distinct()
+            .OrderByDescending(d => d)
+            .Take(2)
+            .ToList();
+
+        // If there is only ONE unique date:
+        if (distinctDates.Count == 1)
+            return new[] { GetScoreForDate(distinctDates[0],gameName), 0 };
+
+        DateTime date1 = distinctDates[0]; // today date
+        DateTime date2 = distinctDates[1]; // yesterday date
+
+        int score1 = GetScoreForDate(date1, gameName);
+        int score2 = GetScoreForDate(date2, gameName);
+        Debug.Log($"{score1} - {date1},{score2} - {date2} from getfuntion");
+        return new[] { score1, score2 };
+    }
+
+    private int GetScoreForDate(DateTime targetDate, string gameName)
+    {
+        var table = AppData.Instance.userData.dTableSession;
+
+        int total = table.AsEnumerable()
+            .Where(row =>
+                DateTime.ParseExact(row.Field<string>(DATETIME),
+                                    DataManager.DATEFORMAT,
+                                    CultureInfo.InvariantCulture).Date == targetDate.Date &&
+                row.Field<string>("GameName") == gameName &&
+                row.Field<string>("Mechanism") == AppData.Instance.selectedMechanism.name
+            )
+            .Sum(row => Convert.ToInt32(row["CurrentHits"]));
+
+        return total;
+    }
+
+
+
+    public class GameStats
+    {
+        public string GameName;
+        public int CumulativeHits;    
+        public int PreviousDayHits; 
+        public int TodayHits; 
+    }
+
+    public List<GameStats> ReadGameStats()
+    {
+        string[] games = { "PONG", "TUK", "HAT", "FRUITCH", "RNR" };
+        string[] mechanisms = { "WFE", "WURD", "FPS", "HOC", "FME1", "FME2" };
+
+        DateTime today = DateTime.Today;
+        DateTime previousDay = today.AddDays(-1);
+
+        List<GameStats> result = new List<GameStats>();
+
+        foreach (string gameName in games)
+        {
+            int cumulativeHits = 0;
+            int todayHits = 0;
+            int previousDayHits = 0;
+
+            foreach (string mech in mechanisms)
+            {
+                var lastRow = dTableSession.AsEnumerable()
+                    .Where(row =>
+                        row.Field<string>("GameName") == gameName &&
+                        row.Field<string>("Mechanism") == mech)
+                    .LastOrDefault();
+
+                if (lastRow != null)
+                {
+                    cumulativeHits += Convert.ToInt32(lastRow["CummulativeHits"]);
+                }
+
+                todayHits += dTableSession.AsEnumerable()
+                    .Where(row =>
+                        row.Field<string>("GameName") == gameName &&
+                        row.Field<string>("Mechanism") == mech &&
+                        DateTime.ParseExact(row.Field<string>(DATETIME).Trim(),
+                            DataManager.DATEFORMAT,
+                            CultureInfo.InvariantCulture).Date == today)
+                    .Sum(row => Convert.ToInt32(row["CurrentHits"]));
+
+                previousDayHits += dTableSession.AsEnumerable()
+                    .Where(row =>
+                        row.Field<string>("GameName") == gameName &&
+                        row.Field<string>("Mechanism") == mech &&
+                        DateTime.ParseExact(row.Field<string>(DATETIME).Trim(),
+                            DataManager.DATEFORMAT,
+                            CultureInfo.InvariantCulture).Date == previousDay)
+                    .Sum(row => Convert.ToInt32(row["CurrentHits"]));
+            }
+
+            result.Add(new GameStats
+            {
+                GameName = gameName,
+                CumulativeHits = cumulativeHits,
+                PreviousDayHits = previousDayHits,
+                TodayHits = todayHits
+            });
+
+            AppLogger.LogInfo(
+                $"GAME: {gameName} | Cumulative={cumulativeHits} | Yesterday={previousDayHits} | Today={todayHits}");
+        }
+
+        return result;
+    }
+    public class MechanismStats
+{
+    public string Mechanism;
+    public int TodayStars;
+    public int YesterdayStars;
+    public int CumulativeStars;
+    public int CumulativeStarsYesterday;
 
 }
+    public List<MechanismStats> ReadMechanismStarStats()
+    {
+        string[] mechanisms = { "WFE", "WURD", "FPS", "HOC", "FME1", "FME2" };
+        List<MechanismStats> results = new List<MechanismStats>();
+
+        DateTime today = DateTime.Today;
+        DateTime yesterday = today.AddDays(-1);
+
+        // ⭐ TOTAL stars of ALL mechanisms (till today)
+        int cumulativeStarsAll = dTableSession.AsEnumerable()
+            .Sum(r => Convert.ToInt32(r["currentStar"]));
+        
+        // ⭐ Cumulative stars till yesterday (ACROSS ALL mechanisms)
+        int cumulativeUntilYesterday = dTableSession.AsEnumerable()
+            .Where(r => DateTime.ParseExact(
+                    r.Field<string>("DateTime"), DataManager.DATEFORMAT, null).Date <= yesterday)
+            .Sum(r => Convert.ToInt32(r["currentStar"]));
+
+        foreach (string mech in mechanisms)
+        {
+            // ⭐ Today stars for this mechanism
+            int todayStars = dTableSession.AsEnumerable()
+                .Where(r =>
+                    r.Field<string>("Mechanism") == mech &&
+                    DateTime.ParseExact(r.Field<string>("DateTime"),
+                        DataManager.DATEFORMAT, null).Date == today)
+                .Sum(r => Convert.ToInt32(r["currentStar"]));
+
+            // ⭐ Yesterday stars for this mechanism
+            int yStars = dTableSession.AsEnumerable()
+                .Where(r =>
+                    r.Field<string>("Mechanism") == mech &&
+                    DateTime.ParseExact(r.Field<string>("DateTime"),
+                        DataManager.DATEFORMAT, null).Date == yesterday)
+                .Sum(r => Convert.ToInt32(r["currentStar"]));
+
+            results.Add(new MechanismStats
+            {
+                Mechanism = mech,
+                TodayStars = todayStars,
+                YesterdayStars = yStars,
+
+                // ⭐ SAME for ALL mechanisms
+                CumulativeStars = cumulativeStarsAll,
+                CumulativeStarsYesterday = cumulativeUntilYesterday
+            });
+        }
+
+        return results;
+    }
+}
+
+
 
 public class PlutoGame
 {
@@ -874,14 +1185,18 @@ public class PlutoGame
     public int cummulativeTargets { get; private set; } = 0;
     public int cummulativeHits { get; private set; } = 0;
     public int cummulativeMisses { get; private set; } = 0;
-
-    public PlutoGame(string gName, string mName, int gCuTargets, int gCuHits, int gCuMisses)
+    public int cummulativeStars {  get; private set; } = 0;
+    public int currentStar {  get; private set; } = 0;
+    public int todayStar {  get; private set; } = 0;
+    public PlutoGame(string gName, string mName, int gCuTargets, int gCuHits, int gCuMisses, int gCuStars,int TodayStars)
     {
         name = gName?.ToUpper() ?? string.Empty;
         mech = mName?.ToUpper() ?? string.Empty;
         cummulativeTargets = gCuTargets;
         cummulativeHits = gCuHits;
         cummulativeMisses = gCuMisses;
+        cummulativeStars = gCuStars;
+        todayStar = TodayStars;
     }
 
     public void ResetCummulativeScore()
@@ -890,6 +1205,25 @@ public class PlutoGame
         cummulativeHits = 0;
         cummulativeMisses = 0;
     }
+    public void updateCummulativeStars()
+    {
+       
+        cummulativeStars++;
+        currentStar = 1;
+        todayStar += currentStar;
+    }
+    //Reset the trailStar Count
+    public void resetstarCount()
+    {
+        currentStar = 0;
+    }
+   
+    //To check if they achieved Today  or not
+    public bool isAchievedToday()
+    {
+        return todayStar > 0 ;
+    }
+    
 
     public void UpdateTargetsHitsMisses(int targets, int hits, int misses)
     {
@@ -951,6 +1285,30 @@ public static class MovementTracker
 
 }
 
+public static class GameFuncs
+{
+    //Game Achievement Data
+        public static int[] GetScores()
+        {
+            return AppData.Instance.userData.getLastTwoDifferentDatesScore(AppData.Instance.selectedGameName);
+        }
+
+        public static int[] GetStarsCount()
+        {
+            return AppData.Instance.userData.readStarCounts(AppData.Instance.selectedGameName);
+        }
+
+        public static int[] GetCummulativeScores()
+        {
+            return AppData.Instance.userData.readCummulativeHitsMissesForGameMovement(AppData.Instance.selectedGameName, AppData.Instance.selectedMechanism.name);
+        }
+
+        public static bool IsAchievedToday()
+        {
+            var starsCount = GetStarsCount();
+            return starsCount[1] > 0;
+        }
+}
 public static class Others
 {
     public static float gameTime = 0f;
@@ -1202,6 +1560,10 @@ public class ROM
         {
             using (var writer = new StreamWriter(fileName, false, Encoding.UTF8))
             {
+                // Write the preheader details
+                writer.WriteLine($":Location: {AppData.Instance.userData.GetDeviceLocation()}");
+                writer.WriteLine($":Device: PLUTO");
+                writer.WriteLine($":User: {AppData.Instance.userData.hospNumber}");
                 writer.WriteLine(string.Join(",", FILEHEADER));
             }
         }

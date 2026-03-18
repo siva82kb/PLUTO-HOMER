@@ -1385,11 +1385,11 @@ RectTransform:
   m_Children:
   - {fileID: 1936397116}
   - {fileID: 2003915165}
-  - {fileID: 1332592930}
   - {fileID: 381018174}
   - {fileID: 403678032}
   - {fileID: 1461520877}
   - {fileID: 241951472}
+  - {fileID: 1332592930}
   m_Father: {fileID: 666362746}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -8903,6 +8903,10 @@ PrefabInstance:
     - target: {fileID: 1186809748117878175, guid: 3f5b5b39d3788944d96dbeb999d2d057, type: 3}
       propertyPath: m_Name
       value: conectStatusPluto
+      objectReference: {fileID: 0}
+    - target: {fileID: 3942099222079621639, guid: 3f5b5b39d3788944d96dbeb999d2d057, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6473857889621378673, guid: 3f5b5b39d3788944d96dbeb999d2d057, type: 3}
       propertyPath: m_Pivot.x

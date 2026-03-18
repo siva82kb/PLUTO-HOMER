@@ -1,135 +1,3 @@
-// using UnityEngine;
-// using TMPro;
-// using System.Collections;
-// using System.IO;
-// using System.Diagnostics; // for Process
-// using Debug = UnityEngine.Debug;
-// using System.Collections.Concurrent;
-
-// public class DataUploadSceneHandler : MonoBehaviour
-// {
-//     public TextMeshProUGUI dataStatus;
-//     public string status = null;
-//     private bool hasUploaded = false; // ensures script runs only 
-//     private ConcurrentQueue<System.Action> _actionQueue = new ConcurrentQueue<System.Action>();
-//     private string progressFilePath = @"C:\DeviceSetups\Pluto\uploadProgress.txt";
-    
-
-//     void Start()
-//     {
-//         Debug.Log($"status : {DataManager.status}");
-//             // PlutoComm.stopSensorStream();
-
-//             // ConnectToRobot.disconnect();
-//         // });
-//         // Start a coroutine that checks file every 60 seconds
-//             StartCoroutine(CheckUploadStatusRoutine());
-//      StartCoroutine(CheckProgress());
-//     }
-
-//     IEnumerator CheckProgress()
-//     {
-//         while (true)
-//         {
-//             if (File.Exists(progressFilePath))
-//             {
-//                 string content = File.ReadAllText(progressFilePath);
-//                 Debug.Log($"{content}");
-//                 dataStatus.text = content; // Example: "Status:Uploading,Uploaded:23.45MB,Total:120.50MB,Percent:19.45%"
-//             }
-//             yield return new WaitForSeconds(30); // check every 5 seconds
-//         }
-//     }
-
-//     void Update()
-//     {
-//         if (DataManager.status != "no_upload")
-//         {
-//             // dataStatus.text = "Data is Uploading...";
-//             dataStatus.color = Color.green;
-//         }
-//             // dataStatus.text = $"{DataManager.status}";
-
-    
-//     }
-//     IEnumerator CheckUploadStatusRoutine()
-//     {
-//         while (true)
-//         {
-//             AppData.Instance.userData.ReadFile();
-//             // dataStatus.text = $"{DataManager.status}";
-//             if (DataManager.status == "upload_needed" && !hasUploaded)
-//             {
-//                 hasUploaded = true;
-//                 Debug.Log("Upload started...");
-//                 RunPythonUploader();
-//             }
-//             else if (DataManager.status == "no_upload" && hasUploaded)
-//             {
-//                 Debug.Log("Upload completed. Shutting down...");
-//                 ShutdownSystem();
-//                 yield break;
-//             }
-//             else if (DataManager.status == "no_upload")
-//             {
-                
-//                 Debug.Log("Upload completed. Shutting down...");
-//                 ShutdownSystem();
-//                 yield break;
-//             }
-
-//             yield return new WaitForSeconds(60f); // wait 1 minute
-//         }
-//     }
-
-    
-
-//     void RunPythonUploader()
-//     {
-//         string pythonScriptPath = @"C:/pythonscripts/uploadToAWS.pyw";
-//         // string pythonExecutionPath = @"C:/Users/Homer 6/AppData/Local/Programs/Python/Python313/pythonw.exe";
-//         string pythonExecutionPath = @"C:/Program Files/Python312/pythonw.exe";
-
-//         if (!File.Exists(pythonScriptPath))
-//         {
-//             Debug.LogError("Python script not found: " + pythonScriptPath);
-//             return;
-//         }
-
-//         try
-//         {
-//             Process process = new Process();
-//             process.StartInfo.FileName = pythonExecutionPath;
-//             process.StartInfo.Arguments = $"\"{pythonScriptPath}\"";
-//             process.StartInfo.UseShellExecute = false;
-//             process.StartInfo.CreateNoWindow = true;
-//             process.Start();
-//         }
-//         catch (System.Exception ex)
-//         {
-//             Debug.LogError("Error running Python script: " + ex.Message);
-//         }
-//     }
-
-//     void ShutdownSystem()
-//     {
-//         try
-//         {
-//             Application.Quit();
-//             // Process.Start("shutdown", "/s /t 0");
-//             #if UNITY_EDITOR
-//                 UnityEditor.EditorApplication.isPlaying = false; 
-//             #endif
-//             // Process.Start("shutdown", "/s /t 0");
-//         }
-//         catch (System.Exception ex)
-//         {
-//             Debug.LogError("Failed to shutdown: " + ex.Message);
-//         }
-//     }
-// }
-
-
 using System.Collections;
 
 using System.Collections.Concurrent;
@@ -145,7 +13,7 @@ using System.Threading;
 using TMPro;
  
 using UnityEngine;
-
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 using XCharts.Runtime;
@@ -177,6 +45,8 @@ public class dataUpload : MonoBehaviour
     {
 
         Debug.Log($"status : {DataManager.status}");
+        AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
+    AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
 
         StartCoroutine(CheckUploadStatusRoutine());
 
@@ -201,6 +71,7 @@ public class dataUpload : MonoBehaviour
         dataStatus.text = message;
 
         numFiles.text = $"Files To Upload : {totalFiles.ToString()}";
+
  
         if (message == "DONE")
 
@@ -227,6 +98,8 @@ public class dataUpload : MonoBehaviour
             hasUploaded = true;
 
             Debug.Log("Upload started...");
+            AppLogger.LogInfo($"Upload started...");
+
 
             RunPythonUploader();
 
@@ -237,6 +110,8 @@ public class dataUpload : MonoBehaviour
         {
 
             Debug.Log("Upload completed. Shutting down...");
+            AppLogger.LogInfo($"Upload completed. Shutting down...");
+
 
             ShutdownSystem();
 
@@ -247,6 +122,8 @@ public class dataUpload : MonoBehaviour
         {
  
             Debug.Log("Upload completed. Shutting down...");
+            AppLogger.LogInfo($"Upload completed. Shutting down...");
+
 
             ShutdownSystem();
 
@@ -273,6 +150,8 @@ public class dataUpload : MonoBehaviour
                 hasUploaded = true;
 
                 Debug.Log("Upload started...");
+            AppLogger.LogInfo($"Upload started....");
+
 
                 RunPythonUploader();
 
@@ -295,6 +174,7 @@ public class dataUpload : MonoBehaviour
             {
  
                 Debug.Log("Upload completed. Shutting down...");
+            AppLogger.LogInfo($"Upload completed. Shutting down...");
 
                 ShutdownSystem();
 
@@ -317,6 +197,7 @@ public class dataUpload : MonoBehaviour
         {
 
             Debug.LogError("File not found: " + DataManager.GetUploadStatusFile);
+            AppLogger.LogError($"File not found:  { DataManager.GetUploadStatusFile}");
 
             return;
 
@@ -386,13 +267,22 @@ public class dataUpload : MonoBehaviour
         // string pythonExecutionPath = @"C:/Users/Homer 6/AppData/Local/Programs/Python/Python313/pythonw.exe";
 
         // string pythonExecutionPath = @"C:/Users/gokul/AppData/Local/Programs/Python/Python313/pythonw.exe";
-        string pythonExecutionPath = @"C:/Program Files/Python312/pythonw.exe";
- 
+        // string pythonExecutionPath = @"C:/Program Files/Python314/pythonw.exe"; //device-6
+        // string pythonExecutionPath = @"C:/Program Files/Python313/pythonw.exe";// device -2
+        // string pythonExecutionPath = @"C:/Users/HOMER_10/AppData/Local/Programs/Python/Python314/pythonw.exe";  //Device-7
+        // string pythonExecutionPath = @"C:/Users/HOMER_08/AppData/Local/Programs/Python/Python313/pythonw.exe"; //Device -8
+        // string pythonExecutionPath = @"C:/Users/HOMER_11/AppData/Local/Programs/Python/Python314/pythonw.exe";  //Device-9
+
+        string pythonExecutionPath = awsManager.pythonExecutionPath;
+
+
         if (!File.Exists(pythonScriptPath))
 
         {
 
             Debug.LogError("Python script not found: " + pythonScriptPath);
+            AppLogger.LogError($"Python script not found: {pythonScriptPath}");
+
 
             return;
 
@@ -457,6 +347,8 @@ public class dataUpload : MonoBehaviour
         if (e.Data.StartsWith("TOTAL_FILES:"))
         {
             totalFiles = int.Parse(e.Data.Split(':')[1]);
+            AppLogger.LogInfo($"Files To Upload : {totalFiles.ToString()}");
+
             return; // Skip showing in UI text
         }
         if (e.Data.StartsWith("COMMAND:"))
@@ -473,11 +365,13 @@ public class dataUpload : MonoBehaviour
         {
             progress = 100f;
             Debug.Log("Upload complete!");
+            AppLogger.LogInfo("Upload Completed");
             message = e.Data;
         }
         else if (e.Data.StartsWith("ERROR"))
         {
             Debug.LogError(e.Data);
+            AppLogger.LogError($"{e.Data}");
             message = e.Data;
             ShutdownSystem();
         }

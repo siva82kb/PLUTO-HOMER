@@ -2569,7 +2569,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6fe5156afd287fb4aa2820dfc34f98e8, type: 3}
+  m_Sprite: {fileID: -7047063671896685998, guid: a34a867b3a3edb746b87352fb8d5c683, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2686,6 +2686,23 @@ MonoBehaviour:
   fktVal: {fileID: 0}
   nextButton: {fileID: 735278275}
   exit: {fileID: 241951478}
+  knobs:
+  - {fileID: 3036037590656471092, guid: 611f2ef685c35cd41a5e6ae4cccdbc2b, type: 3}
+  - {fileID: -4487659463741987603, guid: 2e588274770e97d4992a953f6b8e5a71, type: 3}
+  - {fileID: 8178724482200167804, guid: 557efbd46472f274eb54ba038bf2c4c1, type: 3}
+  - {fileID: 3925810272979064272, guid: 7c3ba3efb395f624f87dc70c460da547, type: 3}
+  - {fileID: 21300000, guid: 54a958cc4d2744b40b6bf7f3ae0a7eb6, type: 3}
+  - {fileID: -8517156809298970867, guid: 8302a778f3cd5d647b8060d315980639, type: 3}
+  - {fileID: 8260628464509057562, guid: e063739c236c96244aaf68842c177175, type: 3}
+  - {fileID: 1265657230423421801, guid: dfd6febd0b959784cbc8dd5515188383, type: 3}
+  - {fileID: -98683787005832116, guid: afce3bd6521dd6547b9843f9a26f32cc, type: 3}
+  - {fileID: -7047063671896685998, guid: a34a867b3a3edb746b87352fb8d5c683, type: 3}
+  - {fileID: 3209163135675214079, guid: 9c71ce6b02dbce745aa173c4e79de666, type: 3}
+  - {fileID: -2370768617259218243, guid: 27d813c9c5dcb924ab5094cb7df78535, type: 3}
+  fme1Fill: {fileID: 1013537663}
+  fme1Outline: {fileID: 1563532401}
+  fme2Fill: {fileID: 345020544}
+  fme2Outline: {fileID: 1777080315}
 --- !u!1 &1109107828
 GameObject:
   m_ObjectHideFlags: 0
@@ -4703,7 +4720,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 54a958cc4d2744b40b6bf7f3ae0a7eb6, type: 3}
+  m_Sprite: {fileID: -7047063671896685998, guid: a34a867b3a3edb746b87352fb8d5c683, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

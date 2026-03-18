@@ -30,6 +30,20 @@ public class FruitSpawner : MonoBehaviour
         }
        
     }
+        float lastTargetReachTime = -1f;
+    float lastInterTargetDuration = 0f;
+    void OnHatTargetReached()
+    {
+        float now = Time.time;
+
+        if (lastTargetReachTime > 0f)
+        {
+            lastInterTargetDuration = now - lastTargetReachTime;
+            Debug.Log($"fruit → Basket duration: {lastInterTargetDuration:F2} sec");
+        }
+
+        lastTargetReachTime = now;
+    }
     public void spawnFruit(GameObject targetBasket)
     {
 

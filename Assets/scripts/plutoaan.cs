@@ -26,6 +26,8 @@ public class PlutoAANController
     public static readonly float MAXCONTROLBOUND = 1f;          // Maximum control bound value.
     public static readonly float MINCONTROLBOUND = 0.16f;       // Minimum control bound value.
     public static float MAX_SPEED = 40.0f;
+    public static float MIN_SPEED = 10.0f;
+
     public float MECH_SPEED = 0f;
 
     public static readonly string[] ADAPTFILEHEADER = new string[] {
@@ -47,7 +49,7 @@ public class PlutoAANController
     public enum PlutoAANState
     {
         NONE = 0,                       // None state. The AAN is not engaged.
-        NEWTRAILTARGETSET,              // Target set but not started moving.
+        NEWTRIALTARGETSET,              // Target set but not started moving.
         AROMMOVING,                     // Moving in the AROM.
         RELAXTOAROM,                    // Relax control to reach nearest AROM edge.
         ASSISTTOTARGETINBOUNDARY,       // Assisting to reach target.
@@ -128,7 +130,7 @@ public class PlutoAANController
 
         // Logging files
         execFileName = null;
-        adaptFileName = DataManager.GetAanAdaptFileName(mechanismName);
+        // adaptFileName = DataManager.GetAanAdaptFileName(mechanismName);
 
         // Execution related variables
         initialPosition = 0;
@@ -274,7 +276,7 @@ private bool CheckNoMovement(float actual, float aromInitPos)
         PlutoAANState _prevstate = state;
         switch (state)
         {
-            case PlutoAANState.NEWTRAILTARGETSET:
+            case PlutoAANState.NEWTRIALTARGETSET:
 
                 //temp add
                 checkVolMov = false;
@@ -416,7 +418,7 @@ private bool CheckNoMovement(float actual, float aromInitPos)
         positionQ.Enqueue(actual);
         timeQ.Enqueue(trialTime);
         stateChange = true;
-        state = PlutoAANState.NEWTRAILTARGETSET;
+        state = PlutoAANState.NEWTRIALTARGETSET;
         PlutoAanLogger.LogInfo($"SetNewTrialDetails | {initialPosition} -> {targetPosition} in {maxDuration}");
     }
 
@@ -582,7 +584,7 @@ public static class PlutoAanLogger
             {
                 string _user = AppData.Instance.userData != null ? AppData.Instance.userData.hospNumber : "";
                 string _trialno = AppData.Instance.selectedMechanism != null ? AppData.Instance.selectedMechanism.trialNumberDay.ToString() : "";
-                string _msg = $"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} {InBraces(_user), -10} {InBraces(AppLogger.currentScene), -12} {InBraces(AppLogger.currentMechanism), -8} {InBraces(AppLogger.currentGame), -8} {InBraces(_trialno), -4} >> {message}";
+                string _msg = $"{DateTime.Now:dd-MM-yyyy HH:mm:ss} {logMsgType,-7} {InBraces(_user), -12} {InBraces(AppLogger.currentScene), -16} {InBraces(AppLogger.currentMechanism), -8} {InBraces(AppLogger.currentGame), -10} {InBraces(_trialno), -4} >> {message}";
                 logWriter.WriteLine(_msg);
                 logWriter.Flush();
                 if (DEBUG) UnityEngine.Debug.Log(_msg);

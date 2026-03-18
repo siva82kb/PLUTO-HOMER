@@ -11,7 +11,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/MAIN.unity
     guid: 6ca3db99d91ceea4ca68eb55d0550929
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/GETCONFIG.unity
     guid: acf265e6ed4c9a04089f4e04fb205d6b
   - enabled: 1
@@ -20,9 +20,6 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/AAN.unity
     guid: e4566bcb5dba8834dbba39a5ab92d390
-  - enabled: 1
-    path: Assets/Scenes/CONFIG.unity
-    guid: 5acedfc7e9c3b7248a5a88c47481d77e
   - enabled: 1
     path: Assets/Scenes/CHMECH.unity
     guid: 066c3fcbb81e1cc4f804ee26f774bb16
@@ -68,5 +65,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/DATAUPLOAD.unity
     guid: 0729e0a8a0114454d8d67cca0c87d508
+  - enabled: 1
+    path: Assets/Scenes/CONFIG.unity
+    guid: 5acedfc7e9c3b7248a5a88c47481d77e
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

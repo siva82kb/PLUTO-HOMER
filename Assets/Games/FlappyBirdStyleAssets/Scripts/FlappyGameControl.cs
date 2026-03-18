@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -10,12 +9,11 @@ using Michsky.UI.ModernUIPack;
 using Unity.VisualScripting;
 using TMPro;
 
-
 public class FlappyGameControl : MonoBehaviour
 {
     public AudioClip[] winClip;
     public AudioClip[] hitClip;
-    public Text ScoreText;
+    public TextMeshProUGUI ScoreText;
     public static FlappyGameControl Instance { get; private set; }
     public GameObject GameOverText;
     public GameObject[] pauseObjects, finishObjects;
@@ -27,6 +25,8 @@ public class FlappyGameControl : MonoBehaviour
     public float scrollSpeed = 0f;
     private int score;
     public BirdControl bc;
+    float lastTargetReachTime = -1f;
+    float lastInterTargetDuration = 0f;
 
     enum AssessStates
     {
@@ -58,13 +58,13 @@ public class FlappyGameControl : MonoBehaviour
     public Vector3? TargetPosition { get; private set; }
     public Vector3 PlayerPosition { get; private set; }
     private float PLAYSIZE;
-    private float triaTimeLeft;
+    private float trialTimeLeft;
     
     public int nTargets = 0;
     public int nSuccess = 0;
     public int nFailure = 0;
     private string prevScene = "CHGAME";
-     public Text timeLeftText, status, gameSpeedViewer;
+     public Text status, gameSpeedViewer;
     public enum GameStates
     {
         WAITING = 0,
@@ -102,7 +102,7 @@ public class FlappyGameControl : MonoBehaviour
     public GameObject aromRight;
     private GameObject targetTemp;
     public GameObject HSC; //HighScoreCanvas
-    public TextMeshProUGUI score1;
+    public TextMeshProUGUI score1, timeLeftText;
     private float lastHighScore, eventDelayTimer = 0f, gameSpeed;
     private bool runOnce = false, changeScene = false;
     public Image loadingImage;
@@ -113,6 +113,17 @@ public class FlappyGameControl : MonoBehaviour
     private GameSpeedController gsc = null;
     bool speedControlsVisible = false;
     public TextMeshProUGUI  finalScore;
+    
+    public GameObject celebrationPanel;
+    public TextMeshProUGUI scoreComparisonTxt;
+    public TextMeshProUGUI yesterdayScoreTxt;
+    public TextMeshProUGUI todayScoreTxt;
+    public TextMeshProUGUI starCount;
+    public GameObject GameOverStar, starLabel, instructionPanel;
+    public int _starCount;
+    private int[] scores;
+    private float mechMinDuration, mechMaxDuration, mechMinThreshold, mechMaxThreshold;
+
 
 
     void Awake()
@@ -134,7 +145,10 @@ public class FlappyGameControl : MonoBehaviour
     private void InitializeGame()
     {
         reminderPanel = GameObject.FindGameObjectWithTag("ReminderPanel");
+        if(AppData.Instance.selectedGame.isAchievedToday())starLabel.GetComponent<Image>().color = Color.white;
+
         gameOverPanel.SetActive(false);
+        instructionPanel.SetActive(false);
         // Intialize game logic variables
         gameState = GameStates.WAITING;
         // Clear even flags.
@@ -150,7 +164,12 @@ public class FlappyGameControl : MonoBehaviour
         prom = AppData.Instance.selectedMechanism.CurrentProm;
         aprom = AppData.Instance.selectedMechanism.CurrentAProm;
 
+        setMinMaxDurationOfMech();
+
+
         gameSpeed = AppData.Instance.speedData.gameSpeed;
+        MOVEDURATION= GetTargetEndTime(gameSpeed);
+
         // Attach PLUTO button event.
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
     }
@@ -158,6 +177,8 @@ public class FlappyGameControl : MonoBehaviour
     public float AngleToScreen(float angle) =>  ( -3f + (angle - aprom[0]) * (PLAYSIZE) / (aprom[1] - aprom[0]));
     void Start()
     {
+        AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
+        AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
         InitializeGame();
         initializeGameSpeedController();
         
@@ -180,6 +201,14 @@ public class FlappyGameControl : MonoBehaviour
             aromRight.transform.position.z
         );
         SetVisibility(false);
+        celebrationPanel.SetActive(false);
+        updateStarCount();
+        
+        scores = GameFuncs.GetScores();
+        Debug.Log($"{scores[0]}/{scores[1]}");
+        AppLogger.LogInfo($"YesterDay's Score: {scores[1]} | Today's Score: {scores[0]}");
+
+        
         HS.text = $"{Others.highestSuccessRate:F0} %";
 
         if (AppData.Instance.selectedMechanism.trialNumberDay >= AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
@@ -193,7 +222,7 @@ public class FlappyGameControl : MonoBehaviour
         }
 
     }
-        private void initializeGameSpeedController()
+    private void initializeGameSpeedController()
     {
         // Hide game speed control initially
         // gameSpeedControl.SetActive(false);
@@ -211,11 +240,12 @@ public class FlappyGameControl : MonoBehaviour
         gsc.gameSpeedText.text = $"{AppData.Instance.speedData.gameSpeed:F2}";
     }
 
-
+    public void updateStarCount()
+    {
+        starCount.text = $"{AppData.Instance.selectedGame.cummulativeStars.ToString("D2")}";
+    }
     void Update()
     {
-
-
         if (isGamePaused && gameState != GameStates.PAUSED) PauseGame();
         else if (!isGamePaused && gameState == GameStates.PAUSED) ResumeGame();
         if (changeScene && gameState == GameStates.DONE)
@@ -255,9 +285,6 @@ public class FlappyGameControl : MonoBehaviour
         PlutoComm.sendHeartbeat();
         if (isGameStarted)
         { UpdateGameTimerUI(); }
-        // Send PLUTO heartbeat
-        // PlutoComm.sendHeartbeat();
-
         // Handle the current game state.
         RunGameStateMachine();
 
@@ -266,14 +293,12 @@ public class FlappyGameControl : MonoBehaviour
         targetTemp = GameObject.FindGameObjectWithTag("Target");
         TargetPosition = targetTemp != null ? targetTemp.transform.position : null;
         prevSpawnTime += Time.deltaTime;
-        Debug.Log(scrollSpeed);
     }
      public void restartGame()
     {
-        // HideFinished();
         gameOverPanel.SetActive(false);
         string currentSceneName = SceneManager.GetActiveScene().name;
-        AppLogger.LogInfo($"The Game is restarted {currentSceneName}");
+        // AppLogger.LogInfo($"The Game is restarted {currentSceneName}");
         SceneManager.LoadScene(currentSceneName);
     }
 
@@ -293,9 +318,17 @@ public class FlappyGameControl : MonoBehaviour
                 obj.SetActive(state);
         }
     }
+    float GetTargetEndTime(float gameSpeed)
+    {
+        float t = (gameSpeed - HomerTherapy.MinSpeed) / (HomerTherapy.MaxSpeed - HomerTherapy.MinSpeed);
+        t = Mathf.Clamp01(t);
+
+        return Mathf.Lerp(mechMaxDuration,mechMinDuration, t);
+    }
+
     public void increaseGameSpeed()
     {
-         if (gameSpeed >= 40.0f) return;
+         if (gameSpeed >= PlutoAANController.MAX_SPEED) return;
 
         gameSpeed += 1.0f;
         gsc.gameSpeedText.text = $"{(int)gameSpeed}";
@@ -303,48 +336,62 @@ public class FlappyGameControl : MonoBehaviour
         UpdateScrollSpeed();
         Debug.Log($"gs - {AppData.Instance.speedData.gameSpeed} + {gameSpeed}");
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s game speed increased to {gameSpeed} and the Scroll Speed is {scrollSpeed}");
+        AppData.Instance.annotation=$"GS: {gameSpeed} | MT: {MOVEDURATION:F2}";
+
 
     }
     public void decreaseGameSpeed()
     {
-
-        string mech = PlutoComm.MECHANISMS[PlutoComm.mechanism];
-        bool isFME = mech == "FME1" || mech == "FME2";
-
-        if ((isFME && gameSpeed <= 1.0f) || (!isFME && gameSpeed <= 10.0f)) return;
+        if (gameSpeed <= PlutoAANController.MIN_SPEED) return;
 
         gameSpeed -= 1.0f;
         gsc.gameSpeedText.text = $"{(int)gameSpeed}";
 
         UpdateScrollSpeed();
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s game speed decreased to {gameSpeed} and the Scroll Speed is {scrollSpeed}");
-
+        AppData.Instance.annotation=$"GS: {gameSpeed} | MT: {MOVEDURATION:F2}";
 
     }
+
+
     private void UpdateScrollSpeed()
     {
-        // Use finer scaling for scroll speed at lower increments
-        float scrollFactor =  0.05f;
-        scrollSpeed = -2f - (scrollFactor * gameSpeed);
+        MOVEDURATION = GetTargetEndTime(gameSpeed);
+        float distance = spawnXposition; 
+        scrollSpeed = -(distance / MOVEDURATION);
+        
+        Debug.Log($"Game Speed: {gameSpeed}, Duration: {MOVEDURATION}, Scroll Speed: {scrollSpeed}");
     }
-    //     public void ShowFinished()
-    // {
-    //     // finalScore.text = $"{score:D3}";
-    //     finalScore.text = $"{nSuccess:D3}";
 
-    //     foreach (GameObject g in finishObjects)
-    //     {
-    //         g.SetActive(true);
-    //     }
-    // }
+    private void setMinMaxDurationOfMech()
+    {
+        string mech = AppData.Instance.selectedMechanism.name;
+        mechMinDuration = (aprom[1]-aprom[0])/HomerTherapy.MaxSpeed;
+        mechMaxDuration = (aprom[1]-aprom[0])/HomerTherapy.MinSpeed;
+        switch (mech)
+        {
+            case"WFE":
+            case"WURD":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechWFEAndWURD;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechWFEAndWURD;
+                break;
+            case"HOC":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechofHOC;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechOfHOC;
+                break;
+            case"FPS":
+            case"FME1":
+            case"FME2":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechFPSAndFME;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechFPSAndFME;
+                break;
+        }
+        if(mechMinDuration < mechMinThreshold) mechMinDuration= mechMinThreshold;
+        if(mechMaxDuration > mechMaxThreshold) mechMaxDuration = mechMaxThreshold;
 
-    // public void HideFinished()
-    // {
-    //     foreach (GameObject g in finishObjects)
-    //     {
-    //         g.SetActive(false);
-    //     }
-    // }
+        Debug.Log($" mech Min speed : { mechMaxDuration}, max :{mechMinDuration}");
+    }
+
     public void spawnColumn()
     {
         float spawnInterval = Mathf.Max(0.5f, 2f - (gameSpeed - 10f) * 0.05f);
@@ -355,7 +402,7 @@ public class FlappyGameControl : MonoBehaviour
             nTargets++;
             columns[CurrentColumn].transform.position = new Vector3(BirdControl.rb2d.transform.position.x + spawnXposition, targetPosition, 0);
             columns[CurrentColumn].tag = "Target";
-            // Debug.Log($"{(BirdControl.rb2d.transform.position.x + spawnXposition, targetPosition, 0)}");
+            Debug.Log($"{(BirdControl.rb2d.transform.position.x + spawnXposition, targetPosition, 0)}");
             if (CurrentColumn == 0)
             {
                 columns[columnPoolSize - 1].tag = "Untagged";
@@ -383,9 +430,8 @@ public class FlappyGameControl : MonoBehaviour
         isGamePaused = true;
         Time.timeScale = 0;
         showPaused();
-        // PauseButton.SetActive(false);
-        // ResumeButton.SetActive(true);
-        // ExitButton.SetActive(false);
+        AppLogger.LogInfo("Game Paused");
+
     }
 
     public void ResumeGame()
@@ -394,11 +440,11 @@ public class FlappyGameControl : MonoBehaviour
         isGamePaused = false;
         gameState = _prevGameState;
         Time.timeScale = 1;
-        // PauseButton.SetActive(true);
-        // ResumeButton.SetActive(false);
         ExitButton.SetActive(true);
         // Send PLUTO heartbeat
         PlutoComm.sendHeartbeat();
+                AppLogger.LogInfo("Game Resumed");
+
 
         if ((PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME1") && (PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME2"))
         {
@@ -406,13 +452,13 @@ public class FlappyGameControl : MonoBehaviour
             PlutoComm.setControlBound(AppData.Instance.CurrentControlBound);
             PlutoComm.setControlDir(0);
         }
-        AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- game resumed");
+        // AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- game resumed");
         
     }
 
     void UpdateGameTimerUI()
     {
-        timerObject.specifiedValue = Mathf.Clamp(100 * (90 - triaTimeLeft) / 90f, 0, 100);
+        timerObject.specifiedValue = Mathf.Clamp(100 * (90 - trialTimeLeft) / 90f, 0, 100);
     }
      private IEnumerator ShowForSeconds(GameObject obj, float seconds)
     {
@@ -438,7 +484,7 @@ public class FlappyGameControl : MonoBehaviour
     {
         if (AppData.Instance.previousSuccessRates != null)
         {
-            SuccessRateBanner.SetActive(true);
+            // SuccessRateBanner.SetActive(true);
             prevSR.text = $" previous SR : {AppData.Instance.previousSuccessRates[0]}%";
             currSR.text = $"Current Success Rate : {AppData.Instance.previousSuccessRates[1]}%";
         }
@@ -460,6 +506,7 @@ public class FlappyGameControl : MonoBehaviour
     public void BallCaught() {
         isTargetHit = true;
         isTargetMissed = false;
+        OnTargetReached();
         if (skipFirstPoint) nSuccess++;
         else skipFirstPoint = true; 
         
@@ -469,6 +516,7 @@ public class FlappyGameControl : MonoBehaviour
         isTargetHit = false;
         isTargetMissed = true;
         nFailure++;
+        OnTargetReached();
     }
 
     public void BirdDied()
@@ -479,7 +527,7 @@ public class FlappyGameControl : MonoBehaviour
 
     public void BirdScored()
     {
-        if (triaTimeLeft < 0 && !birdDied)
+        if (trialTimeLeft < 0 && !birdDied)
         {
             gameOver = true;
             score = 0;
@@ -510,11 +558,9 @@ public class FlappyGameControl : MonoBehaviour
 
     public void StartGame()
     {
-        // scrollSpeed = -2 - 1 * (0.02f * AppData.Instance.speedData.gameSpeed);
-        //if (AppData.Instance.speedData.gameSpeed > 38f) gameSpeed = 38.0f;
-        scrollSpeed = -2f - (0.05f * gameSpeed);
+        hidePaused();
+        UpdateScrollSpeed();
 
-            hidePaused();
         // Start new trial.
         AppData.Instance.StartNewTrial();
          gsc.sessionDetailsText.text = $"sessionNo: {AppData.Instance.currentSessionNumber}\n" +
@@ -534,7 +580,7 @@ public class FlappyGameControl : MonoBehaviour
         AppData.Instance.aanController.ResetTrial();
         
         // Initialize game variables.
-        triaTimeLeft = HomerTherapy.TrialDuration;
+        trialTimeLeft = HomerTherapy.TrialDuration;
       //  Debug.Log($"trial time left :{triaTimeLeft}");
         // Reset score related variables.
         nTargets = 0;
@@ -543,11 +589,6 @@ public class FlappyGameControl : MonoBehaviour
 
         timerObject.isOn = true;
         timerObject.enabled = true;
-
-        // Disable buttons except the pause button.
-        // StartButton.SetActive(false);
-        // PauseButton.SetActive(true);
-        // ResumeButton.SetActive(false);
     }
 
     public bool IsGamePlaying()
@@ -556,19 +597,38 @@ public class FlappyGameControl : MonoBehaviour
             && gameState != GameStates.PAUSED
             && gameState != GameStates.STOP;
     }
+    
+    void OnTargetReached()
+    {
+        float now = Time.time;
+
+        if (lastTargetReachTime > 0f)
+        {
+            lastInterTargetDuration = now - lastTargetReachTime;
+            Debug.Log($"Duration between targets: {lastInterTargetDuration:F2} sec");
+        }
+
+        lastTargetReachTime = now;
+    }
+
 
     private void RunGameStateMachine()
     {
         // Check if the game is to be paused or unpaused.
-       // Debug.Log($"Game Update : {gameState}");
+        // Debug.Log($"Game Update : {gameState}");
         if (isGamePaused) PauseGame();
         else if (gameState == GameStates.PAUSED) ResumeGame();
 
         // Run the game timer
-        if (IsGamePlaying()) triaTimeLeft -= Time.deltaTime;
+        // if (IsGamePlaying()) trialTimeLeft -= Time.deltaTime;
+
+        if (IsGamePlaying() && trialTimeLeft > 0f)
+        {
+            trialTimeLeft -= Time.deltaTime;
+        }
         // Debug.Log(isGameStarted);
         // Act according to the current game state.
-        bool isTimeUp = triaTimeLeft <= 0;
+        bool isTimeUp = trialTimeLeft <= 0;
         switch (gameState)
         {
             case GameStates.WAITING:
@@ -593,8 +653,8 @@ public class FlappyGameControl : MonoBehaviour
                     targetAngle = HomerTherapy.GetNewTargetPositionUniformFull(arom, aprom);
                     targetPosition = AngleToScreen(targetAngle);
                     spawnColumn();
-                    MOVEDURATION = MoveDuration();
-                  //  Debug.Log($"mm :{MOVEDURATION}");
+                    // MOVEDURATION = MoveDuration();
+                    //  Debug.Log($"mm :{MOVEDURATION}");
                     // Set new trial in the AAN controller.
                     float checkFME = ((PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME1") && (PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME2")) ? gameSpeed : 20.0f;
                     AppData.Instance.aanController.SetNewTrialDetails(PlutoComm.angle, targetAngle, MOVEDURATION, checkFME);
@@ -643,68 +703,198 @@ public class FlappyGameControl : MonoBehaviour
              
                 break;
             case GameStates.PAUSED:
-                AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game paused");
+                // AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game paused");
                 //Debug.Log(isGamePaused);
                 break;
+            // case GameStates.STOP:
+            //     // Trial complete.
+            //     // Update AANController.
+            //     AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
+            //     instructionPanel.SetActive(true);
+
+            //     // Set AAN target if needed.
+            //     isGameFinished = true;
+            //     AppData.Instance.previousSuccessRates =null;
+            //     if (AppData.Instance.speedData.gameSpeed != gameSpeed)
+            //     {
+            //         AppData.Instance.speedData.updateGameSpeedfromGame(gameSpeed);
+            //         AppData.Instance.speedData.setGameSpeed(gameSpeed);
+            //     }
+            //         AppData.Instance.speedData.setMoveDuration(MOVEDURATION);
+
+                
+            //     if (AppData.Instance.aanController.stateChange) UpdatePlutoAANTarget();
+            //     // Change to done only when the AAN Controller is AromMoving or Idle state.
+            //     if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AROMMOVING
+            //         || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.IDLE)
+            //     {
+            //         float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
+            //         instructionPanel.SetActive(false);
+
+                                           
+            //         Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
+            //         // Stop the current game trial
+            //         if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
+            //         {
+            //             AppData.Instance.selectedGame.updateCummulativeStars();
+            //             celebrationPanel.SetActive(true);
+            //         }
+            //         AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+            
+            //         gameOverPanel.SetActive(!celebrationPanel.gameObject.activeSelf);
+            
+            //         if (gameOverPanel.gameObject.activeSelf)
+            //         {
+            //             GameOverStar.SetActive(AppData.Instance.selectedGame.isAchievedToday());
+            //             yesterdayScoreTxt.text = $"{scores[1]:D4}";
+            //             todayScoreTxt.text = $"{(scores[0]+nSuccess):D4}";
+            //         }
+            //         if (celebrationPanel.gameObject.activeSelf)
+            //         {
+            //             updateStarCount();
+            //             scoreComparisonTxt.text = $"{(scores[0] + nSuccess).ToString("D3")}";
+            //         }
+            //         // AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+            //         gameState = GameStates.DONE;
+            //         lastHighScore = AppData.Instance.successRate * (PlutoAANController.MAXCONTROLBOUND - AppData.Instance.CurrentControlBound);
+            //         if (AppData.Instance.previousSuccessRates == null)
+            //         {
+            //                 score1.text = $"{(int)lastHighScore}";
+            //                 AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(AppData.Instance.selectedMechanism.name, AppData.Instance.selectedGameName);
+            //                 // SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            //                 // ShowFinished();
+            //                 AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game finished");
+            //                 // finalScore.text = $"{AppData.Instance.selectedGame.cummulativeHits:D4}";
+
+            //         }
+            //         if (AppData.Instance.selectedMechanism.trialNumberDay == AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
+            //         {
+            //             AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- game finished and changed to Choose Mechanism scene due to allocated trials has over.");
+            //             SceneManager.LoadScene("CHMECH");
+            //         }
+            //     }
+            //     break;
+
             case GameStates.STOP:
                 // Trial complete.
                 // Update AANController.
                 AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
+                instructionPanel.SetActive(true);
+
                 // Set AAN target if needed.
                 isGameFinished = true;
-                AppData.Instance.previousSuccessRates =null;
+                AppData.Instance.previousSuccessRates = null;
                 if (AppData.Instance.speedData.gameSpeed != gameSpeed)
                 {
                     AppData.Instance.speedData.updateGameSpeedfromGame(gameSpeed);
                     AppData.Instance.speedData.setGameSpeed(gameSpeed);
                 }
-                
-                if (AppData.Instance.aanController.stateChange) UpdatePlutoAANTarget();
-                // Change to done only when the AAN Controller is AromMoving or Idle state.
+                AppData.Instance.speedData.setMoveDuration(MOVEDURATION);
+
+                if (AppData.Instance.aanController.stateChange) 
+                    UpdatePlutoAANTarget();
+                  // Change to done only when the AAN Controller is AromMoving or Idle state or after delay completes
                 if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AROMMOVING
-                    || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.IDLE)
+                    || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.IDLE
+                    )
                 {
-                    float gameTime = HomerTherapy.TrialDuration - triaTimeLeft;
-                    Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
-                    AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
-                    gameState = GameStates.DONE;
-                    lastHighScore = AppData.Instance.successRate * (PlutoAANController.MAXCONTROLBOUND - AppData.Instance.CurrentControlBound);
-                    if (AppData.Instance.previousSuccessRates == null)
+                    ProceedToGameEnd();
+                }
+                // Add delay when game is over but not in AROM-moving state
+                if (AppData.Instance.aanController.state != PlutoAANController.PlutoAANState.AROMMOVING)
+                {
+                    // Calculate delay based on game speed
+                    float endGameDelay = 0f;
+                    if (Mathf.Approximately(gameSpeed, 40f))
+                        endGameDelay = 5f;
+                    else if (Mathf.Approximately(gameSpeed, 10f))
+                        endGameDelay = 12f;
+                    else
+                        endGameDelay = Mathf.Lerp(12f, 5f, (gameSpeed - 10f) / 30f); // Linear interpolation for other speeds
+                    
+                    // Use eventDelayTimer for the countdown
+                    if (eventDelayTimer <= 0f)
                     {
-                        score1.text = $"{(int)lastHighScore}";
-                        if (lastHighScore > Others.highestSuccessRate)
+                        eventDelayTimer = endGameDelay;
+                    }
+                    else
+                    {
+                        eventDelayTimer -= Time.deltaTime;
+                        if (eventDelayTimer <= 0f)
                         {
-                            StartCoroutine(ShowForSeconds(HSC, 1.3f));
+                            // Delay completed - proceed with ending the game
+                            ProceedToGameEnd();
                         }
                         else
                         {
-                            AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(AppData.Instance.selectedMechanism.name, AppData.Instance.selectedGameName);
-                            // SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-                            // ShowFinished();
-                            AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game finished");
-                            finalScore.text = $"{AppData.Instance.selectedGame.cummulativeHits:D4}";
-
-                            gameOverPanel.SetActive(true);
-                            // finalScore.text = $"{nSuccess:D3}";
-                            
+                            break;
                         }
                     }
-                    if (AppData.Instance.selectedMechanism.trialNumberDay == AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
-                    {
-                        AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game finished and changed to Choose Mechanism scene due to allocated trials has over.");
-                        SceneManager.LoadScene("CHMECH");
-                    }
                 }
+                
+              
                 break;
+        
+        
         }
         UpdateText();
     }
 
     private void UpdateText()
     {
-        timeLeftText.text = $": {(int)triaTimeLeft}";
-        ScoreText.text = $"Score: {nSuccess}";
+        timeLeftText.text = $"Timer:{Mathf.Max(0, Mathf.CeilToInt(trialTimeLeft)):D2}s";
+        ScoreText.text = $"Score:{nSuccess}";
     }
+
+    private void ProceedToGameEnd()
+{
+    float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
+    instructionPanel.SetActive(false);
+
+    Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
+    
+    // Stop the current game trial
+    if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
+    {
+        AppData.Instance.selectedGame.updateCummulativeStars();
+                AppLogger.LogInfo($"Beat yesterday's score - {AppData.Instance.selectedGameName} game. 1 star added. Stars: {AppData.Instance.selectedGame.cummulativeStars:D2}");      
+
+        celebrationPanel.SetActive(true);
+    }
+    AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+
+    gameOverPanel.SetActive(!celebrationPanel.gameObject.activeSelf);
+
+    if (gameOverPanel.gameObject.activeSelf)
+    {
+        GameOverStar.SetActive(AppData.Instance.selectedGame.isAchievedToday());
+        yesterdayScoreTxt.text = $"{scores[1]:D4}";
+        todayScoreTxt.text = $"{(scores[0] + nSuccess):D4}";
+    }
+    if (celebrationPanel.gameObject.activeSelf)
+    {
+        updateStarCount();
+        scoreComparisonTxt.text = $"{(scores[0] + nSuccess).ToString("D3")}";
+    }
+    
+    gameState = GameStates.DONE;
+    lastHighScore = AppData.Instance.successRate * (PlutoAANController.MAXCONTROLBOUND - AppData.Instance.CurrentControlBound);
+    
+    if (AppData.Instance.previousSuccessRates == null)
+    {
+        score1.text = $"{(int)lastHighScore}";
+        AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(
+            AppData.Instance.selectedMechanism.name, 
+            AppData.Instance.selectedGameName);
+        AppLogger.LogInfo("Game Over");
+    }
+    
+    if (AppData.Instance.selectedMechanism.trialNumberDay == AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
+    {
+        AppLogger.LogInfo("Game over and changed to Choose Mechanism scene due to allocated trials has over.");
+        SceneManager.LoadScene("CHMECH");
+    }
+}
 
     private void UpdatePlutoAANTarget()
     {
@@ -726,7 +916,9 @@ public class FlappyGameControl : MonoBehaviour
 
     private float MoveDuration()
     {
-        float movduration= 0.5f * ((PlayerPosition.x + spawnXposition) - (PlayerPosition.x))/ -scrollSpeed ;
+        // float movduration= 0.5f * ((PlayerPosition.x + spawnXposition) - (PlayerPosition.x))/ -scrollSpeed ;
+        float movduration= ((PlayerPosition.x + spawnXposition) - (PlayerPosition.x))/ -scrollSpeed ;
+
         return movduration;
     }
     public void OnStartButtonClick() 
@@ -738,20 +930,45 @@ public class FlappyGameControl : MonoBehaviour
     {
         if(gameState == GameStates.DONE || gameState == GameStates.WAITING){
             Time.timeScale = 1f;
+            AppLogger.LogInfo("Exit Game");
             SceneManager.LoadScene(prevScene);
         }
         else
         {
             gameState = GameStates.STOP;
-            float gameTime = HomerTherapy.TrialDuration - triaTimeLeft;
+            float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
+            
             Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
             AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
             if (AppData.Instance.speedData.gameSpeed != gameSpeed)  AppData.Instance.speedData.setGameSpeed(gameSpeed);
+            AppData.Instance.speedData.setMoveDuration(MOVEDURATION);
+
+                                   // Stop the current game trial
+            if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
+            {
+                AppData.Instance.selectedGame.updateCummulativeStars();
+                celebrationPanel.SetActive(true);
+            }
             AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+            
+            gameOverPanel.SetActive(!celebrationPanel.gameObject.activeSelf);
+            
+            if (gameOverPanel.gameObject.activeSelf)
+            {
+                GameOverStar.SetActive(AppData.Instance.selectedGame.isAchievedToday());
+                yesterdayScoreTxt.text = $"{scores[1]:D4}";
+                todayScoreTxt.text = $"{(scores[0]+nSuccess):D4}";
+            }
+            if (celebrationPanel.gameObject.activeSelf)
+            {
+                updateStarCount();
+                scoreComparisonTxt.text = $"{(scores[0] + nSuccess).ToString("D3")}";
+            }
+            // AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
             gameState = GameStates.DONE;
             Time.timeScale = 1f;
             SceneManager.LoadScene(prevScene);
-                AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game exit");
+            AppLogger.LogInfo("Exit Game");
 
         }
     }
@@ -762,8 +979,15 @@ public class FlappyGameControl : MonoBehaviour
         else if (gameState != GameStates.STOP && gameState != GameStates.DONE) isGamePaused = !isGamePaused;
         else if (gameState == GameStates.DONE && isGameFinished) changeScene = true;
 
-        AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- PLUTO button pressed");
+        AppLogger.LogInfo("PLUTO button pressed");
 
+    }
+     private void OnDestroy()
+    {
+        if (ConnectToRobot.isPLUTO)
+        {
+            PlutoComm.OnButtonReleased -= onPlutoButtonReleased;
+        }
     }
 
 }

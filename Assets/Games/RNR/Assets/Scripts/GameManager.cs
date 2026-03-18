@@ -73,14 +73,16 @@ public class GameManager : MonoBehaviour
     public int nTargets = 0;
     public int nSuccess = 0;
     public int nFailure = 0;
+    private float mechMinDuration, mechMaxDuration, mechMinThreshold, mechMaxThreshold;
     public List<SeedController> seeds;
     private SeedController currentHighlighted;
     private GameObject[] detailObjects;
 
     private float rainTimer = 0f, convertedAngle=0f;
     private float highlightTimer = 0f;
-
-    private float rainDurationToGrow = 0.5f;    // needs 1s of rain
+    float maxRainDuration = 0.5f;   // slow game → longer rain
+    float minRainDuration = 0.15f;  // fast game → shorter rain
+    private float rainDurationToGrow = 0f;    // needs 1s of rain
     public float highlightDuration;     // highlighted for 3s
     private bool hasGrownThisCycle = false, runOnce = false;
     private SeedController lastHighlighted = null; // store last seed
@@ -95,6 +97,15 @@ public class GameManager : MonoBehaviour
     private bool isButtonPressed = false, isPaused = true, isFinished = false;
     public Vector3? TargetPosition { get; private set; }
     public Vector3 PlayerPosition { get; private set; }
+        public GameObject celebrationPanel;
+    public TextMeshProUGUI scoreComparisonTxt;
+    public TextMeshProUGUI yesterdayScoreTxt;
+    public TextMeshProUGUI todayScoreTxt;
+    public TextMeshProUGUI starCount;
+    public GameObject GameOverStar, starLabel, instructionPanel;
+    public int _starCount;
+    private int[] scores;
+
 
 
      private void Awake()
@@ -110,14 +121,15 @@ public class GameManager : MonoBehaviour
     }
     void Start()
     {
+        AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
+        AppLogger.LogInfo($"{SceneManager.GetActiveScene().name} scene started.");
         initializeGame();
+        if(AppData.Instance.selectedGame.isAchievedToday())starLabel.GetComponent<Image>().color = Color.white;
         GameObject cloudObj = Instantiate(cloudPrefab, new Vector3(0, 3.5f, 0), Quaternion.identity);
         playerCloud = cloudObj.GetComponent<CloudController>();
         PLAYSIZE = Camera.main.orthographicSize * Camera.main.aspect;
+        instructionPanel.SetActive(false);
 
-        // if (mechanismSpeed < 20) totalTargets = 12;
-        // else if (mechanismSpeed < 30) totalTargets = 16;
-        // else totalTargets = 20;
 
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
         finishObjects = GameObject.FindGameObjectsWithTag("ShowOnFinish");
@@ -127,6 +139,11 @@ public class GameManager : MonoBehaviour
         HideFinished();
         // HidePaused();
         SetVisibility(false);
+        updateStarCount();
+        
+        scores = GameFuncs.GetScores();
+        Debug.Log($"{scores[0]}/{scores[1]}");
+        AppLogger.LogInfo($"YesterDay's Score: {scores[1]} | Today's Score: {scores[0]}");
 
         //arom
         aromLeft.transform.position = new Vector3(
@@ -150,7 +167,17 @@ public class GameManager : MonoBehaviour
         }
             
     }
+    public void updateStarCount()
+    {
+        starCount.text = $"{AppData.Instance.selectedGame.cummulativeStars.ToString("D2")}";
+    }
+    float GetTargetEndTime(float gameSpeed)
+    {
+        float t = (gameSpeed - HomerTherapy.MinSpeed) / (HomerTherapy.MaxSpeed - HomerTherapy.MinSpeed);
+        t = Mathf.Clamp01(t);
 
+        return Mathf.Lerp(mechMaxDuration,mechMinDuration, t);
+    }
     public void StartGame()
     {
          // Start new trial.
@@ -179,19 +206,25 @@ public class GameManager : MonoBehaviour
 
         HidePaused();
     }
-    private float CalculateHighlightDuration(float mechanismSpeed)
+    private float CalculateHighlightDuration()
     {
-        float slope = (0.2f - 1.0f) / (40f - 10f);  // (-0.8 / 30)
-        rainDurationToGrow = 1.0f + slope * (mechanismSpeed - 10f);
-
-        // Clamp to safe range
-        rainDurationToGrow = Mathf.Clamp(rainDurationToGrow, 0.2f, 1.0f);
-        // Linear relation between speed (10 → 40) and duration (7s → 4.5s)
-        float duration = -0.0833f * mechanismSpeed + 7.833f;
-
-        // Clamp so it doesn’t go below or above intended range
-        return Mathf.Clamp(duration, 4.5f, 7f);
+        // rainDurationToGrow = 0.2f;
+        
+        CalculateRainDurationToGrow();
+        float  duration = GetTargetEndTime(gameSpeed);
+        return duration;
     }
+    private void CalculateRainDurationToGrow()
+    {
+        float minSpeed = 10f;
+        float maxSpeed = 40f;
+
+
+
+        float t = Mathf.InverseLerp(HomerTherapy.MinSpeed, HomerTherapy.MaxSpeed, gameSpeed);
+        rainDurationToGrow= Mathf.Lerp(maxRainDuration, minRainDuration, t);
+    }
+
 
     void Update()
     {
@@ -219,21 +252,6 @@ public class GameManager : MonoBehaviour
             SetVisibility(speedControlsVisible);
 
         }
-
-        // if (isGamePaused && gameState != GameStates.PAUSED) pauseGame();
-        // else if (!isGamePaused && gameState == GameStates.PAUSED) resumeGame();
-        // if ((isFinished && Input.GetKeyDown(KeyCode.P)) || (isFinished && isButtonPressed))
-        // {
-
-        //     if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AROMMOVING
-        //             || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.IDLE)
-        //     {
-        // OnReStartButtonClick();
-        //     }
-        //     isButtonPressed = false;
-        // }
-        // PlayerPosition = GameObject.FindGameObjectWithTag("Player").transform.position;
-//        Debug.Log($"chageScene - {changeScene && gameState == GameStates.DONE},   --{changeScene},--{gameState}");
        
 
         if (currentHighlighted != null)
@@ -291,7 +309,7 @@ public class GameManager : MonoBehaviour
             if (currentHighlighted.IsBeingRainedOn)
             {
                 rainTimer += Time.deltaTime;
-                
+                Debug.Log($" raintimer :{rainTimer}");
                 if (rainTimer >= rainDurationToGrow)
                 {
                     currentHighlighted.Grow();
@@ -307,8 +325,9 @@ public class GameManager : MonoBehaviour
         }
 
         // Score.text = $"Score : {score}";
-        Score.text = $"SCORE: {score}";
-        Timer.text = "TIME: " + trialTimeLeft.ToString("F0");
+        Score.text = $"Score:{(int)score}";
+        // Timer.text = $"Timer:{(int)trialTimeLeft:D2}s";
+        Timer.text = $"Timer:{Mathf.Max(0, Mathf.CeilToInt(trialTimeLeft)):D2}s";
     }
 
     void FixedUpdate()
@@ -321,30 +340,26 @@ public class GameManager : MonoBehaviour
 
     }
 
-        public void increaseGameSpeed()
+    public void increaseGameSpeed()
     {
-           if (gameSpeed >= 40.0f) return;
+        if (gameSpeed >= PlutoAANController.MAX_SPEED) return;
 
         gameSpeed += 1.0f;
         gsc.gameSpeedText.text = $"{gameSpeed:F2}";
-        highlightDuration = CalculateHighlightDuration(gameSpeed);
+        highlightDuration = CalculateHighlightDuration();
 
-        Debug.Log($"gs - {AppData.Instance.speedData.gameSpeed} + {gameSpeed}");
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s  game speed decreased to {gameSpeed} - HightlightDuration decreased - set to {highlightDuration}");
-
-        
+        AppData.Instance.annotation=$"GS: {gameSpeed} | MT: {highlightDuration:F2}";
+    
     }
     public void decreaseGameSpeed()
     {
-        string mech = PlutoComm.MECHANISMS[PlutoComm.mechanism];
-
-        if ((mech != "FME1" && mech != "FME2" && gameSpeed <= 10.0f) ||
-            ((mech == "FME1" || mech == "FME2") && gameSpeed <= 1.0f))
-            return;
+        if (gameSpeed <= PlutoAANController.MIN_SPEED) return;
 
         gameSpeed -= 1.0f;
         gsc.gameSpeedText.text = $"{gameSpeed:F2}";
-        highlightDuration = CalculateHighlightDuration(gameSpeed);
+        highlightDuration = CalculateHighlightDuration();
+        AppData.Instance.annotation=$"GS: {gameSpeed} | MT: {highlightDuration:F2}";
         AppLogger.LogInfo($"{AppData.Instance.selectedGameName}'s  game speed decreased to {gameSpeed} - HightlightDuration decreased - set to {highlightDuration}");
     }
     private void SetVisibility(bool state)
@@ -370,12 +385,16 @@ public class GameManager : MonoBehaviour
         arom = AppData.Instance.selectedMechanism.CurrentArom;
         prom = AppData.Instance.selectedMechanism.CurrentProm;
         aprom = AppData.Instance.selectedMechanism.CurrentAProm;
+        setMinMaxDurationOfMech();
+
 
         gameSpeed = AppData.Instance.speedData.gameSpeed; // degrees/sec
-        highlightDuration = CalculateHighlightDuration(gameSpeed);
+        highlightDuration = CalculateHighlightDuration();
         // Attach PLUTO button event.
         PlutoComm.OnButtonReleased += onPlutoButtonReleased;
         reminderPanel.SetActive(false);
+        celebrationPanel.SetActive(false);
+
         initializeGameSpeedController();
 
     }
@@ -411,7 +430,7 @@ public class GameManager : MonoBehaviour
     {
         HideFinished();
         string currentSceneName = SceneManager.GetActiveScene().name;
-        AppLogger.LogInfo($"The Game is restarted {currentSceneName}");
+        // AppLogger.LogInfo($"The Game is restarted {currentSceneName}");
         SceneManager.LoadScene(currentSceneName);
     }
 
@@ -424,7 +443,11 @@ public class GameManager : MonoBehaviour
 
     private void RunGameStateMachine()
     {
-        if (IsGamePlaying()) trialTimeLeft -= Time.deltaTime;
+        if (IsGamePlaying() && trialTimeLeft > 0f)
+        {
+            trialTimeLeft -= Time.deltaTime;
+        }
+
         bool isTimeUp = trialTimeLeft <= 0;
 
         switch (gameState)
@@ -463,6 +486,7 @@ public class GameManager : MonoBehaviour
                     hasGrownThisCycle = false;
                     // Set new trial in the AAN controller.
                     float checkFME = ((PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME1") && (PlutoComm.MECHANISMS[PlutoComm.mechanism] != "FME2")) ? gameSpeed : 20.0f;
+                    Debug.Log($" check fme {checkFME}");
                     AppData.Instance.aanController.SetNewTrialDetails(PlutoComm.angle, convertedAngle, highlightDuration, checkFME);
                     //AppData.Instance.aanController.SetNewTrialDetails(PlutoComm.angle, targetAngle, MOVEDURATION, AppData.Instance.speedData.gameSpeed);
                     eventDelayTimer = 0.05f;
@@ -518,66 +542,161 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameStates.PAUSED:
-                AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- Game Paused");
+                // AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- Game Paused");
                 break;
 
+            // case GameStates.STOP:
+            //     foreach (var seed in seeds)
+            //     {
+            //      seed.SetHighlight(false);
+            //      seed.highLighter.SetActive(false);
+            //     }
+
+            //     // Update AANController.
+            //     AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
+            //     // Set AAN target if needed.
+            //     isGameFinished = true;
+            //     instructionPanel.SetActive(true);
+
+            //     AppData.Instance.previousSuccessRates =null;
+            //     if (AppData.Instance.speedData.gameSpeed != gameSpeed)
+            //     {
+            //         AppData.Instance.speedData.setGameSpeed(gameSpeed);
+            //     }
+            //         AppData.Instance.speedData.setMoveDuration(highlightDuration);
+
+                
+            //     if (AppData.Instance.aanController.stateChange) UpdatePlutoAANTarget();
+            //     // Change to done only when the AAN Controller is AromMoving or Idle state.
+            //     if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AROMMOVING
+            //         || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.IDLE)
+            //     {
+            //         float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
+            //         instructionPanel.SetActive(false);
+
+                                  
+            //         Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
+
+            //           // Stop the current game trial
+            //         if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
+            //         {
+            //             AppData.Instance.selectedGame.updateCummulativeStars();
+            //             celebrationPanel.SetActive(true);
+            //         }
+            //         AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+                    
+            //         gameOverPanel.SetActive(!celebrationPanel.gameObject.activeSelf);
+                    
+            //         if (gameOverPanel.gameObject.activeSelf)
+            //         {
+            //             GameOverStar.SetActive(AppData.Instance.selectedGame.isAchievedToday());
+            //             yesterdayScoreTxt.text = $"{scores[1]:D4}";
+            //             todayScoreTxt.text = $"{(scores[0]+nSuccess):D4}";
+            //         }
+            //         if (celebrationPanel.gameObject.activeSelf)
+            //         {
+            //             updateStarCount();
+            //             scoreComparisonTxt.text = $"{(scores[0] + nSuccess).ToString("D3")}";
+            //         }
+            //         // AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+            //         gameState = GameStates.DONE;
+            //         lastHighScore = AppData.Instance.successRate * (PlutoAANController.MAXCONTROLBOUND - AppData.Instance.CurrentControlBound);
+            //         if (AppData.Instance.previousSuccessRates == null)
+            //         {
+            //             scorex.text = $"{(int)lastHighScore}";
+            //             Debug.Log($" Others.highestSuccessRate :{Others.highestSuccessRate} + {lastHighScore}");
+            //             // if (lastHighScore > Others.highestSuccessRate)
+            //             // {
+            //             //     StartCoroutine(ShowForSeconds(HSC, 1.3f));
+            //             // }
+            //             // else
+            //             // {
+            //                 AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(AppData.Instance.selectedMechanism.name, AppData.Instance.selectedGameName);
+            //                 // SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            //                 ShowFinished();
+            //             // }
+
+
+            //         }
+            //         if (AppData.Instance.selectedMechanism.trialNumberDay == AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
+            //         {
+            //             AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game finished and changed to Choose Mechanism scene due to allocated trials has over.");
+            //             SceneManager.LoadScene("CHMECH");
+            //         }
+            //     }
+
+            //     break;
             case GameStates.STOP:
                 foreach (var seed in seeds)
                 {
-                 seed.SetHighlight(false);
-                 seed.highLighter.SetActive(false);
+                    seed.SetHighlight(false);
+                    seed.highLighter.SetActive(false);
                 }
 
                 // Update AANController.
                 AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
                 // Set AAN target if needed.
                 isGameFinished = true;
-                AppData.Instance.previousSuccessRates =null;
+                instructionPanel.SetActive(true);
+
+                AppData.Instance.previousSuccessRates = null;
                 if (AppData.Instance.speedData.gameSpeed != gameSpeed)
                 {
                     AppData.Instance.speedData.setGameSpeed(gameSpeed);
                 }
-                
-                if (AppData.Instance.aanController.stateChange) UpdatePlutoAANTarget();
-                // Change to done only when the AAN Controller is AromMoving or Idle state.
+                AppData.Instance.speedData.setMoveDuration(highlightDuration);
+
+                if (AppData.Instance.aanController.stateChange) 
+                    UpdatePlutoAANTarget();
+
+                     // Change to done only when the AAN Controller is AromMoving or Idle state or after delay completes
                 if (AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.AROMMOVING
-                    || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.IDLE)
+                    || AppData.Instance.aanController.state == PlutoAANController.PlutoAANState.IDLE
+                    )
                 {
-                    float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
-                    Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
-                    AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
-                    gameState = GameStates.DONE;
-                    lastHighScore = AppData.Instance.successRate * (PlutoAANController.MAXCONTROLBOUND - AppData.Instance.CurrentControlBound);
-                    if (AppData.Instance.previousSuccessRates == null)
+                    ProceedToGameEnd();
+                }
+                
+                // Add delay when game is over but not in AROM-moving state
+                if (AppData.Instance.aanController.state != PlutoAANController.PlutoAANState.AROMMOVING)
+                {
+                    // Calculate delay based on game speed
+                    float endGameDelay = 0f;
+                    if (Mathf.Approximately(gameSpeed, 40f))
+                        endGameDelay = 5f;
+                    else if (Mathf.Approximately(gameSpeed, 10f))
+                        endGameDelay = 12f;
+                    else
+                        endGameDelay = Mathf.Lerp(12f, 5f, (gameSpeed - 10f) / 30f); // Linear interpolation for other speeds
+                    
+                    // Use eventDelayTimer for the countdown
+                    if (eventDelayTimer <= 0f)
                     {
-                        scorex.text = $"{(int)lastHighScore}";
-                        Debug.Log($" Others.highestSuccessRate :{Others.highestSuccessRate} + {lastHighScore}");
-                        if (lastHighScore > Others.highestSuccessRate)
+                        eventDelayTimer = endGameDelay;
+                    }
+                    else
+                    {
+                        eventDelayTimer -= Time.deltaTime;
+                        if (eventDelayTimer <= 0f)
                         {
-                            StartCoroutine(ShowForSeconds(HSC, 1.3f));
+                            // Delay completed - proceed with ending the game
+                            ProceedToGameEnd();
                         }
                         else
                         {
-                            AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(AppData.Instance.selectedMechanism.name, AppData.Instance.selectedGameName);
-                            // SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-                            ShowFinished();
+                            // Still waiting - don't proceed to game end yet
+                            break;
                         }
-
-
-                    }
-                    if (AppData.Instance.selectedMechanism.trialNumberDay == AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
-                    {
-                        AppLogger.LogInfo($"{AppData.Instance.selectedGameName}-- game finished and changed to Choose Mechanism scene due to allocated trials has over.");
-                        SceneManager.LoadScene("CHMECH");
                     }
                 }
-
+                
+               
                 break;
         }
     }
 
 
-private IEnumerator ShowForSeconds(GameObject obj, float seconds)
+    private IEnumerator ShowForSeconds(GameObject obj, float seconds)
     {
         obj.SetActive(true);
         loadingImage.gameObject.SetActive(true);
@@ -597,6 +716,64 @@ private IEnumerator ShowForSeconds(GameObject obj, float seconds)
         AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(AppData.Instance.selectedMechanism.name, AppData.Instance.selectedGameName);
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
+
+    private void ProceedToGameEnd()
+{
+    float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
+    instructionPanel.SetActive(false);
+
+    Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
+
+    // Stop the current game trial
+    if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
+    {
+        AppData.Instance.selectedGame.updateCummulativeStars();
+                AppLogger.LogInfo($"Beat yesterday's score - {AppData.Instance.selectedGameName} game. 1 star added. Stars: {AppData.Instance.selectedGame.cummulativeStars:D2}");      
+
+        celebrationPanel.SetActive(true);
+    }
+    AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+    
+    gameOverPanel.SetActive(!celebrationPanel.gameObject.activeSelf);
+    
+    if (gameOverPanel.gameObject.activeSelf)
+    {
+        GameOverStar.SetActive(AppData.Instance.selectedGame.isAchievedToday());
+        yesterdayScoreTxt.text = $"{scores[1]:D4}";
+        todayScoreTxt.text = $"{(scores[0] + nSuccess):D4}";
+    }
+    if (celebrationPanel.gameObject.activeSelf)
+    {
+        updateStarCount();
+        scoreComparisonTxt.text = $"{(scores[0] + nSuccess).ToString("D3")}";
+    }
+    
+    gameState = GameStates.DONE;
+    lastHighScore = AppData.Instance.successRate * (PlutoAANController.MAXCONTROLBOUND - AppData.Instance.CurrentControlBound);
+    
+    if (AppData.Instance.previousSuccessRates == null)
+    {
+        scorex.text = $"{(int)lastHighScore}";
+        Debug.Log($" Others.highestSuccessRate :{Others.highestSuccessRate} + {lastHighScore}");
+        // if (lastHighScore > Others.highestSuccessRate)
+        // {
+        //     StartCoroutine(ShowForSeconds(HSC, 1.3f));
+        // }
+        // else
+        // {
+            AppData.Instance.previousSuccessRates = AppData.Instance.userData.GetLastTwoSuccessRates(
+                AppData.Instance.selectedMechanism.name, 
+                AppData.Instance.selectedGameName);
+            ShowFinished();
+        // }
+    }
+    
+    if (AppData.Instance.selectedMechanism.trialNumberDay == AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
+    {
+        AppLogger.LogInfo("Game over and changed to Choose Mechanism scene due to allocated trials has over.");
+        SceneManager.LoadScene("CHMECH");
+    }
+}
 
     private void UpdatePlutoAANTarget()
     {
@@ -635,23 +812,52 @@ private IEnumerator ShowForSeconds(GameObject obj, float seconds)
         // map seedX → angle
         return Mathf.Lerp(aprom[0], aprom[1], Mathf.InverseLerp(minX, maxX, seedX));
     }
-float GetXPositionFromAngle(float targetAngle)
-{
-    float minX = float.MaxValue;
-    float maxX = float.MinValue;
-
-    // find true min/max X among all seeds (same as your original function)
-    foreach (var seed in seeds)
+    float GetXPositionFromAngle(float targetAngle)
     {
-        float x = seed.transform.position.x;
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
+        float minX = float.MaxValue;
+        float maxX = float.MinValue;
+
+        // find true min/max X among all seeds (same as your original function)
+        foreach (var seed in seeds)
+        {
+            float x = seed.transform.position.x;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+        }
+
+        // map angle → normalized position → X position
+        float normalizedPosition = Mathf.InverseLerp(aprom[0], aprom[1], targetAngle);
+        return Mathf.Lerp(minX, maxX, normalizedPosition);
     }
 
-    // map angle → normalized position → X position
-    float normalizedPosition = Mathf.InverseLerp(aprom[0], aprom[1], targetAngle);
-    return Mathf.Lerp(minX, maxX, normalizedPosition);
-}
+    private void setMinMaxDurationOfMech()
+    {
+        string mech = AppData.Instance.selectedMechanism.name;
+        mechMinDuration = (aprom[1]-aprom[0])/HomerTherapy.MaxSpeed;
+        mechMaxDuration = (aprom[1]-aprom[0])/HomerTherapy.MinSpeed;
+        switch (mech)
+        {
+            case"WFE":
+            case"WURD":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechWFEAndWURD;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechWFEAndWURD;
+                break;
+            case"HOC":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechofHOC;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechOfHOC;
+                break;
+            case"FPS":
+            case"FME1":
+            case"FME2":
+                mechMinThreshold = HomerTherapy.MinDurationOfMechFPSAndFME;
+                mechMaxThreshold = HomerTherapy.MaxDurationOfMechFPSAndFME;
+                break;
+        }
+        if(mechMinDuration < mechMinThreshold) mechMinDuration= mechMinThreshold;
+        if(mechMaxDuration > mechMaxThreshold) mechMaxDuration = mechMaxThreshold;
+
+        Debug.Log($" mech Min speed : { mechMaxDuration}, max :{mechMinDuration}");
+    }
 
 
 
@@ -662,7 +868,7 @@ float GetXPositionFromAngle(float targetAngle)
     {
          if(AppData.Instance.previousSuccessRates!=null)
         {
-            SuccessRateBanner.SetActive(true);
+            // SuccessRateBanner.SetActive(true);
             Debug.Log($" previous SR : {AppData.Instance.previousSuccessRates[0]}%");
             Debug.Log($"Current Success Rate : {AppData.Instance.previousSuccessRates[1]}%");
             prevSR.text = $" previous SR : {AppData.Instance.previousSuccessRates[0]}%";
@@ -682,8 +888,8 @@ float GetXPositionFromAngle(float targetAngle)
     public void ShowFinished()
     {
         // Time.timeScale = 0;
-        finalScore.text = $"{AppData.Instance.selectedGame.cummulativeHits:D4}";
-        AppLogger.LogInfo($" {AppData.Instance.selectedGameName} - Game finished");
+        // finalScore.text = $"{AppData.Instance.selectedGame.cummulativeHits:D4}";
+        AppLogger.LogInfo("Game Over");
         // RestartButton.SetActive(true);
         foreach (GameObject g in finishObjects) g.SetActive(true);
     }
@@ -701,9 +907,15 @@ float GetXPositionFromAngle(float targetAngle)
         isPaused = true;
         Time.timeScale = 0;
         showPaused();
-        // PauseButton.SetActive(false);
-        // ResumeButton.SetActive(true);
-        // ExitButton.SetActive(false);
+                AppLogger.LogInfo("Game Paused");
+
+    }
+    private void OnDestroy()
+    {
+        if (ConnectToRobot.isPLUTO)
+        {
+            PlutoComm.OnButtonReleased -= onPlutoButtonReleased;
+        }
     }
 
     public void EndGame()
@@ -712,13 +924,11 @@ float GetXPositionFromAngle(float targetAngle)
         Time.timeScale = 1f;
         if (AppData.Instance.selectedMechanism.trialNumberDay >= AppData.Instance.userData.mechMoveTimePrsc[AppData.Instance.selectedMechanism.name])
         {
-              reminderPanel.SetActive(true);
-            
+            reminderPanel.SetActive(true);
         }
         else
         {
             reminderPanel.SetActive(false);
-
         }
         // ShowFinished();
         Debug.Log("Game Over – 60s finished!");
@@ -731,11 +941,10 @@ float GetXPositionFromAngle(float targetAngle)
         isPaused = false;
         gameState = _prevGameState;
         Time.timeScale = 1;
-        // PauseButton.SetActive(true);
-        // ResumeButton.SetActive(false);
         ExitButton.SetActive(true);
         reminderPanel.SetActive(false);
-            
+                AppLogger.LogInfo("Game Resumed");
+
 
          // Send PLUTO heartbeat
         PlutoComm.sendHeartbeat();
@@ -746,7 +955,7 @@ float GetXPositionFromAngle(float targetAngle)
             PlutoComm.setControlBound(AppData.Instance.CurrentControlBound);
             PlutoComm.setControlDir(0);
         }
-        AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- game resumed");
+        // AppLogger.LogInfo($"{AppData.Instance.selectedGameName} -- game resumed");
     }
 
     public void TargetReached()
@@ -755,8 +964,6 @@ float GetXPositionFromAngle(float targetAngle)
         isTargetReached = true;
         isTargetMissed = false;
         nSuccess++;
-        Debug.Log("Target Reached");
-
     }
 
     public void TargetMissed()
@@ -779,23 +986,13 @@ float GetXPositionFromAngle(float targetAngle)
             seed.highLighter.SetActive(false);
         }
 
-        // if (score >= totalTargets || nTargets >= totalTargets)
-        // {
-        //     currentHighlighted = null;
-        //     EndGame();
-        //     return;
-        // }
-
-        // Clamp angle to -90..90
-        //targetPosition = Mathf.Clamp(targetPosition, aprom[0], aprom[1]);
-
         float r = (aprom[1] - aprom[0]) / 5f;
         if (AppData.Instance.selectedMechanism.IsMechanism("HOC")) r = -r;
         Debug.Log($" aprom min :{aprom[0]}and max is {aprom[1]} and the r is {r} and the tarPOs {targetAngle}");
-    // Map angle to bin (0..4)
+        // Map angle to bin (0..4)
         int bin = Mathf.FloorToInt((targetAngle + aprom[1]) / r); // (-90→0, 90→4)
         Debug.Log($" Bin Num: {bin}");
-    bin = Mathf.Clamp(bin, 0, 4); // safety
+        bin = Mathf.Clamp(bin, 0, 4); // safety
 
         // pick the corresponding seed
         if (bin < seeds.Count)
@@ -808,19 +1005,6 @@ float GetXPositionFromAngle(float targetAngle)
             // Convert its X position back to angle
             // float seedX = currentHighlighted.transform.position.x;
             convertedAngle = GetHighlightedSeedAngle();
-     
-            Debug.Log($"Angle {targetAngle:F1} → Highlighting Seed {bin+1} -> {convertedAngle}-> X POSITION{GetXPositionFromAngle(convertedAngle)}");
-            // if (!currentHighlighted.IsFullyGrown)
-            // {
-            //     currentHighlighted.SetHighlight(true);
-            //     nTargets++;
-            //     lastHighlighted = currentHighlighted;
-            //     Debug.Log($"Angle {targetPosition:F1} → Highlighting Seed {bin+1}");
-            // }
-            // else
-            // {
-            //     Debug.Log($"Seed {bin+1} is fully grown. Skipping.");
-            // }
         }
         else
         {
@@ -832,20 +1016,50 @@ float GetXPositionFromAngle(float targetAngle)
     {
         if(gameState == GameStates.DONE || gameState == GameStates.WAITING ){
             Time.timeScale = 1f;
+            AppLogger.LogInfo("Exit Game");
+
             SceneManager.LoadScene(exitScene);
+
         }
         else
         {
             gameState = GameStates.STOP;
             float gameTime = HomerTherapy.TrialDuration - trialTimeLeft;
+            
             Others.gameTime = (gameTime < HomerTherapy.TrialDuration) ? gameTime : HomerTherapy.TrialDuration;
             AppData.Instance.aanController.Update(PlutoComm.angle, Time.deltaTime, true);
             if (AppData.Instance.speedData.gameSpeed != gameSpeed)  AppData.Instance.speedData.setGameSpeed(gameSpeed);
-            AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+                    AppData.Instance.speedData.setMoveDuration(highlightDuration);
+
+              // Stop the current game trial
+                    if ((scores[0] + nSuccess) > scores[1] && !AppData.Instance.selectedGame.isAchievedToday())
+                    {
+                        AppData.Instance.selectedGame.updateCummulativeStars();
+                        celebrationPanel.SetActive(true);
+                    }
+                    AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
+                    
+                    gameOverPanel.SetActive(!celebrationPanel.gameObject.activeSelf);
+                    
+                    if (gameOverPanel.gameObject.activeSelf)
+                    {
+                        GameOverStar.SetActive(AppData.Instance.selectedGame.isAchievedToday());
+                        yesterdayScoreTxt.text = $"{scores[1]:D4}";
+                        todayScoreTxt.text = $"{(scores[0]+nSuccess):D4}";
+                    }
+                    if (celebrationPanel.gameObject.activeSelf)
+                    {
+                        updateStarCount();
+                        scoreComparisonTxt.text = $"{(scores[0] + nSuccess).ToString("D3")}";
+                    }
+            // AppData.Instance.StopTrial(nTargets, nSuccess, nFailure);
             gameState = GameStates.DONE;
             Time.timeScale = 1f;
             SceneManager.LoadScene(exitScene);
+            AppLogger.LogInfo("Exit Game");
         }
     
     }
+
+
 }

@@ -1,54 +1,3 @@
-// using UnityEngine;
-
-// public class AudioPersist : MonoBehaviour
-// {
-//     void Start()
-//     {
-//         DontDestroyOnLoad(gameObject);
-        
-//         // Ensure audio continues playing
-//         AudioSource audioSource = GetComponent<AudioSource>();
-//         if (!audioSource.isPlaying)
-//         {
-//             audioSource.Play();
-//         }
-//     }
-// // }
-
-// using UnityEngine;
-
-// public class AudioPersist : MonoBehaviour
-// {
-//     private static AudioPersist instance;
-//     private AudioSource audioSource;
-    
-//     void Awake()
-//     {
-//         // Check if another audio persistent object already exists
-//         AudioPersist[] existingObjects = FindObjectsOfType<AudioPersist>();
-        
-//         if (existingObjects.Length > 1)
-//         {
-//             // If this is a duplicate, destroy it
-//             Destroy(gameObject);
-//             return;
-//         }
-        
-//         // If this is the first one, set it up
-//         instance = this;
-//         DontDestroyOnLoad(gameObject);
-//         audioSource = GetComponent<AudioSource>();
-        
-//         if (!audioSource.isPlaying)
-//         {
-//             audioSource.Play();
-//         }
-//     }
-// }
-
-
-
-
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
@@ -58,8 +7,8 @@ public class AudioPersist : MonoBehaviour
     private static AudioPersist instance;
     private AudioSource audioSource;
 
-    // Scene build indices where music should fade out
-    [SerializeField] private int[] mutedSceneIndices = { 10, 12, 13, 14, 16, 17 };
+    [SerializeField] private int[] mutedSceneIndices = { 9, 10, 11, 12, 13, 14, 15 };
+
 
     // Fade speed controls
     [SerializeField] private float fadeDuration = 1.5f;

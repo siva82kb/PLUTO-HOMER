@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace XCharts.Runtime
@@ -173,6 +174,11 @@ namespace XCharts.Runtime
 
             var yAxis = chart.GetChartComponent<YAxis>();
             yAxis.axisTick.alignWithLabel = true;
+        }
+
+        public object GetOrAddYAxis()
+        {
+            throw new NotImplementedException();
         }
     }
 }

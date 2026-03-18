@@ -56,7 +56,7 @@ public class SeedController : MonoBehaviour
         var main = highlightEffect.main;
         if (IsBeingRainedOn)
         {
-            main.startColor = Color.red;   // Blue when raining
+            main.startColor = Color.red;   
         }
         else
         {

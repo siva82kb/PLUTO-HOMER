@@ -10,10 +10,17 @@ public static class awsManager
 {
     public static string pythonScriptPath = @"C:/pythonscripts/uploadToAWS.pyw";
 
-    // public static  string pythonExecutionPath = @"C:/Users/Homer 6/AppData/Local/Programs/Python/Python313/pythonw.exe";
-    //    public static  string pythonExecutionPath = @"C:/Users/HOMER_08/AppData/Local/Programs/Python/Python313/pythonw.exe";
+    // public static  string pythonExecutionPath = @"C:/Users/HOMER_09/AppData/Local/Python/bin/pythonw.exe"; //Device - 4
+    // public static string pythonExecutionPath = @"C:/Program Files/Python313/pythonw.exe"; // Device - 5, Device-2
+    
+    // public static string pythonExecutionPath = @"C:/Program Files/Python312/pythonw.exe";
+    // public static string pythonExecutionPath = @"C:/Program Files/Python313/pythonw.exe";// device-2, device - 1
+    // public static string pythonExecutionPath = @"C:/Program Files/Python314/pythonw.exe"; //device 10
+    public static string pythonExecutionPath;
+    // public static  string pythonExecutionPath = @"C:/Users/HOMER_10/AppData/Local/Programs/Python/Python314/pythonw.exe";  //Device-7
+    // public static  string pythonExecutionPath = @"C:/Users/HOMER_08/AppData/Local/Programs/Python/Python313/pythonw.exe"; //Device -8
+    // public static string pythonExecutionPath = @"C:/Users/HOMER_11/AppData/Local/Programs/Python/Python314/pythonw.exe"; //Device-9
 
-    public static string pythonExecutionPath = @"C:/Program Files/Python312/pythonw.exe";
     public static string filePathUploadStatus = @"C:/DeviceSetups/Pluto"; //change according to the device
     public static string filePathAppsetups = @"C:/AppSetups/Pluto"; //change according to the device
 
@@ -76,6 +83,7 @@ public static void RunAWSpythonScript()
     {
         string uploadFilePath = Path.Combine(filePathUploadStatus, "uploadStatus.txt");
         File.WriteAllText(uploadFilePath, $"{Path.Combine(Application.dataPath, "data", AppData.Instance.userID)},{status},{DeviceName},{AppData.Instance.userData.hospNumber},{AppData.Instance.userData.GetDeviceLocation()}");
+
         if (!File.Exists(Path.Combine(filePathUploadStatus, "uploadProgress.txt")))
         {
             File.Create(Path.Combine(filePathUploadStatus, "uploadProgress.txt"));

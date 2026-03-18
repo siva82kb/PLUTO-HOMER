@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Data;
+using Unity.VisualScripting;
 
 public class MechanismSceneHandler : MonoBehaviour
 {
@@ -22,6 +23,9 @@ public class MechanismSceneHandler : MonoBehaviour
 
     public Button nextButton;
     public Button exit;
+    public Sprite[] knobs;
+    public GameObject fme1Fill, fme1Outline;
+    public GameObject fme2Fill, fme2Outline;
     private static bool changeScene = false;
     private string mechSelected = null;
     private string nextScene = "CALIB";
@@ -44,7 +48,7 @@ public class MechanismSceneHandler : MonoBehaviour
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");
         Debug.Log(PlutoComm.MECHANISMS[PlutoComm.mechanism]);
-        AppLogger.SetCurrentMechanism(PlutoComm.MECHANISMS[PlutoComm.mechanism]);
+        AppLogger.SetCurrentMechanism(null);
 
         // Update timescale
         Time.timeScale = Time.timeScale == 0 ? 1 : Time.timeScale;
@@ -87,14 +91,54 @@ public class MechanismSceneHandler : MonoBehaviour
             Toggle toggleComponent = child.GetComponent<Toggle>();
             bool isPrescribed = AppData.Instance.userData.mechMoveTimePrsc[toggleComponent.name] > 0;
             
-
             bool isDone = AppData.Instance.userData.getTodayMoveTimeForMechanism(toggleComponent.name)>= AppData.Instance.userData.mechMoveTimePrsc[toggleComponent.name];
             // Debug.Log($" done : {isDone}, x-{AppData.Instance.userData.getTodayMoveTimeForMechanism(toggleComponent.name)} y-{AppData.Instance.userData.mechMoveTimePrsc[toggleComponent.name]} ");
             // Hide the component if it has no prescribed time.
             
             toggleComponent.interactable = (isPrescribed);
             toggleComponent.gameObject.SetActive(isPrescribed );
-
+            if(AppData.Instance.userData.FME1 != AppData.Instance.userData.FME2)
+            {
+                // Get the Image components (assuming they are Image components)
+                Image fme1FillImage = fme1Fill.GetComponent<Image>();
+                Image fme1OutlineImage = fme1Outline.GetComponent<Image>();
+                Image fme2FillImage = fme2Fill.GetComponent<Image>();
+                Image fme2OutlineImage = fme2Outline.GetComponent<Image>();
+                // Switch sprites based on FME1 and FME2 values
+                if (toggleComponent.gameObject.name == "FME1")
+                {
+                    // Ensure the index is within bounds of the knobs array
+                    int spriteIndex = AppData.Instance.userData.FME1;
+                    if (spriteIndex >= 0 && spriteIndex < knobs.Length)
+                    {
+                        if (fme1FillImage != null) 
+                            fme1FillImage.sprite = knobs[spriteIndex];
+                        if (fme1OutlineImage != null) 
+                            fme1OutlineImage.sprite = knobs[spriteIndex];
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"FME1 sprite index {spriteIndex} is out of range (0-{knobs.Length - 1})");
+                    }
+                }
+                
+                if (toggleComponent.gameObject.name == "FME2")
+                {
+                    // Ensure the index is within bounds of the knobs array
+                    int spriteIndex = AppData.Instance.userData.FME2;
+                    if (spriteIndex >= 0 && spriteIndex < knobs.Length)
+                    {
+                        if (fme2FillImage != null) 
+                            fme2FillImage.sprite = knobs[spriteIndex];
+                        if (fme2OutlineImage != null) 
+                            fme2OutlineImage.sprite = knobs[spriteIndex];
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"FME2 sprite index {spriteIndex} is out of range (0-{knobs.Length - 1})");
+                    }
+                }
+            }
             
             // Change the toggle's background color
             Image bgImage = toggleComponent.targetGraphic as Image; // Usually the Background Image

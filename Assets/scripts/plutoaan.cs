@@ -49,7 +49,7 @@ public class PlutoAANController
     public enum PlutoAANState
     {
         NONE = 0,                       // None state. The AAN is not engaged.
-        NEWTRAILTARGETSET,              // Target set but not started moving.
+        NEWTRIALTARGETSET,              // Target set but not started moving.
         AROMMOVING,                     // Moving in the AROM.
         RELAXTOAROM,                    // Relax control to reach nearest AROM edge.
         ASSISTTOTARGETINBOUNDARY,       // Assisting to reach target.
@@ -276,7 +276,7 @@ private bool CheckNoMovement(float actual, float aromInitPos)
         PlutoAANState _prevstate = state;
         switch (state)
         {
-            case PlutoAANState.NEWTRAILTARGETSET:
+            case PlutoAANState.NEWTRIALTARGETSET:
 
                 //temp add
                 checkVolMov = false;
@@ -418,7 +418,7 @@ private bool CheckNoMovement(float actual, float aromInitPos)
         positionQ.Enqueue(actual);
         timeQ.Enqueue(trialTime);
         stateChange = true;
-        state = PlutoAANState.NEWTRAILTARGETSET;
+        state = PlutoAANState.NEWTRIALTARGETSET;
         PlutoAanLogger.LogInfo($"SetNewTrialDetails | {initialPosition} -> {targetPosition} in {maxDuration}");
     }
 

@@ -36,6 +36,11 @@ public class GameManager : MonoBehaviour
     private GameObject[] pauseObjects, finishObjects;
     public GameObject StartButton, PauseButton, ResumeButton, ExitButton, RestartButton;
     public TextMeshProUGUI prevSR, currSR, HS, status;
+     [Header("Location BGMs")]
+    [SerializeField] private AudioClip ranipetBGM;
+    [SerializeField] private AudioClip manipalBGM;
+    [SerializeField] private AudioClip ludianaBGM;
+    public AudioSource bgmAudioSource;
 
     public GameObject aromLeft;
     public GameObject aromRight;
@@ -118,7 +123,26 @@ public class GameManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+        setUpLocationBGM();
     }
+    private void setUpLocationBGM()
+    {
+           string location = AppData.Instance.userData.GetDeviceLocation();
+            
+            if (!string.IsNullOrEmpty(location))
+            {
+                string loc = location.Trim().ToLower();
+                if (loc.Contains("ranipet") && ranipetBGM != null)
+                    bgmAudioSource.clip = ranipetBGM;
+                else if (loc.Contains("manipal") && manipalBGM != null)
+                    bgmAudioSource.clip = manipalBGM;
+                else if (loc.Contains("ludhiana") && ludianaBGM != null)
+                    bgmAudioSource.clip = ludianaBGM;
+
+                if (bgmAudioSource.clip != null)
+                    bgmAudioSource.Play();
+            }
+    } 
     void Start()
     {
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);

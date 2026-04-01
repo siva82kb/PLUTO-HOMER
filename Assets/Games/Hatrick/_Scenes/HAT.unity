@@ -3287,6 +3287,10 @@ MonoBehaviour:
   starLabel: {fileID: 1387020569}
   instructionPanel: {fileID: 1606251105}
   _starCount: 0
+  ranipetBGM: {fileID: 8300000, guid: 27d268493402b5047ad8d7e020a6d61a, type: 3}
+  manipalBGM: {fileID: 8300000, guid: 2bd5a0685c6339a418c8a145aeeb52d5, type: 3}
+  ludianaBGM: {fileID: 8300000, guid: 27d268493402b5047ad8d7e020a6d61a, type: 3}
+  bgmAudioSource: {fileID: 960214899}
 --- !u!4 &768395343
 Transform:
   m_ObjectHideFlags: 0
@@ -4007,8 +4011,8 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: 70acefbf486c157409cde02171239a83, type: 3}
-  m_Resource: {fileID: 8300000, guid: 70acefbf486c157409cde02171239a83, type: 3}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1

@@ -93,7 +93,8 @@ public class OneTimeConfig : MonoBehaviour
             fme2Image.SetActive(false);
         // Automatically set startDateField and endDateField
         startDate = DateTime.Now;
-        endDate = startDate.AddDays(30);
+        // endDate = startDate.AddDays(30);
+        endDate = startDate.AddDays(28).Date.AddDays(1).AddSeconds(-1);
 
         if (File.Exists(DataManager.configFile))
         {
@@ -106,8 +107,8 @@ public class OneTimeConfig : MonoBehaviour
 
         }
         
-        startDateField.text = startDate.ToString("dd-MM-yyyy");
-        endDateField.text = endDate.ToString("dd-MM-yyyy");
+        startDateField.text = startDate.ToString("dd-MM-yyyy HH:mm:ss");
+        endDateField.text = endDate.ToString("dd-MM-yyyy HH:mm:ss");
 
         // Add listeners
         wfeField.onValueChanged.AddListener(delegate { UpdateTotalDuration(); });
@@ -400,7 +401,7 @@ public class OneTimeConfig : MonoBehaviour
         bool rightHand = lastRow.Field<string>("TrainingSide") == "right";
         int FME1 = int.Parse(lastRow.Field<string>("FME1ID"));
         int FME2 = int.Parse(lastRow.Field<string>("FME2ID"));
-        endDate = DateTime.ParseExact(lastRow.Field<string>("endDate"), "dd-MM-yyyy", CultureInfo.InvariantCulture);
+        endDate = DateTime.ParseExact(lastRow.Field<string>("endDate"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture);
 
         homerIdField.text = hospNumber;
         affectedSideDropdown.value = rightHand ? 0 : 1;

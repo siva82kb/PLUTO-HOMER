@@ -222,7 +222,7 @@ public partial class AppData
             rawDataString.Append($"{aanController.targetPosition:F3},");
             rawDataString.Append($"{aanController.initialPosition:F3},");
             rawDataString.Append($"{aanController.state},");
-            rawDataString.Append($"{annotation}");
+            rawDataString.Append($"{annotation},");
 
             // End of line
             rawDataString.Append("\n");

@@ -97,6 +97,11 @@ public class FruitBasketGameController : MonoBehaviour
     public GameObject GameOverStar, starLabel, instructionPanel;
     public int _starCount;
     private int[] scores;
+         [Header("Location BGMs")]
+    [SerializeField] private AudioClip ranipetBGM;
+    [SerializeField] private AudioClip manipalBGM;
+    [SerializeField] private AudioClip ludianaBGM;
+    public AudioSource bgmAudioSource;
   
     public void setGameState(GameStates state)
     {
@@ -105,7 +110,26 @@ public class FruitBasketGameController : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+    setUpLocationBGM();
     }
+    private void setUpLocationBGM()
+    {
+           string location = AppData.Instance.userData.GetDeviceLocation();
+            
+            if (!string.IsNullOrEmpty(location))
+            {
+                string loc = location.Trim().ToLower();
+                if (loc.Contains("ranipet") && ranipetBGM != null)
+                    bgmAudioSource.clip = ranipetBGM;
+                else if (loc.Contains("manipal") && manipalBGM != null)
+                    bgmAudioSource.clip = manipalBGM;
+                else if (loc.Contains("ludhiana") && ludianaBGM != null)
+                    bgmAudioSource.clip = ludianaBGM;
+
+                if (bgmAudioSource.clip != null)
+                    bgmAudioSource.Play();
+            }
+    } 
     void Start()
     {
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);

@@ -214,7 +214,6 @@ public partial class AppData
             rawDataString.Append($"{PlutoComm.err},");
             rawDataString.Append($"{PlutoComm.errDiff},");
             rawDataString.Append($"{PlutoComm.errSum},");
-
             // Game Data
             rawDataString.Append($"{GetGamePlayerPosition()},");
             rawDataString.Append($"{GetGameTargetPosition()},");
@@ -223,7 +222,6 @@ public partial class AppData
             rawDataString.Append($"{aanController.initialPosition:F3},");
             rawDataString.Append($"{aanController.state},");
             rawDataString.Append($"{annotation},");
-
             // End of line
             rawDataString.Append("\n");
         }

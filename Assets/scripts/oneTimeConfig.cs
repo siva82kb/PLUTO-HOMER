@@ -93,7 +93,6 @@ public class OneTimeConfig : MonoBehaviour
             fme2Image.SetActive(false);
         // Automatically set startDateField and endDateField
         startDate = DateTime.Now;
-        // endDate = startDate.AddDays(30);
         endDate = startDate.AddDays(28).Date.AddDays(1).AddSeconds(-1);
 
         if (File.Exists(DataManager.configFile))

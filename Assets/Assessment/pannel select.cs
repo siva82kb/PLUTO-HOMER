@@ -89,7 +89,15 @@ public class assessmentSceneHandler : MonoBehaviour
 
     public void chanceMech()
     {
+        if (AppData.isPlanSetup)
+        {
+        SceneManager.LoadScene("PLANSETUP");
+
+        }
+        else
+        {
         SceneManager.LoadScene(mechScene);
+        }
     }
 
     public void gameScene()

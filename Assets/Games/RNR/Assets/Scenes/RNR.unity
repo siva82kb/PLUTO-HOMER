@@ -7840,8 +7840,8 @@ MonoBehaviour:
   HS: {fileID: 0}
   status: {fileID: 0}
   ranipetBGM: {fileID: 8300000, guid: 7ee3c38ab6b41a94a8d20c62fb0b0b99, type: 3}
-  manipalBGM: {fileID: 8300000, guid: 7ee3c38ab6b41a94a8d20c62fb0b0b99, type: 3}
-  ludianaBGM: {fileID: 8300000, guid: 2bd5a0685c6339a418c8a145aeeb52d5, type: 3}
+  manipalBGM: {fileID: 8300000, guid: 8de374cea15811a4bb7a8032abc80b7f, type: 3}
+  ludianaBGM: {fileID: 8300000, guid: 81a39a6f3b1b146488418f3e1227de86, type: 3}
   bgmAudioSource: {fileID: 776559206}
   aromLeft: {fileID: 1744843505}
   aromRight: {fileID: 1302231362}

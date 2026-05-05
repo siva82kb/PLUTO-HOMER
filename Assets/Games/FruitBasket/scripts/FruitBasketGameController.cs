@@ -923,6 +923,8 @@ public class FruitBasketGameController : MonoBehaviour
         
         AppLogger.LogInfo("Game Over");
     }
+            PlutoComm.setControlType("NONE");
+
     
     endGame();
 }

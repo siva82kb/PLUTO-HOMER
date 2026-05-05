@@ -45,7 +45,7 @@ public class PROMsceneHandler : MonoBehaviour
     private List<string[]> DirectionText = new List<string[]>
      {
          new string[] { "Flexion", "Extension" },
-         new string[] { "Ulnar Dev.", "Radial Dev."},
+         new string[] { "Radial Dev" ,"Ulnar Dev"},
          new string[] { "Pronation", "Supination" },
          new string[]{ "Open", "Open"},
          new string[] {"",""},
@@ -129,7 +129,7 @@ public class PROMsceneHandler : MonoBehaviour
         switch (_state)
         {
             case AssessStates.INIT:
-                startButton.SetActive(true);
+                startButton.SetActive(false); // Hidden - use PLUTO button instead
                 if(!runOnce){
                 InitializeAssessment();
                 runOnce = true;
@@ -143,9 +143,10 @@ public class PROMsceneHandler : MonoBehaviour
                 {
                     relaxText.color = Color.red;
                     relaxText.text = "PROM Should not below the range of AROM \n " +
-                                     "Please REDO AROM AGAIN";
+                                     "Please REDO AROM AGAIN\n\nPress PLUTO button to restart";
                 }
-                else relaxText.text = FormatRelaxText(AppData.Instance.selectedMechanism.oldRom.promMin, AppData.Instance.selectedMechanism.oldRom.promMax);
+                else relaxText.text = FormatRelaxText(AppData.Instance.selectedMechanism.oldRom.promMin, AppData.Instance.selectedMechanism.oldRom.promMax)
+                    + "\n\nPress PLUTO button to start";
                 break;
             case AssessStates.ASSESS:
                 startButton.SetActive(false);
@@ -153,8 +154,9 @@ public class PROMsceneHandler : MonoBehaviour
                 _tmax = promSlider.maxAng;
                 Debug.Log("max angle :" + _tmax);
                 relaxText.color= Color.white;
-                relaxText.text = FormatRelaxText(AppData.Instance.selectedMechanism.oldRom.promMin, AppData.Instance.selectedMechanism.oldRom.promMax);
-                nextButton.SetActive(true);
+                relaxText.text = FormatRelaxText(AppData.Instance.selectedMechanism.oldRom.promMin, AppData.Instance.selectedMechanism.oldRom.promMax)
+                    + "\n\nPress PLUTO button to confirm PROM";
+                nextButton.SetActive(false); // Hidden - use PLUTO button instead
                 if (isButtonPressed || Input.GetKeyDown(KeyCode.Return))
                 {
                     OnNextButtonClick();

@@ -406,6 +406,7 @@ public class PlutoUserData
     public string hospNumber { private set; get; }
     public int FME1 { private set; get; }
     public int FME2 { private set; get; }
+    public float totalTime{private set; get;}
 
 
     public bool rightHand { private set; get; }
@@ -679,6 +680,7 @@ public class PlutoUserData
         Debug.Log(lastRow.Field<string>("FME1ID"));
         FME1 = int.Parse(lastRow.Field<string>("FME1ID"));
         FME2 = int.Parse(lastRow.Field<string>("FME2ID"));
+        totalTime = float.Parse(lastRow.Field<string>("TotalTime"));
         //AppData.trainingSide = ; // lastRow.Field<string>("TrainingSide");
         startDate = DateTime.ParseExact(lastRow.Field<string>("StartDate"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture);
         endDate = DateTime.ParseExact(lastRow.Field<string>("endDate"), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture);
@@ -1172,6 +1174,177 @@ public class PlutoUserData
 
 
 
+public static class ConfigData
+{
+    // =========================
+    // STATIC DATA (loaded once)
+    // =========================
+    public static string HomerID;
+    public static string StartDate;
+    public static string EndDate;
+    public static string TrainingSide;
+    public static string Location;
+    public static string Group;
+
+    // =========================
+    // EDITABLE DATA (runtime)
+    // =========================
+    public static int WFE;
+    public static int WURD;
+    public static int FPS;
+    public static int HOC;
+
+    public static int FME1Time;
+    public static int FME2Time;
+
+    public static int FME1ID = -1;
+    public static int FME2ID = -1;
+
+    public static int TotalTime;
+
+    private static DataTable cachedTable;
+
+    // =========================
+    // LOAD FROM CSV
+    // =========================
+    public static void LoadFromConfig(string path)
+    {
+        cachedTable = DataManager.loadCSV(path);
+
+        if (cachedTable == null || cachedTable.Rows.Count == 0)
+        {
+            Debug.LogError("Config file empty or missing");
+            return;
+        }
+
+        DataRow row = cachedTable.Rows[cachedTable.Rows.Count - 1];
+
+        // STATIC DATA (never change)
+        HomerID = row["HomerID"].ToString();
+        StartDate = row["StartDate"].ToString();
+        EndDate = row["EndDate"].ToString();
+        TrainingSide = row["TrainingSide"].ToString();
+        Location = row["Location"].ToString();
+        Group = row["Group"].ToString();
+        
+        // EDITABLE DATA
+        int.TryParse(row["WFE"].ToString(), out WFE);
+        int.TryParse(row["WURD"].ToString(), out WURD);
+        int.TryParse(row["FPS"].ToString(), out FPS);
+        int.TryParse(row["HOC"].ToString(), out HOC);
+
+        int.TryParse(row["FME1"].ToString(), out FME1Time);
+        int.TryParse(row["FME2"].ToString(), out FME2Time);
+
+        int.TryParse(row["FME1ID"].ToString(), out FME1ID);
+        int.TryParse(row["FME2ID"].ToString(), out FME2ID);
+
+        CalculateTotalTime();
+
+        Debug.Log("Config loaded into session");
+        
+    Debug.Log($"Config loaded: FME1ID={FME1ID}, FME2ID={FME2ID}");
+    }
+
+    // =========================
+    // UPDATE METHODS
+    // =========================
+    public static void SetFME1(int index)
+    {
+        if (index == FME2ID)
+        {
+            Debug.LogWarning("FME1 cannot be same as FME2");
+            return;
+        }
+
+        FME1ID = index;
+    }
+
+    public static void SetFME2(int index)
+    {
+        if (index == FME1ID)
+        {
+            Debug.LogWarning("FME2 cannot be same as FME1");
+            return;
+        }
+
+        FME2ID = index;
+    }
+
+    public static void SetTimes(int wfe, int wurd, int fps, int hoc, int fme1, int fme2)
+    {
+        WFE = wfe;
+        WURD = wurd;
+        FPS = fps;
+        HOC = hoc;
+        FME1Time = fme1;
+        FME2Time = fme2;
+
+        CalculateTotalTime();
+    }
+
+    private static void CalculateTotalTime()
+    {
+        TotalTime = WFE + WURD + FPS + HOC + FME1Time + FME2Time;
+    }
+
+    // =========================
+    // SAVE TO CSV
+    // =========================
+    public static void SaveToConfig(string path)
+    {
+        if (cachedTable == null || cachedTable.Rows.Count == 0)
+        {
+            Debug.LogError("No cached config to save");
+            return;
+        }
+
+        // Create a new row instead of modifying the last one
+        DataRow newRow = cachedTable.NewRow();
+
+        // Copy static data from last row
+        DataRow lastRow = cachedTable.Rows[cachedTable.Rows.Count - 1];
+        newRow["HomerID"] = lastRow["HomerID"];
+        newRow["StartDate"] = System.DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss"); // Update to current date
+        newRow["EndDate"] = lastRow["EndDate"];
+        newRow["TrainingSide"] = lastRow["TrainingSide"];
+        newRow["Location"] = lastRow["Location"];
+        newRow["Group"] = lastRow["Group"];
+
+        // Set editable values
+        newRow["WFE"] = WFE.ToString();
+        newRow["WURD"] = WURD.ToString();
+        newRow["FPS"] = FPS.ToString();
+        newRow["HOC"] = HOC.ToString();
+        newRow["FME1"] = FME1Time.ToString();
+        newRow["FME2"] = FME2Time.ToString();
+
+        newRow["FME1ID"] = FME1ID.ToString();
+        newRow["FME2ID"] = FME2ID.ToString();
+
+        newRow["TotalTime"] = TotalTime.ToString();
+
+        // Add new row to table
+        cachedTable.Rows.Add(newRow);
+
+        DataManager.saveCSV(cachedTable, path);
+
+        Debug.Log("Config saved as new row in session");
+    }
+
+    // =========================
+    // RESET (optional)
+    // =========================
+    public static void ResetSession()
+    {
+        FME1ID = -1;
+        FME2ID = -1;
+        WFE = WURD = FPS = HOC = 0;
+        FME1Time = FME2Time = 0;
+        TotalTime = 0;
+    }
+}
+
 public class PlutoGame
 {
     public string name { get; private set; } = null;
@@ -1409,10 +1582,15 @@ public class PlutoMechanism
         if (amin != 0 || amax != 0) aromCompleted = true;
     }
 
-    public void SetNewAPromValues(float apmin, float apmax)
+public void SetNewAPromValues(float apmin, float apmax)
     {
         newRom.SetAProm(apmin, apmax);
         if (apmin != 0 || apmax != 0) apromCompleted = true;
+    }
+
+    public void SetAromCPM(bool value)
+    {
+        newRom.SetCPM(value);
     }
 
     public void SaveAssessmentData()
@@ -1463,8 +1641,8 @@ public class PlutoMechanism
 
 public class ROM
 {
-    public static string[] FILEHEADER = new string[] {
-        "DateTime", "PromMin", "PromMax", "AromMin", "AromMax","APromMin","APromMax"
+public static string[] FILEHEADER = new string[] {
+        "DateTime", "PromMin", "PromMax", "AromMin", "AromMax","APromMin","APromMax", "CPM"
     };
     // Class attributes to store data read from the file
     public string datetime;
@@ -1474,6 +1652,7 @@ public class ROM
     public float aromMax { get; private set; }
     public float apromMin { get; private set; }
     public float apromMax { get; private set; }
+    public bool cpm { get; private set; }
     public string mechanism { get; private set; }
     public bool isAromSet { get => aromMin != 0 || aromMax != 0; }
     public bool isPromSet { get => promMin != 0 || promMax != 0; }
@@ -1486,7 +1665,7 @@ public class ROM
         else
         {
             // Handle case when no matching mechanism is found
-            datetime = null;
+datetime = null;
             mechanism = mechanismName;
             promMin = 0;
             promMax = 0;
@@ -1494,6 +1673,7 @@ public class ROM
             aromMax = 0;
             apromMin = 0;
             apromMax = 0;
+            cpm = false;
         }
     }
 
@@ -1508,7 +1688,7 @@ public class ROM
         if (tofile) WriteToAssessmentFile();
     }
 
-    public ROM()
+public ROM()
     {
         promMin = 0;
         promMax = 0;
@@ -1516,6 +1696,7 @@ public class ROM
         aromMax = 0;
         apromMin = 0;
         apromMax = 0;
+        cpm = false;
         mechanism = null;
         datetime = null;
     }
@@ -1535,20 +1716,25 @@ public class ROM
         aromMax = max;
         datetime = DateTime.Now.ToString();
     }
-    public void SetAProm(float min, float max)
+public void SetAProm(float min, float max)
     {
         apromMin = min;
         apromMax = max;
         datetime = DateTime.Now.ToString();
     }
 
+    public void SetCPM(bool value)
+    {
+        cpm = value;
+    }
 
-    public void WriteToAssessmentFile()
+
+public void WriteToAssessmentFile()
     {
         string fileName = DataManager.GetRomFileName(mechanism); ;
         using (StreamWriter file = new StreamWriter(fileName, true))
         {
-            file.WriteLine(string.Join(",", new string[] { datetime, promMin.ToString(), promMax.ToString(), aromMin.ToString(), aromMax.ToString(), apromMin.ToString(), apromMax.ToString() }));
+            file.WriteLine(string.Join(",", new string[] { datetime, promMin.ToString(), promMax.ToString(), aromMin.ToString(), aromMax.ToString(), apromMin.ToString(), apromMax.ToString(), cpm.ToString() }));
         }
     }
 
@@ -1573,7 +1759,7 @@ public class ROM
         if (romData.Rows.Count == 0)
         {
             // Set default values for the mechanism.
-            datetime = null;
+datetime = null;
             mechanism = mechanismName;
             promMin = 0;
             promMax = 0;
@@ -1581,6 +1767,7 @@ public class ROM
             aromMax = 0;
             apromMin = 0;
             apromMax = 0;
+            cpm = false;
             return;
         }
         // Assign ROM from the last row.
@@ -1590,8 +1777,21 @@ public class ROM
         promMax = float.Parse(romData.Rows[romData.Rows.Count - 1].Field<string>("PromMax"));
         aromMin = float.Parse(romData.Rows[romData.Rows.Count - 1].Field<string>("AromMin"));
         aromMax = float.Parse(romData.Rows[romData.Rows.Count - 1].Field<string>("AromMax"));
-        apromMin = float.Parse(romData.Rows[romData.Rows.Count - 1].Field<string>("APromMin"));
+apromMin = float.Parse(romData.Rows[romData.Rows.Count - 1].Field<string>("APromMin"));
         apromMax = float.Parse(romData.Rows[romData.Rows.Count - 1].Field<string>("APromMax"));
+
+        // Try to read CPM column (handle backward compatibility if column doesn't exist)
+        try
+        {
+            string cpmStr = romData.Rows[romData.Rows.Count - 1].Field<string>("CPM");
+            cpm = !string.IsNullOrEmpty(cpmStr) && bool.TryParse(cpmStr, out var result) && result;
+        }
+        catch
+        {
+            // Column doesn't exist, set CPM based on AROM range: true if ≤5 degrees
+            float aromRange = Mathf.Abs(aromMax - aromMin);
+            cpm = aromRange <= 5f;
+        }
     }
 }
 

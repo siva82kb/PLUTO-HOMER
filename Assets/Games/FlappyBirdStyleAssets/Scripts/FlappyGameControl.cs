@@ -902,7 +902,7 @@ public class FlappyGameControl : MonoBehaviour
     
     gameState = GameStates.DONE;
     lastHighScore = AppData.Instance.successRate * (PlutoAANController.MAXCONTROLBOUND - AppData.Instance.CurrentControlBound);
-    
+            PlutoComm.setControlType("NONE");
     if (AppData.Instance.previousSuccessRates == null)
     {
         score1.text = $"{(int)lastHighScore}";

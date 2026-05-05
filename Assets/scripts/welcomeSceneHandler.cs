@@ -30,7 +30,9 @@ public class welcomSceneHandler : MonoBehaviour
     void Start()
     {
 
-        if (!Directory.Exists(DataManager.basePath)) 
+        if (!AppData.isNRSVersion)
+        {
+            if (!Directory.Exists(DataManager.basePath)) 
         {
             SceneManager.LoadScene("CONFIG");
             return;
@@ -54,15 +56,11 @@ public class welcomSceneHandler : MonoBehaviour
             SceneManager.LoadScene("CONFIG");
             return;
         }
+        }
 
         
         // Initialize.
         AppData.Instance.Initialize(SceneManager.GetActiveScene().name);
-
-        if ((DateTime.Today - AppData.Instance.userData.startDate).TotalDays >= 15)
-        {
-            SceneManager.LoadScene("CONFIG");
-        }
 
         AppLogger.SetCurrentScene(SceneManager.GetActiveScene().name);
         AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");

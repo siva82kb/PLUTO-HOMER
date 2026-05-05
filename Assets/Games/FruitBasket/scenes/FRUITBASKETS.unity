@@ -1504,8 +1504,8 @@ MonoBehaviour:
   instructionPanel: {fileID: 1138632891}
   _starCount: 0
   ranipetBGM: {fileID: 8300000, guid: aedc3c11b23d59f46a39ddfbf9743f13, type: 3}
-  manipalBGM: {fileID: 8300000, guid: 7ee3c38ab6b41a94a8d20c62fb0b0b99, type: 3}
-  ludianaBGM: {fileID: 8300000, guid: 2bd5a0685c6339a418c8a145aeeb52d5, type: 3}
+  manipalBGM: {fileID: 8300000, guid: 3946183c6b59c9143b349ec1934690a9, type: 3}
+  ludianaBGM: {fileID: 8300000, guid: 66b26cbbfd8858848bee16946e1083a2, type: 3}
   bgmAudioSource: {fileID: 422574514}
 --- !u!114 &422574513
 MonoBehaviour:

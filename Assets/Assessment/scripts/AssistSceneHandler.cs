@@ -5,6 +5,8 @@ using TS.DoubleSlider;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using System.Collections;
+using System;
+using Unity.VisualScripting;
 
 
 public class AssistsceneHandler : MonoBehaviour
@@ -43,7 +45,7 @@ public class AssistsceneHandler : MonoBehaviour
     private List<string[]> DirectionText = new List<string[]>
      {
          new string[] { "Flexion", "Extension" },
-         new string[] { "Ulnar Dev", "Radial Dev" },
+         new string[] { "Radial Dev" ,"Ulnar Dev"},
          new string[] { "Pronation", "Supination" },
          new string[] { "Open", "Open"},
          new string[] { "", "" },
@@ -386,7 +388,7 @@ public class AssistsceneHandler : MonoBehaviour
         currentAngle = PlutoComm.angle;
         // jointAngle.text = $"{((int)PlutoComm.angle).ToString()} + Torque :{PlutoComm.target}";
         jointAngle.text = $"Angle: {((int)PlutoComm.angle).ToString()}";
-        jointAngleHoc.text = ((int)PlutoComm.getHOCDisplay(PlutoComm.angle)).ToString();
+        jointAngleHoc.text = $"Range:{((int)PlutoComm.getHOCDisplay(PlutoComm.angle)).ToString()}cm";
         runAssessmentStateMachine();
         // Debug.Log($" ct: {PlutoComm.CONTROLTYPE[PlutoComm.controlType]} + tor :{PlutoComm.target}");
     }
@@ -431,8 +433,18 @@ public class AssistsceneHandler : MonoBehaviour
                             OnSaveClick();
                             isButtonPressed = false;
 
-                            if (AppData.Instance.selectedMechanism.apromCompleted)
+if (AppData.Instance.selectedMechanism.apromCompleted)
+                        {
+                            if (AppData.isPlanSetup)
+                            {
+                                SceneManager.LoadScene("PLANSETUP");
+                            }
+                            else
+                            {
                                 SceneManager.LoadScene("CHGAME");
+                                
+                            }
+                        }
                         }
                     }
                 break;

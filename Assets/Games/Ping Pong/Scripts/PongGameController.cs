@@ -895,6 +895,8 @@ public class PongGameController : MonoBehaviour
             gameEnd();
         // }
     }
+            PlutoComm.setControlType("NONE");
+
 }
 
     private void setTarget(){

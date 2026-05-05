@@ -765,6 +765,8 @@ private void ProceedToGameEnd()
         AppLogger.LogInfo("Game over and changed to Choose Mechanism scene due to allocated trials has over.");
         SceneManager.LoadScene("CHMECH");
     }
+            PlutoComm.setControlType("NONE");
+
 }
     private IEnumerator ShowForSeconds(GameObject obj, float seconds)
     {

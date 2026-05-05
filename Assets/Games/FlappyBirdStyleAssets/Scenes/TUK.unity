@@ -220,7 +220,7 @@ MonoBehaviour:
   _starCount: 0
   ranipetBGM: {fileID: 8300000, guid: d791bf948cc044a4480eb3d94bea0255, type: 3}
   manipalBGM: {fileID: 8300000, guid: d791bf948cc044a4480eb3d94bea0255, type: 3}
-  ludianaBGM: {fileID: 8300000, guid: d791bf948cc044a4480eb3d94bea0255, type: 3}
+  ludianaBGM: {fileID: 8300000, guid: 05fbf741a9d31bc45bea7770a9bd85d3, type: 3}
   bgmAudioSource: {fileID: 963194229}
 --- !u!4 &18032855
 Transform:

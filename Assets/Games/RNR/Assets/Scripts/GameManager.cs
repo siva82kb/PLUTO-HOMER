@@ -797,6 +797,8 @@ public class GameManager : MonoBehaviour
         AppLogger.LogInfo("Game over and changed to Choose Mechanism scene due to allocated trials has over.");
         SceneManager.LoadScene("CHMECH");
     }
+            PlutoComm.setControlType("NONE");
+
 }
 
     private void UpdatePlutoAANTarget()

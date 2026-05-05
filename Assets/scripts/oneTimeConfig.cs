@@ -80,6 +80,8 @@ public class OneTimeConfig : MonoBehaviour
     private string currentLocation;
     private string currentTrainingSide;
 
+    public GameObject verifyImage;
+
     private void Start()
     {
         // Initialize verification panel (hidden by default)
@@ -91,6 +93,18 @@ public class OneTimeConfig : MonoBehaviour
             fme1Image.SetActive(false);
         if(fme2Image!= null)
             fme2Image.SetActive(false);
+
+        if (AppData.isNRSVersion)
+        {
+            // Everything editable
+            SetFieldInteractivity(true);
+        }
+        else
+        {
+            // Keep locked until verification completes
+            SetFieldInteractivity(false);
+        }
+
         // Automatically set startDateField and endDateField
         startDate = DateTime.Now;
         endDate = startDate.AddDays(28).Date.AddDays(1).AddSeconds(-1);
@@ -102,8 +116,16 @@ public class OneTimeConfig : MonoBehaviour
         else
         {
             InitializePreviewImages();
-            verifyPanel.SetActive(true);
 
+            if (AppData.isNRSVersion)
+            {
+                // Direct config mode (no verification)
+                verifyPanel.SetActive(false);
+            }
+            else
+            {
+                verifyPanel.SetActive(true);
+            }
         }
         
         startDateField.text = startDate.ToString("dd-MM-yyyy HH:mm:ss");
@@ -116,7 +138,7 @@ public class OneTimeConfig : MonoBehaviour
         hocField.onValueChanged.AddListener(delegate { UpdateTotalDuration(); });
         fme1TimeField.onValueChanged.AddListener(delegate { UpdateTotalDuration(); });
         fme2TimeField.onValueChanged.AddListener(delegate { UpdateTotalDuration(); });
-                fme1TimeField.onValueChanged.AddListener(delegate { displayFMEOption(); });
+        fme1TimeField.onValueChanged.AddListener(delegate { displayFMEOption(); });
         fme2TimeField.onValueChanged.AddListener(delegate { displayFMEOption(); });
 
         fme1SelectButton.onClick.AddListener(() => OpenImageSelectionPopup(1));
@@ -125,21 +147,51 @@ public class OneTimeConfig : MonoBehaviour
         InitializeImageSelectionPopup();
         imageSelectionPopup.SetActive(false);
 
+        if (AppData.isNRSVersion)
+        {
+            verifyPanel.SetActive(false);
+            if (verifyImage != null)
+                verifyImage.SetActive(false);
+        }
+
+        if (AppData.isNRSVersion && verifyButton != null)
+        {
+            verifyButton.gameObject.SetActive(false);
+        }
+
         // Add verify button listener - NEW
         if (verifyButton != null){
             verifyButton.onClick.AddListener(OnVerifyButtonClick);
             Debug.Log($"Verify ButtonInitialized");
             }
+        
         if (popupOk != null)
             popupOk.onClick.AddListener(OnPopupOkClick);
         if (popupCancel != null)
             popupCancel.onClick.AddListener(OnPopupCancelClick);
     }
 
+    private void SetFieldInteractivity(bool isEditable)
+    {
+        if (homerIdField != null)
+            homerIdField.interactable = isEditable;
+
+        if (affectedSideDropdown != null)
+            affectedSideDropdown.interactable = isEditable;
+
+        if (location != null)
+            location.interactable = isEditable;
+    }
 
     // Called when verify button is clicked
     private void OnVerifyButtonClick()
     {
+
+        if (AppData.isNRSVersion)
+        {
+            Debug.Log("NRS Version - skipping verification");
+            return;
+        }
         Debug.Log("Verify button clicked");
         
         if (HOMERID == null)
@@ -338,7 +390,7 @@ public class OneTimeConfig : MonoBehaviour
                 else
                 {
                     // Not activated - show popup with patient ID and training side
-                    popUpConfirmationPatientID.text = $"HomerID : {searchHomerID} is assigned to Patient id: {hospID}\nTraining Side: {trainSide}\n\nAre you sure?";
+                    popUpConfirmationPatientID.text = $"Homer ID : {searchHomerID}\nPatient ID: {hospID}\nTraining Side: {trainSide}\n\nAre you sure?";
                     Debug.Log($"Training side from cloud: {trainSide}");
                     messageText.text = "";
                     popUpPanel.SetActive(true);
@@ -357,11 +409,12 @@ public class OneTimeConfig : MonoBehaviour
     {
         popUpPanel.SetActive(false);
         verifyPanel.SetActive(false);
-        
+        // SetFieldInteractivity(true);
         // Set the saved values back to fields
         homerIdField.text = currentPatientID;
         affectedSideDropdown.value = GetDropdownIndexForSide(currentTrainingSide);
         location.value = GetDropdownIndexForLocation(currentLocation);
+        verifyImage.SetActive(true);
         
         // Proceed to configuration scene
         // saveConfig();
@@ -372,7 +425,7 @@ public class OneTimeConfig : MonoBehaviour
     {
         popUpPanel.SetActive(false);
         verifyPanel.SetActive(true);
-        
+        SetFieldInteractivity(false);
         // Clear fields
         homerIdField.text = "";
         messageText.text = "Verification cancelled";
@@ -393,6 +446,7 @@ public class OneTimeConfig : MonoBehaviour
     // Modified: Load existing config method
     private void LoadExistingConfig()
     {
+        verifyImage.SetActive(true);
         DataTable configData = DataManager.loadCSV(DataManager.configFile);
         DataRow lastRow = configData.Rows[configData.Rows.Count - 1];
         
@@ -778,14 +832,32 @@ public class OneTimeConfig : MonoBehaviour
 
         // Updated headers to include all fields
         string headers = "HomerID,StartDate,EndDate,TotalTime,WFE,WURD,FPS,HOC,FME1,FME2,FME1ID,FME2ID,TrainingSide,Location,Group";
-        string data = $"{homerID},{startDate},{endDate},{totalDuration},{wfe},{wurd},{fps},{hoc},{fme1Time},{fme2Time},{fme1id},{fme2id},{trainingSide},{Location},{group}";
+        string data = $"{homerID},{startDate},{endDate},0,0,0,0,0,0,0,-1,-1,{trainingSide},{Location},{group}";
 
         string directoryPath = Path.Combine(Application.dataPath, "data", AppData.Instance.userID, "data");
         string datapath = Path.Combine(directoryPath, "configdata.csv");
         
         // Ensure directory exists
-        if (!Directory.Exists(directoryPath))
-            Directory.CreateDirectory(directoryPath);
+        // if (!Directory.Exists(directoryPath))
+        //     Directory.CreateDirectory(directoryPath);
+
+        if (AppData.isNRSVersion)
+        {
+            if (Directory.Exists(directoryPath))
+            {
+                msg.text = "Homer ID already exists. Cannot create duplicate account.";
+                return;
+            }
+            else
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+        }
+        else
+        {
+            if (!Directory.Exists(directoryPath))
+                Directory.CreateDirectory(directoryPath);
+        }
 
         if (!File.Exists(datapath))
         {

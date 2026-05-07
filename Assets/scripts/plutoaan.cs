@@ -289,15 +289,35 @@ private bool CheckNoMovement(float actual, float aromInitPos)
                 {
                     case TargetType.InAromFromArom:
                     case TargetType.InPromFromArom:
-                        state = PlutoAANState.AROMMOVING;
-                        PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | {GetTargetType()}");
+                        if (AppData.isCPMMode)
+                        {
+                            // CPM mode: skip AROMMOVING, go directly to ASSISTTOTARGETATBOUNDARY
+                            state = PlutoAANState.ASSISTTOTARGETATBOUNDARY;
+                            GenerateAssistToTargetAanTarget(actual, false);
+                            PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} (CPM skip AROMMOVING) | {GetTargetType()}");
+                        }
+                        else
+                        {
+                            state = PlutoAANState.AROMMOVING;
+                            PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | {GetTargetType()}");
+                        }
                         break;
                     case TargetType.InAromFromProm:
                     case TargetType.InPromFromPromCrossArom:
-                        state = PlutoAANState.RELAXTOAROM;
-                        // Generate target to relax to AROM.
-                        GenerateRelaxToAromAanTarget(actual);
-                        PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
+                        if (AppData.isCPMMode)
+                        {
+                            // CPM mode: skip RELAXTOAROM, go directly to ASSISTTOTARGETATBOUNDARY
+                            state = PlutoAANState.ASSISTTOTARGETATBOUNDARY;
+                            GenerateAssistToTargetAanTarget(actual, false);
+                            PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} (CPM skip RELAXTOAROM) | {GetTargetType()}");
+                        }
+                        else
+                        {
+                            state = PlutoAANState.RELAXTOAROM;
+                            // Generate target to relax to AROM.
+                            GenerateRelaxToAromAanTarget(actual);
+                            PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
+                        }
                         break;
                     case TargetType.InPromFromPromNoCrossArom:
                         state = PlutoAANState.ASSISTTOTARGETATBOUNDARY;
@@ -367,20 +387,38 @@ private bool CheckNoMovement(float actual, float aromInitPos)
                 // Check if the trial is done.
                 if (trialDone)
                 {
-                    // We need to relax to the AroM.
-                    // Generate target to relax to AROM.
-                    GenerateRelaxToAromAanTarget(actual);
-                    state = PlutoAANState.RELAXTOAROM;
-                    PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
+                    if (AppData.isCPMMode)
+                    {
+                        // CPM mode: go directly to IDLE, skip RELAXTOAROM
+                        state = PlutoAANState.IDLE;
+                        PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} (CPM skip RELAXTOAROM) | trial done");
+                    }
+                    else
+                    {
+                        // We need to relax to the AroM.
+                        // Generate target to relax to AROM.
+                        GenerateRelaxToAromAanTarget(actual);
+                        state = PlutoAANState.RELAXTOAROM;
+                        PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
+                    }
                 }
                 break;
             case PlutoAANState.ASSISTTOTARGETINBOUNDARY:
                 // Check if the trial is done.
                 if (trialDone)
                 {
-                    GenerateRelaxToAromAanTarget(actual);
-                    state = PlutoAANState.RELAXTOAROM;
-                    PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");     
+                    if (AppData.isCPMMode)
+                    {
+                        // CPM mode: go directly to IDLE, skip RELAXTOAROM
+                        state = PlutoAANState.IDLE;
+                        PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} (CPM skip RELAXTOAROM) | trial done");
+                    }
+                    else
+                    {
+                        GenerateRelaxToAromAanTarget(actual);
+                        state = PlutoAANState.RELAXTOAROM;
+                        PlutoAanLogger.LogInfo($"Update | {_prevstate} -> {state} | [{_newAanTarget[0]}, {_newAanTarget[1]}, {_newAanTarget[2]}, {_newAanTarget[3]}, {_newAanTarget[4]}]");
+                    }
                 }
                 break;
         }

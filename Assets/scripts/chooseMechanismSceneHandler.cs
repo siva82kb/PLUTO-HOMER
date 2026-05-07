@@ -40,6 +40,7 @@ public class MechanismSceneHandler : MonoBehaviour
         PlutoComm.calibrateStart("NOMECH");
         PlutoComm.setControlGain(1.0f);
         AppData.Instance.SetMechanism(null);
+        AppData.isCPMMode = false;
 
         // Initialize if needed
         if (AppData.Instance.userData == null)

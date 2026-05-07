@@ -271,13 +271,27 @@ public class PROMsceneHandler : MonoBehaviour
         logMessage += $" | New AROM: [{AppData.Instance.selectedMechanism.newRom.aromMin:F2} ,  {AppData.Instance.selectedMechanism.newRom.aromMax:F2}]";
         AppLogger.LogInfo(logMessage);
 
-        // Switch scene if assessment is complete.
-        if (AppData.Instance.selectedMechanism.promCompleted && AppData.Instance.selectedMechanism.aromCompleted && mechFME) SceneManager.LoadScene(nextScene);
-        else if (AppData.Instance.selectedMechanism.promCompleted && AppData.Instance.selectedMechanism.aromCompleted && !mechFME)
+        if (AppData.Instance.selectedMechanism.promCompleted && AppData.Instance.selectedMechanism.aromCompleted)
         {
-            AppData.Instance.selectedMechanism.SetNewAPromValues(promSlider.minAng, promSlider.maxAng);
-            AppData.Instance.selectedMechanism.SaveAssessmentData();
-            SceneManager.LoadScene("CHGAME");
+            // Check if CPM mode (AROM ≤ 5°) - skip ASSISTPROFILE and go directly to CHGAME
+            float aromRange = AppData.Instance.selectedMechanism.newRom.aromMax - AppData.Instance.selectedMechanism.newRom.aromMin;
+            Debug.Log( $"aromRange {aromRange}");
+            if (aromRange <= 5f)
+            {
+                // AppData.Instance.selectedMechanism.SetNewAPromValues(promSlider.minAng, promSlider.maxAng);
+                // AppData.Instance.selectedMechanism.SaveAssessmentData();
+                AppLogger.LogInfo($"CPM: AROM range {aromRange:F2}° ≤ 5°. Skipping APROM assessment. Going directly to CHGAME.");
+                // if(AppData.isPlanSetup==false) SceneManager.LoadScene("CHGAME");
+                // else SceneManager.LoadScene("PLANSETUP");
+                SceneManager.LoadScene(nextScene);
+
+            }
+            else
+            {
+                AppData.Instance.selectedMechanism.SetNewAPromValues(promSlider.minAng, promSlider.maxAng);
+                // AppData.Instance.selectedMechanism.SaveAssessmentData();
+                SceneManager.LoadScene(nextScene);
+            }
         }
     }
 

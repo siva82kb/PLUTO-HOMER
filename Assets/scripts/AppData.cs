@@ -26,6 +26,7 @@ public partial class AppData
     public string annotation{ get; set;}="";
     public static bool isNRSVersion = false;
     public static bool isPlanSetup = false;
+    public static bool isCPMMode = false;
 
     // What is this used for?
     
@@ -180,6 +181,8 @@ public partial class AppData
         AppLogger.LogInfo($"Selected mechanism '{selectedMechanism.name}'.");
         AppLogger.SetCurrentMechanism(selectedMechanism.name);
         AppLogger.LogInfo($"Trial numbers for ' {selectedMechanism.name}' updated. Day: {selectedMechanism.trialNumberDay}, Session: {selectedMechanism.trialNumberSession}.");
+        isCPMMode = (selectedMechanism.currRom != null) && selectedMechanism.currRom.cpm;
+        AppLogger.LogInfo($"CPM mode: {isCPMMode} for mechanism '{selectedMechanism.name}'.");
     }
 
     public void setUser(string user){

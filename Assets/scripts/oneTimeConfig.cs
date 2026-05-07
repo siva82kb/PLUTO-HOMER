@@ -236,60 +236,138 @@ public class OneTimeConfig : MonoBehaviour
         // Start verification process
         StartCoroutine(VerifyHomerID(currentPatientID, currentLocation));
     }
+    // private IEnumerator VerifyHomerID(string homerID, string location)
+    // {
+    //     messageText.text = "Verifying HomerID...";
+        
+    //     // Construct S3 path
+    //     string s3Path = $"s3://{awsBucketName}/{location}/{homerDetailsFileName}";
+        
+    //     // Download file from S3 using AWS CLI
+    //     string tempFilePath = Path.Combine(Application.temporaryCachePath, "HomerDetails_temp.json");
+        
+    //     // Use AWS CLI to download the file
+    //     string arguments = $"s3 cp {s3Path} \"{tempFilePath}\" --profile {awsProfile}";
+        
+    //     System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
+    //     startInfo.FileName = "aws";
+    //     startInfo.Arguments = arguments;
+    //     startInfo.RedirectStandardOutput = true;
+    //     startInfo.RedirectStandardError = true;
+    //     startInfo.UseShellExecute = false;
+    //     startInfo.CreateNoWindow = true;
+
+    //     using (System.Diagnostics.Process process = new System.Diagnostics.Process())
+    //     {
+    //         process.StartInfo = startInfo;
+    //         process.Start();
+            
+    //         string output = process.StandardOutput.ReadToEnd();
+    //         string error = process.StandardError.ReadToEnd();
+    //         process.WaitForExit();
+
+    //         yield return null;
+
+    //         if (process.ExitCode != 0)
+    //         {
+    //             Debug.LogError($"AWS CLI Error: {error}");
+    //             messageText.text = "Error connecting to AWS. Check internet connection.";
+    //             yield break;
+    //         }
+    //     }
+
+    //     // Check if file was downloaded successfully
+    //     if (File.Exists(tempFilePath))
+    //     {
+    //         string jsonContent = File.ReadAllText(tempFilePath);
+    //         ProcessHomerDetails(jsonContent, homerID);
+            
+    //         // Clean up temp file
+    //         File.Delete(tempFilePath);
+    //     }
+    //     else
+    //     {
+    //         messageText.text = $"Could not find HomerDetails for location: {location}";
+    //     }
+    // }
+
     private IEnumerator VerifyHomerID(string homerID, string location)
-    {
-        messageText.text = "Verifying HomerID...";
-        
-        // Construct S3 path
-        string s3Path = $"s3://{awsBucketName}/{location}/{homerDetailsFileName}";
-        
-        // Download file from S3 using AWS CLI
-        string tempFilePath = Path.Combine(Application.temporaryCachePath, "HomerDetails_temp.json");
-        
-        // Use AWS CLI to download the file
-        string arguments = $"s3 cp {s3Path} \"{tempFilePath}\" --profile {awsProfile}";
-        
-        System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
-        startInfo.FileName = "aws";
-        startInfo.Arguments = arguments;
-        startInfo.RedirectStandardOutput = true;
-        startInfo.RedirectStandardError = true;
-        startInfo.UseShellExecute = false;
-        startInfo.CreateNoWindow = true;
-
-        using (System.Diagnostics.Process process = new System.Diagnostics.Process())
-        {
-            process.StartInfo = startInfo;
-            process.Start();
-            
-            string output = process.StandardOutput.ReadToEnd();
-            string error = process.StandardError.ReadToEnd();
-            process.WaitForExit();
-
-            yield return null;
-
-            if (process.ExitCode != 0)
-            {
-                Debug.LogError($"AWS CLI Error: {error}");
-                messageText.text = "Error connecting to AWS. Check internet connection.";
-                yield break;
-            }
-        }
-
-        // Check if file was downloaded successfully
-        if (File.Exists(tempFilePath))
-        {
-            string jsonContent = File.ReadAllText(tempFilePath);
-            ProcessHomerDetails(jsonContent, homerID);
-            
-            // Clean up temp file
-            File.Delete(tempFilePath);
-        }
-        else
-        {
-            messageText.text = $"Could not find HomerDetails for location: {location}";
-        }
-    }
+{
+     messageText.text = "Verifying HomerID...";
+     yield return null;
+ 
+     string s3Path = $"s3://{awsBucketName}/{location.ToLower()}/patients/{homerID}/{homerID}.json";
+     string tempFilePath = Path.Combine(Application.temporaryCachePath, "HomerPatient_temp.json");
+     string arguments = $"s3 cp {s3Path} \"{tempFilePath}\" --profile {awsProfile}";
+ 
+     System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
+     startInfo.FileName = "aws";
+     startInfo.Arguments = arguments;
+     startInfo.RedirectStandardOutput = true;
+     startInfo.RedirectStandardError = true;
+     startInfo.UseShellExecute = false;
+     startInfo.CreateNoWindow = true;
+ 
+     using (System.Diagnostics.Process process = new System.Diagnostics.Process())
+     {
+         process.StartInfo = startInfo;
+         process.Start();
+         string error = process.StandardError.ReadToEnd();
+         process.WaitForExit();
+ 
+         if (process.ExitCode != 0)
+         {
+             Debug.LogError($"AWS CLI Error: {error}");
+             messageText.text = $"HomerID {homerID} not found.";
+             verifyButton.interactable = true;
+             yield break;
+         }
+     }
+ 
+     if (!File.Exists(tempFilePath))
+     {
+         messageText.text = $"HomerID {homerID} not found.";
+         verifyButton.interactable = true;
+         yield break;
+     }
+ 
+     string jsonContent = File.ReadAllText(tempFilePath);
+     File.Delete(tempFilePath);
+ 
+     ProcessPatientDetails(jsonContent, homerID);
+     verifyButton.interactable = true;
+}
+ 
+// Reads the per-patient JSON: if group is null → unassigned; if "control" → blocked; otherwise show confirmation popup
+private void ProcessPatientDetails(string jsonContent, string homerID)
+{
+     var json = JSON.Parse(jsonContent);
+     if (json == null)
+     {
+         messageText.text = "Invalid patient data format.";
+         return;
+     }
+ 
+     var groupNode = json["group"];
+     if (groupNode == null || groupNode.IsNull || string.IsNullOrEmpty(groupNode.Value))
+     {
+         messageText.text = $"{homerID} is Unassigned. Please wait — PI should assign a group.";
+         return;
+     }
+ 
+     if (groupNode.Value.ToLower() == "control")
+     {
+         messageText.text = $"{homerID} is assigned to the Control group. Cannot enroll in PLUTO.";
+         return;
+     }
+ 
+     string hospID = json["hospitalID"];
+     currentTrainingSide = json["trainingSide"];
+     
+     popUpConfirmationPatientID.text = $"Homer ID: {homerID}\nPatient ID: {hospID}\nTraining Side: {currentTrainingSide}\n\nAre you sure?";
+     messageText.text = "";
+     popUpPanel.SetActive(true);
+}
 
 
     // NEW: Helper to get dropdown index for training side

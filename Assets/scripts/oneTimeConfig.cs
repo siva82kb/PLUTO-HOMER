@@ -1,4 +1,4 @@
-using System;
+    using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -28,6 +28,7 @@ public class OneTimeConfig : MonoBehaviour
     public Image fme1PreviewImage;
     public Button fme1SelectButton;
     public GameObject fme1Image, fme2Image;
+    public GameObject configPanel;
     
     // FME2 components - Time input + Image selection
     public TMP_InputField fme2TimeField;
@@ -98,6 +99,7 @@ public class OneTimeConfig : MonoBehaviour
         {
             // Everything editable
             SetFieldInteractivity(true);
+            configPanel.SetActive(true);
         }
         else
         {
@@ -124,6 +126,8 @@ public class OneTimeConfig : MonoBehaviour
             }
             else
             {
+                configPanel.SetActive(false);
+
                 verifyPanel.SetActive(true);
             }
         }
@@ -336,6 +340,8 @@ public class OneTimeConfig : MonoBehaviour
  
      ProcessPatientDetails(jsonContent, homerID);
      verifyButton.interactable = true;
+            configPanel.SetActive(true);
+
 }
  
 // Reads the per-patient JSON: if group is null → unassigned; if "control" → blocked; otherwise show confirmation popup

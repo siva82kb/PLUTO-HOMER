@@ -85,11 +85,31 @@ public class AssistsceneHandler : MonoBehaviour
     float maxDirectionDuration = 15f;
     bool runOnce = false;
 
+    // Control bound stepping for CPM assessment
+    private const float CB_STEP_SIZE = 0.1f;
+    private const float CB_START = 0.1f;
+    private float reachedPositiveCB = 1.0f;
+    private float reachedNegativeCB = 1.0f;
+
     void Start()
     {
-          // Set mechanism name
+        // // Defensive guard: if CPM mode (AROM ≤ 5°), skip APROM assessment and go to CHGAME
+        // float aromRange = AppData.Instance.selectedMechanism.currRom.aromMax - AppData.Instance.selectedMechanism.currRom.aromMin;
+        // if (aromRange <= 5f)
+        // {
+        //     float pMin = AppData.Instance.selectedMechanism.currRom.promMin;
+        //     float pMax = AppData.Instance.selectedMechanism.currRom.promMax;
+        //     AppData.Instance.selectedMechanism.SetNewAPromValues(pMin, pMax);
+        //     AppData.Instance.selectedMechanism.SaveAssessmentData();
+        //     AppData.isCPMMode = true;
+        //     AppLogger.LogInfo($"CPM guard in AssistSceneHandler: AROM {aromRange:F2}° ≤ 5°. APROM set to PROM [{pMin:F2}, {pMax:F2}]. Skipping APROM assessment.");
+        //     SceneManager.LoadScene("CHGAME");
+        //     return;
+        // }
+
+        // Set mechanism name
         mechName.text = PlutoComm.MECHANISMSTEXT[PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, AppData.Instance.selectedMechanism.name)];
-  
+
         InitializeAssessment();
     }
     void ResetAssessment()
@@ -111,6 +131,8 @@ public class AssistsceneHandler : MonoBehaviour
         _tmin = 0f;
         _tmax = 0f;
         stopClock = 0f;
+        reachedPositiveCB = 1.0f;
+        reachedNegativeCB = 1.0f;
         apromSlider.minAng = 0;
         apromSlider.maxAng = 0;
         inst.text = "";
@@ -226,43 +248,52 @@ public class AssistsceneHandler : MonoBehaviour
 
                 if (currentAngle < targetPositiveEnd - endpointTolerance)
                 {
+                    // Stepped control bound logic: start low, increase only when stuck
                     if (!onceReached)
-                        torque = smoothTorque;
+                        torque = CB_START;
 
-                    if (stuckTimer > stuckThresholdTime && torque >= 0.99f)
+                    if (stuckTimer > stuckThresholdTime)
                     {
                         stuckTimer = 0f;
-                        positiveStuckAttempts++;
-                        onceReached = true;
+                        // Check if endpoint reached at current CB
+                        if (currentAngle >= targetPositiveEnd - endpointTolerance)
+                        {
+                            reachedPositive = true;
+                            reachedPositiveCB = torque;
+                            maxAngle = currentAngle;
+                            PlutoComm.setControlTarget(0f);
+                            goingPositive = false;
+                            yield return null;
+                            continue;
+                        }
+                        else if (torque >= 1.0f)
+                        {
+                            // Full assist, still stuck — accept current angle as limit
+                            reachedPositive = true;
+                            reachedPositiveCB = 1.0f;
+                            maxAngle = currentAngle;
+                            PlutoComm.setControlTarget(0f);
+                            goingPositive = false;
+                            yield return null;
+                            continue;
+                        }
+                        else
+                        {
+                            // Step up control bound and keep going
+                            torque = Mathf.Min(torque + CB_STEP_SIZE, 1.0f);
+                            onceReached = true;
+                        }
                     }
 
-                    if (positiveStuckAttempts >= maxStuckAttempts)
-                    {
-                        reachedPositive = true;
-                        maxAngle = currentAngle;
-                        torque = 0f;
-                        PlutoComm.setControlTarget(0);
-                        // yield return new WaitForSeconds(0.1f);
-                        goingPositive = false;
-                        yield return null;
-                        continue;
-                    }
-
-                    if (onceReached && currentAngle > previousAngle)
-                        torque -= 0.1f;
-
-                    torque = Mathf.Clamp(torque, 0.0f, 1.0f);
-                    // if (torque == -1.0f) Debug.Log("here is the issue");
                     PlutoComm.setControlTarget(torque);
                 }
                 else
                 {
+                    // Endpoint naturally reached
                     reachedPositive = true;
+                    reachedPositiveCB = torque;
                     maxAngle = currentAngle;
-                    stopClock = 0f;
-                    torque = 0f;
                     PlutoComm.setControlTarget(0);
-                    //yield return new WaitForSeconds(0.1f);
                     goingPositive = false;
                 }
             }
@@ -311,56 +342,68 @@ public class AssistsceneHandler : MonoBehaviour
 
                 if (currentAngle > targetNegativeEnd + endpointTolerance)
                 {
-                    float revSmoothTorque = -Mathf.SmoothStep(0f, 1f, timeFraction);
-                    // if (revSmoothTorque == -1.0f) Debug.Log("2nd place is the issue");
+                    // Stepped control bound logic: start low, increase only when stuck
                     if (!onceReached)
-                        torque = revSmoothTorque;
+                        torque = -CB_START;
 
-                    if (stuckTimer > stuckThresholdTime && torque <= -0.99f)
+                    if (stuckTimer > stuckThresholdTime)
                     {
                         stuckTimer = 0f;
-                        negativeStuckAttempts++;
-                        onceReached = true;
+                        // Check if endpoint reached at current CB
+                        if (currentAngle <= targetNegativeEnd + endpointTolerance)
+                        {
+                            PlutoComm.setControlType("NONE");
+                            yield return new WaitForSeconds(0.1f);
+                            reachedNegative = true;
+                            reachedNegativeCB = Mathf.Abs(torque);
+                            minAngle = currentAngle;
+                            torque = 0f;
+                            redoButton.SetActive(true);
+                            inst.text = $"APROM Reached both ends min : {_tmin},max :{_tmax}.";
+                            inst1.text = "Press PLUTO button to move next scene";
+                            shadow.color = new Color(0.2f, 0.85f, 0.4f, 0.8f);
+                            yield return null;
+                            continue;
+                        }
+                        else if (Mathf.Abs(torque) >= 1.0f)
+                        {
+                            // Full assist, still stuck — accept current angle as limit
+                            PlutoComm.setControlType("NONE");
+                            yield return new WaitForSeconds(0.1f);
+                            reachedNegative = true;
+                            reachedNegativeCB = 1.0f;
+                            minAngle = currentAngle;
+                            torque = 0f;
+                            redoButton.SetActive(true);
+                            inst.text = $"APROM Reached both ends min : {_tmin},max :{_tmax}.";
+                            inst1.text = "Press PLUTO button to move next scene";
+                            shadow.color = new Color(0.2f, 0.85f, 0.4f, 0.8f);
+                            yield return null;
+                            continue;
+                        }
+                        else
+                        {
+                            // Step up control bound and keep going
+                            torque = -Mathf.Min(Mathf.Abs(torque) + CB_STEP_SIZE, 1.0f);
+                            onceReached = true;
+                        }
                     }
-
-                    if (negativeStuckAttempts >= maxStuckAttempts)
-                    {
-                        PlutoComm.setControlType("NONE");
-                        yield return new WaitForSeconds(0.1f);
-                        reachedNegative = true;
-                        minAngle = currentAngle;
-                        torque = 0f;
-                        redoButton.SetActive(true);
-                        inst.text = $"APROM Reached both ends min : {_tmin},max :{_tmax}.";
-                        inst1.text = "Press PLUTO button to move next scene";
-                        // shadow.color = new Color(1f, 0.5f, 0f, 0.5f);
-                     shadow.color = new Color(0.2f, 0.85f, 0.4f, 0.8f); 
-
-                        yield return null;
-                        continue;
-                    }
-
-                    if (onceReached && currentAngle < previousAngle)
-                        torque += 0.1f;
-
-                    torque = Mathf.Clamp(torque, -1.0f, 0.0f);
-                    // torque = Mathf.Min(0.0f, Mathf.Clamp(torque, -1.0f, 0.0f));
 
                     PlutoComm.setControlTarget(torque);
                 }
                 else
                 {
+                    // Endpoint naturally reached
                     PlutoComm.setControlType("NONE");
                     yield return new WaitForSeconds(0.1f);
                     reachedNegative = true;
+                    reachedNegativeCB = Mathf.Abs(torque);
                     minAngle = currentAngle;
                     torque = 0f;
                     redoButton.SetActive(true);
                     inst.text = $"APROM Reached both ends min : {_tmin},max :{_tmax}.";
                     inst1.text = "Press PLUTO button to move next scene";
-                    //  shadow.color = new Color(0f, 240f, 240f, 1f); 
-                     shadow.color = new Color(0.2f, 0.85f, 0.4f, 0.8f); 
-                    
+                    shadow.color = new Color(0.2f, 0.85f, 0.4f, 0.8f);
                 }
             }
 
@@ -473,6 +516,11 @@ if (AppData.Instance.selectedMechanism.apromCompleted)
 
     public void OnSaveClick()
     {
+        // Save the minimum control bound needed to reach both endpoints
+        float cpmCB = Mathf.Max(reachedPositiveCB, reachedNegativeCB);
+        AppData.Instance.selectedMechanism.currRom.SetCPMControlBound(cpmCB);
+        AppLogger.LogInfo($"CPMControlBound set to {cpmCB:F2} (pos: {reachedPositiveCB:F2}, neg: {reachedNegativeCB:F2})");
+
         AppData.Instance.selectedMechanism.SaveAssessmentData();
         apromSlider.UpdateMinMaxvalues = false;
         CurrPositioncursor.SetActive(false);

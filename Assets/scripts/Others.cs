@@ -1642,7 +1642,7 @@ public void SetNewAPromValues(float apmin, float apmax)
 public class ROM
 {
 public static string[] FILEHEADER = new string[] {
-        "DateTime", "PromMin", "PromMax", "AromMin", "AromMax","APromMin","APromMax", "CPM"
+        "DateTime", "PromMin", "PromMax", "AromMin", "AromMax","APromMin","APromMax", "CPM", "CPMControlBound"
     };
     // Class attributes to store data read from the file
     public string datetime;
@@ -1653,6 +1653,7 @@ public static string[] FILEHEADER = new string[] {
     public float apromMin { get; private set; }
     public float apromMax { get; private set; }
     public bool cpm { get; private set; }
+    public float cpmControlBound { get; private set; }
     public string mechanism { get; private set; }
     public bool isAromSet { get => aromMin != 0 || aromMax != 0; }
     public bool isPromSet { get => promMin != 0 || promMax != 0; }
@@ -1674,6 +1675,7 @@ datetime = null;
             apromMin = 0;
             apromMax = 0;
             cpm = false;
+            cpmControlBound = 0.9f;
         }
     }
 
@@ -1697,6 +1699,7 @@ public ROM()
         apromMin = 0;
         apromMax = 0;
         cpm = false;
+        cpmControlBound = 0.9f;
         mechanism = null;
         datetime = null;
     }
@@ -1728,13 +1731,18 @@ public void SetAProm(float min, float max)
         cpm = value;
     }
 
+    public void SetCPMControlBound(float value)
+    {
+        cpmControlBound = value;
+    }
+
 
 public void WriteToAssessmentFile()
     {
         string fileName = DataManager.GetRomFileName(mechanism); ;
         using (StreamWriter file = new StreamWriter(fileName, true))
         {
-            file.WriteLine(string.Join(",", new string[] { datetime, promMin.ToString(), promMax.ToString(), aromMin.ToString(), aromMax.ToString(), apromMin.ToString(), apromMax.ToString(), cpm.ToString() }));
+            file.WriteLine(string.Join(",", new string[] { datetime, promMin.ToString(), promMax.ToString(), aromMin.ToString(), aromMax.ToString(), apromMin.ToString(), apromMax.ToString(), cpm.ToString(), cpmControlBound.ToString() }));
         }
     }
 
@@ -1768,6 +1776,7 @@ datetime = null;
             apromMin = 0;
             apromMax = 0;
             cpm = false;
+            cpmControlBound = 0.9f;
             return;
         }
         // Assign ROM from the last row.
@@ -1791,6 +1800,18 @@ apromMin = float.Parse(romData.Rows[romData.Rows.Count - 1].Field<string>("AProm
             // Column doesn't exist, set CPM based on AROM range: true if ≤5 degrees
             float aromRange = Mathf.Abs(aromMax - aromMin);
             cpm = aromRange <= 5f;
+        }
+
+        // Try to read CPMControlBound column (handle backward compatibility)
+        try
+        {
+            string cpmCbStr = romData.Rows[romData.Rows.Count - 1].Field<string>("CPMControlBound");
+            cpmControlBound = !string.IsNullOrEmpty(cpmCbStr) && float.TryParse(cpmCbStr, out var result) ? result : 0.9f;
+        }
+        catch
+        {
+            // Column doesn't exist, use default 0.9f
+            cpmControlBound = 0.9f;
         }
     }
 }

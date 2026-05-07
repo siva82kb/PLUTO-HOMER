@@ -28,7 +28,12 @@ public partial class AppData
         trialType = tSrType.tType;
         
         // Set current control bound.
-        _currControlBound = trialType  == HomerTherapy.TrialType.SR85PCCATCH ? 0.0f : aanController.currentCtrlBound;
+        if (trialType == HomerTherapy.TrialType.SR85PCCATCH)
+            _currControlBound = 0.0f;
+        else if (AppData.isCPMMode)
+            _currControlBound = selectedMechanism.currRom.cpmControlBound;
+        else
+            _currControlBound = aanController.currentCtrlBound;
 
         // Set the trial data files.
         StartRawAndAanExecDataLogging();
@@ -58,7 +63,7 @@ public partial class AppData
                 // Update targets, hits and misses.
         selectedGame.UpdateTargetsHitsMisses(nTargets, nSuccess, nFailure);
         // Update the control bound if needed.
-        if (trialType  != HomerTherapy.TrialType.SR85PCCATCH)
+        if (trialType != HomerTherapy.TrialType.SR85PCCATCH && !AppData.isCPMMode)
         {
             aanController.AdaptControLBound(desiredSuccessRate, successRate);
         }
@@ -123,7 +128,7 @@ public partial class AppData
             // "GameSpeed"
             speedData.gameSpeed.ToString(),
             // "AssistMode"
-            trialType == HomerTherapy.TrialType.SR85PCCATCH ? "ACTIVE" : "AAN",
+            trialType == HomerTherapy.TrialType.SR85PCCATCH ? "ACTIVE" : (AppData.isCPMMode ? "CPM" : "AAN"),
             // "DesiredSuccessRate"
             $"{desiredSuccessRate:F3}",
             // "SuccessRate"

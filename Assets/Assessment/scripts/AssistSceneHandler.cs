@@ -234,12 +234,20 @@ public class AssistsceneHandler : MonoBehaviour
 
                 if (currentAngle < targetPositiveEnd - endpointTolerance)
                 {
-                    stepStartTime += Time.deltaTime;
+                    // Check if hand is moving
+                    float deltaAngle = Mathf.Abs(currentAngle - previousAngle);
+                    bool isMoving = deltaAngle > 0.5f;  // moving if angle change > 0.5 degrees per frame
+
+                    // Only accumulate check timer when hand is NOT moving
+                    if (!isMoving)
+                        stepStartTime += Time.deltaTime;
+                    else
+                        stepStartTime = 0f;  // reset timer if hand starts moving again
 
                     // Determine hold time based on current CB
                     float holdTime = (Mathf.Abs(torque - 1.0f) < 0.01f) ? FULL_ASSIST_CHECK_TIME : NORMAL_STEP_CHECK_TIME;
 
-                    // Time to step up or finish?
+                    // Time to step up or finish? (only when hand is stuck)
                     if (stepStartTime >= holdTime)
                     {
                         stepStartTime = 0f;
@@ -336,12 +344,20 @@ public class AssistsceneHandler : MonoBehaviour
 
                 if (currentAngle > targetNegativeEnd + endpointTolerance)
                 {
-                    stepStartTime += Time.deltaTime;
+                    // Check if hand is moving
+                    float deltaAngle = Mathf.Abs(currentAngle - previousAngle);
+                    bool isMoving = deltaAngle > 0.5f;  // moving if angle change > 0.5 degrees per frame
+
+                    // Only accumulate check timer when hand is NOT moving
+                    if (!isMoving)
+                        stepStartTime += Time.deltaTime;
+                    else
+                        stepStartTime = 0f;  // reset timer if hand starts moving again
 
                     // Determine hold time based on current CB
                     float holdTime = (Mathf.Abs(torque - (-1.0f)) < 0.01f) ? FULL_ASSIST_CHECK_TIME : NORMAL_STEP_CHECK_TIME;
 
-                    // Time to step up or finish?
+                    // Time to step up or finish? (only when hand is stuck)
                     if (stepStartTime >= holdTime)
                     {
                         stepStartTime = 0f;

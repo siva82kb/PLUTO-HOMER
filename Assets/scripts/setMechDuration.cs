@@ -160,11 +160,17 @@ public class MechanismDurationHandler : MonoBehaviour
             // Enable checkbox only if mechanism is assessed OR if it's FME1/FME2
             mechCb.checkbox.interactable = isAssessed || isFME;
 
-            // Start with nothing selected (don't load previously selected state)
-            mechCb.checkbox.isOn = false;
+            // Auto-select mechanisms that have a previous duration set
+            int previousDuration = GetConfigValue(mechCb.mechName);
+            bool shouldSelect = previousDuration > 0;
+            mechCb.checkbox.isOn = shouldSelect;
+
+            // Add to selectedMechs if auto-selected
+            if (shouldSelect)
+                selectedMechs.Add(mechCb.mechName);
 
             // Update label color based on initial state
-            UpdateCheckboxLabelColor(mechCb, false);
+            UpdateCheckboxLabelColor(mechCb, shouldSelect);
 
             // Add listener for checkbox changes
             mechCb.checkbox.onValueChanged.AddListener((isChecked) =>

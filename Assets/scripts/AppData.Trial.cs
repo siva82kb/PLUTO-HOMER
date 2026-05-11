@@ -30,8 +30,6 @@ public partial class AppData
         // Set current control bound.
         if (trialType == HomerTherapy.TrialType.SR85PCCATCH)
             _currControlBound = 0.0f;
-        else if (AppData.isCPMMode)
-            _currControlBound = selectedMechanism.currRom.cpmControlBound;
         else
             _currControlBound = aanController.currentCtrlBound;
 
@@ -63,7 +61,7 @@ public partial class AppData
                 // Update targets, hits and misses.
         selectedGame.UpdateTargetsHitsMisses(nTargets, nSuccess, nFailure);
         // Update the control bound if needed.
-        if (trialType != HomerTherapy.TrialType.SR85PCCATCH && !AppData.isCPMMode)
+        if (trialType != HomerTherapy.TrialType.SR85PCCATCH)
         {
             aanController.AdaptControLBound(desiredSuccessRate, successRate);
         }
@@ -128,7 +126,7 @@ public partial class AppData
             // "GameSpeed"
             speedData.gameSpeed.ToString(),
             // "AssistMode"
-            trialType == HomerTherapy.TrialType.SR85PCCATCH ? "ACTIVE" : (AppData.isCPMMode ? "CPM" : "AAN"),
+            trialType == HomerTherapy.TrialType.SR85PCCATCH ? "ACTIVE" : "AAN",
             // "DesiredSuccessRate"
             $"{desiredSuccessRate:F3}",
             // "SuccessRate"

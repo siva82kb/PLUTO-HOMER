@@ -101,7 +101,6 @@ public class ChooseGameSceneHandler : MonoBehaviour
         AppData.Instance.previousSuccessRates =null;
         // Attach callback.
         AttachCallbacks();
-        AppData.isCPMMode = AppData.Instance.selectedMechanism.currRom.cpm;
 
         // Make sure No control is set
         PlutoComm.setControlType("NONE");

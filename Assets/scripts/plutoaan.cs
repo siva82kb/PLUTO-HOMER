@@ -192,6 +192,13 @@ public class PlutoAANController
         PlutoAanLogger.LogInfo($"Currrent Control Bound: {currentCtrlBound}");
     }
 
+    private bool IsCPMMode()
+    {
+        if (mechanism?.currRom == null)
+            return false;
+        float aromRange = Mathf.Abs(mechanism.currRom.aromMax - mechanism.currRom.aromMin);
+        return aromRange <= 5f;
+    }
 
 private bool CheckNoMovement(float actual, float aromInitPos)
 {
@@ -289,7 +296,7 @@ private bool CheckNoMovement(float actual, float aromInitPos)
                 {
                     case TargetType.InAromFromArom:
                     case TargetType.InPromFromArom:
-                        if (AppData.isCPMMode)
+                        if (IsCPMMode())
                         {
                             // CPM mode: skip AROMMOVING, go directly to ASSISTTOTARGETATBOUNDARY
                             state = PlutoAANState.ASSISTTOTARGETATBOUNDARY;
@@ -304,7 +311,7 @@ private bool CheckNoMovement(float actual, float aromInitPos)
                         break;
                     case TargetType.InAromFromProm:
                     case TargetType.InPromFromPromCrossArom:
-                        if (AppData.isCPMMode)
+                        if (IsCPMMode())
                         {
                             // CPM mode: skip RELAXTOAROM, go directly to ASSISTTOTARGETATBOUNDARY
                             state = PlutoAANState.ASSISTTOTARGETATBOUNDARY;
@@ -387,7 +394,7 @@ private bool CheckNoMovement(float actual, float aromInitPos)
                 // Check if the trial is done.
                 if (trialDone)
                 {
-                    if (AppData.isCPMMode)
+                    if (IsCPMMode())
                     {
                         // CPM mode: go directly to IDLE, skip RELAXTOAROM
                         state = PlutoAANState.IDLE;
@@ -407,7 +414,7 @@ private bool CheckNoMovement(float actual, float aromInitPos)
                 // Check if the trial is done.
                 if (trialDone)
                 {
-                    if (AppData.isCPMMode)
+                    if (IsCPMMode())
                     {
                         // CPM mode: go directly to IDLE, skip RELAXTOAROM
                         state = PlutoAANState.IDLE;

@@ -96,20 +96,6 @@ public class AssistsceneHandler : MonoBehaviour
 
     void Start()
     {
-        // // Defensive guard: if CPM mode (AROM ≤ 5°), skip APROM assessment and go to CHGAME
-        // float aromRange = AppData.Instance.selectedMechanism.currRom.aromMax - AppData.Instance.selectedMechanism.currRom.aromMin;
-        // if (aromRange <= 5f)
-        // {
-        //     float pMin = AppData.Instance.selectedMechanism.currRom.promMin;
-        //     float pMax = AppData.Instance.selectedMechanism.currRom.promMax;
-        //     AppData.Instance.selectedMechanism.SetNewAPromValues(pMin, pMax);
-        //     AppData.Instance.selectedMechanism.SaveAssessmentData();
-        //     AppData.isCPMMode = true;
-        //     AppLogger.LogInfo($"CPM guard in AssistSceneHandler: AROM {aromRange:F2}° ≤ 5°. APROM set to PROM [{pMin:F2}, {pMax:F2}]. Skipping APROM assessment.");
-        //     SceneManager.LoadScene("CHGAME");
-        //     return;
-        // }
-
         // Set mechanism name
         mechName.text = PlutoComm.MECHANISMSTEXT[PlutoComm.GetPlutoCodeFromLabel(PlutoComm.MECHANISMS, AppData.Instance.selectedMechanism.name)];
 
@@ -524,11 +510,6 @@ if (AppData.Instance.selectedMechanism.apromCompleted)
 
     public void OnSaveClick()
     {
-        // Save the minimum control bound needed to reach both endpoints
-        float cpmCB = Mathf.Max(reachedPositiveCB, reachedNegativeCB);
-        AppData.Instance.selectedMechanism.currRom.SetCPMControlBound(cpmCB);
-        AppLogger.LogInfo($"CPMControlBound set to {cpmCB:F2} (pos: {reachedPositiveCB:F2}, neg: {reachedNegativeCB:F2})");
-
         AppData.Instance.selectedMechanism.SaveAssessmentData();
         apromSlider.UpdateMinMaxvalues = false;
         CurrPositioncursor.SetActive(false);

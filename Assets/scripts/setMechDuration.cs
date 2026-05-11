@@ -169,6 +169,13 @@ public class MechanismDurationHandler : MonoBehaviour
             if (shouldSelect)
                 selectedMechs.Add(mechCb.mechName);
 
+            // Visual feedback - find label text first
+            if (mechCb.labelText == null)
+            {
+                // Try to find the label text if not assigned
+                mechCb.labelText = mechCb.checkbox.GetComponentInChildren<Text>();
+            }
+
             // Update label color based on initial state
             UpdateCheckboxLabelColor(mechCb, shouldSelect);
 
@@ -178,18 +185,6 @@ public class MechanismDurationHandler : MonoBehaviour
                 OnMechanismToggled(mechCb.mechName, isChecked);
                 UpdateCheckboxLabelColor(mechCb, isChecked);
             });
-
-            // Visual feedback
-            if (mechCb.labelText == null)
-            {
-                // Try to find the label text if not assigned
-                mechCb.labelText = mechCb.checkbox.GetComponentInChildren<Text>();
-            }
-
-            if (mechCb.labelText != null)
-            {
-                mechCb.labelText.color = mechCb.checkbox.interactable ? Color.white : Color.gray;
-            }
 
             mechCb.root.SetActive(true);
         }

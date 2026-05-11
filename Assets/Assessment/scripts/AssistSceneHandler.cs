@@ -67,32 +67,14 @@ public class AssistsceneHandler : MonoBehaviour
     // Flags to track which side we're heading toward
     bool goingPositive = true;
 
-    // For tracking stuck situation
+    // Assessment tracking
     float previousAngle = 0f;
-    float stuckTimer = 0f;
-    float stuckThresholdTime = 3.0f; // seconds
-    // Add these as class-level variables:
-    int positiveStuckAttempts = 0;
-    int negativeStuckAttempts = 0;
-    const int maxStuckAttempts = 2;
     float maxAngle = 0f;
     float minAngle = 0f;
-    bool onceReached = false, firstPositiveStart=true, firstNegativeStart = true;
-    float trailDuration = 1f;
-    float stopClock=0f;
-    float positiveTimer = 0f;
-    float negativeTimer = 0f;
-    float maxDirectionDuration = 15f;
+    bool firstPositiveStart = true;
+    bool firstNegativeStart = true;
     bool runOnce = false;
 
-    // Control bound stepping for CPM assessment
-    private const float CB_STEP_SIZE = 0.1f;
-    private const float CB_START = 0.1f;
-    private const float DIRECTION_TIMEOUT = 30f;        // max 30 seconds per direction
-    private const float NORMAL_STEP_CHECK_TIME = 0.33f; // 1/3 second to check each normal step
-    private const float FULL_ASSIST_CHECK_TIME = 2.5f;  // 2.5 seconds for full 1.0f assist
-    private float reachedPositiveCB = 1.0f;
-    private float reachedNegativeCB = 1.0f;
 
     void Start()
     {
@@ -109,24 +91,17 @@ public class AssistsceneHandler : MonoBehaviour
         goingPositive = true;
         reachedPositive = false;
         reachedNegative = false;
-        onceReached = false;
         firstPositiveStart = true;
         firstNegativeStart = true;
-        stuckTimer = 0f;
-        positiveStuckAttempts = 0;
-        negativeStuckAttempts = 0;
         minAngle = 0f;
         maxAngle = 0f;
         _tmin = 0f;
         _tmax = 0f;
-        stopClock = 0f;
-        reachedPositiveCB = 1.0f;
-        reachedNegativeCB = 1.0f;
         apromSlider.minAng = 0;
         apromSlider.maxAng = 0;
         inst.text = "";
         inst1.text = "";
-        shadow.color = new Color(1f, 0.5f, 0f, 0.7f); // Orange with 70% opacity
+        shadow.color = new Color(1f, 0.5f, 0f, 0.7f);
 
         redoButton.SetActive(false);
         runOnce = false;
@@ -175,42 +150,49 @@ public class AssistsceneHandler : MonoBehaviour
 
     IEnumerator RunAssessment()
     {
-        float directionStartTime = 0f;
-        float stepStartTime = 0f;
+        float assessmentTimer = 0f;
 
         while (!reachedPositive || !reachedNegative)
         {
+            assessmentTimer += Time.deltaTime;
+
+            // 30-second total timeout
+            if (assessmentTimer >= 30f)
+            {
+                if (!reachedPositive)
+                {
+                    maxAngle = currentAngle;
+                    reachedPositive = true;
+                }
+                if (!reachedNegative)
+                {
+                    minAngle = currentAngle;
+                    reachedNegative = true;
+                }
+                PlutoComm.setControlType("NONE");
+                yield return new WaitForSeconds(0.1f);
+                redoButton.SetActive(true);
+                inst.text = $"APROM Assessment complete: {_tmin} to {_tmax}";
+                inst1.text = "Press PLUTO button to move next scene";
+                shadow.color = new Color(0.2f, 0.85f, 0.4f, 0.8f);
+                yield return null;
+                break;
+            }
+
             if (goingPositive && !reachedPositive)
             {
                 if (firstPositiveStart)
                 {
-                    directionStartTime = 0f;
-                    stepStartTime = 0f;
-                    torque = CB_START;
+                    torque = 1.0f;
                     firstPositiveStart = false;
                     PlutoComm.setControlTarget(torque);
                 }
 
-                directionStartTime += Time.deltaTime;
-
-                // 30-second timeout for this direction
-                if (directionStartTime >= DIRECTION_TIMEOUT)
-                {
-                    reachedPositive = true;
-                    reachedPositiveCB = torque;
-                    maxAngle = currentAngle;
-                    PlutoComm.setControlTarget(0f);
-                    goingPositive = false;
-                    yield return null;
-                    continue;
-                }
-
-                // Button press to skip this direction
+                // Button press to skip positive direction
                 if (isButtonPressed && !reachedPositive)
                 {
                     isButtonPressed = false;
                     reachedPositive = true;
-                    reachedPositiveCB = torque;
                     maxAngle = currentAngle;
                     PlutoComm.setControlTarget(0);
                     goingPositive = false;
@@ -218,192 +200,58 @@ public class AssistsceneHandler : MonoBehaviour
                     continue;
                 }
 
-                if (currentAngle < targetPositiveEnd - endpointTolerance)
+                // Check if reached endpoint
+                if (currentAngle >= targetPositiveEnd - endpointTolerance)
                 {
-                    // Check if hand is moving
-                    float deltaAngle = Mathf.Abs(currentAngle - previousAngle);
-                    bool isMoving = deltaAngle > 0.5f;  // moving if angle change > 0.5 degrees per frame
-
-                    // Only accumulate check timer when hand is NOT moving
-                    if (!isMoving)
-                        stepStartTime += Time.deltaTime;
-                    else
-                        stepStartTime = 0f;  // reset timer if hand starts moving again
-
-                    // Determine hold time based on current CB
-                    float holdTime = (Mathf.Abs(torque - 1.0f) < 0.01f) ? FULL_ASSIST_CHECK_TIME : NORMAL_STEP_CHECK_TIME;
-
-                    // Time to step up or finish? (only when hand is stuck)
-                    if (stepStartTime >= holdTime)
-                    {
-                        stepStartTime = 0f;
-
-                        // Check if endpoint reached at current CB
-                        if (currentAngle >= targetPositiveEnd - endpointTolerance)
-                        {
-                            reachedPositive = true;
-                            reachedPositiveCB = torque;
-                            maxAngle = currentAngle;
-                            PlutoComm.setControlTarget(0f);
-                            goingPositive = false;
-                            yield return null;
-                            continue;
-                        }
-                        // Step up or stop
-                        else if (torque >= 1.0f)
-                        {
-                            // Full assist tried, still can't reach
-                            reachedPositive = true;
-                            reachedPositiveCB = 1.0f;
-                            maxAngle = currentAngle;
-                            PlutoComm.setControlTarget(0f);
-                            goingPositive = false;
-                            yield return null;
-                            continue;
-                        }
-                        else
-                        {
-                            // Step up control bound
-                            torque = Mathf.Min(torque + CB_STEP_SIZE, 1.0f);
-                        }
-                    }
-
-                    PlutoComm.setControlTarget(torque);
-                }
-                else
-                {
-                    // Endpoint naturally reached
                     reachedPositive = true;
-                    reachedPositiveCB = torque;
                     maxAngle = currentAngle;
                     PlutoComm.setControlTarget(0);
                     goingPositive = false;
                 }
+
+                PlutoComm.setControlTarget(torque);
             }
             else if (!reachedNegative)
             {
                 if (firstNegativeStart)
                 {
-                    directionStartTime = 0f;
-                    stepStartTime = 0f;
-                    torque = -CB_START;
+                    torque = -1.0f;
                     firstNegativeStart = false;
                     PlutoComm.setControlTarget(torque);
                 }
 
-                directionStartTime += Time.deltaTime;
-
-                // 30-second timeout for this direction
-                if (directionStartTime >= DIRECTION_TIMEOUT)
-                {
-                    PlutoComm.setControlType("NONE");
-                    yield return new WaitForSeconds(0.1f);
-                    reachedNegative = true;
-                    reachedNegativeCB = Mathf.Abs(torque);
-                    minAngle = currentAngle;
-                    torque = 0f;
-                    redoButton.SetActive(true);
-                    inst.text = $"APROM Reached both ends min : {_tmin},max :{_tmax}.";
-                    inst1.text = "Press PLUTO button to move next scene";
-                    shadow.color = new Color(0.2f, 0.85f, 0.4f, 0.8f);
-                    yield return null;
-                    continue;
-                }
-
-                // Button press to skip this direction
+                // Button press to skip negative direction
                 if (isButtonPressed && !reachedNegative)
                 {
                     PlutoComm.setControlType("NONE");
                     yield return new WaitForSeconds(0.1f);
                     isButtonPressed = false;
                     reachedNegative = true;
-                    reachedNegativeCB = Mathf.Abs(torque);
                     minAngle = currentAngle;
                     torque = 0f;
                     redoButton.SetActive(true);
-                    inst.text = $"APROM Reached both ends min : {_tmin},max :{_tmax}.";
+                    inst.text = $"APROM Assessment complete: {_tmin} to {_tmax}";
                     inst1.text = "Press PLUTO button to move next scene";
                     shadow.color = new Color(0.2f, 0.85f, 0.4f, 0.8f);
                     yield return null;
-                    continue;
+                    break;
                 }
 
-                if (currentAngle > targetNegativeEnd + endpointTolerance)
+                // Check if reached endpoint
+                if (currentAngle <= targetNegativeEnd + endpointTolerance)
                 {
-                    // Check if hand is moving
-                    float deltaAngle = Mathf.Abs(currentAngle - previousAngle);
-                    bool isMoving = deltaAngle > 0.5f;  // moving if angle change > 0.5 degrees per frame
-
-                    // Only accumulate check timer when hand is NOT moving
-                    if (!isMoving)
-                        stepStartTime += Time.deltaTime;
-                    else
-                        stepStartTime = 0f;  // reset timer if hand starts moving again
-
-                    // Determine hold time based on current CB
-                    float holdTime = (Mathf.Abs(torque - (-1.0f)) < 0.01f) ? FULL_ASSIST_CHECK_TIME : NORMAL_STEP_CHECK_TIME;
-
-                    // Time to step up or finish? (only when hand is stuck)
-                    if (stepStartTime >= holdTime)
-                    {
-                        stepStartTime = 0f;
-
-                        // Check if endpoint reached at current CB
-                        if (currentAngle <= targetNegativeEnd + endpointTolerance)
-                        {
-                            PlutoComm.setControlType("NONE");
-                            yield return new WaitForSeconds(0.1f);
-                            reachedNegative = true;
-                            reachedNegativeCB = Mathf.Abs(torque);
-                            minAngle = currentAngle;
-                            torque = 0f;
-                            redoButton.SetActive(true);
-                            inst.text = $"APROM Reached both ends min : {_tmin},max :{_tmax}.";
-                            inst1.text = "Press PLUTO button to move next scene";
-                            shadow.color = new Color(0.2f, 0.85f, 0.4f, 0.8f);
-                            yield return null;
-                            continue;
-                        }
-                        // Step up or stop
-                        else if (Mathf.Abs(torque) >= 1.0f)
-                        {
-                            // Full assist tried, still can't reach
-                            PlutoComm.setControlType("NONE");
-                            yield return new WaitForSeconds(0.1f);
-                            reachedNegative = true;
-                            reachedNegativeCB = 1.0f;
-                            minAngle = currentAngle;
-                            torque = 0f;
-                            redoButton.SetActive(true);
-                            inst.text = $"APROM Reached both ends min : {_tmin},max :{_tmax}.";
-                            inst1.text = "Press PLUTO button to move next scene";
-                            shadow.color = new Color(0.2f, 0.85f, 0.4f, 0.8f);
-                            yield return null;
-                            continue;
-                        }
-                        else
-                        {
-                            // Step up control bound
-                            torque = -Mathf.Min(Mathf.Abs(torque) + CB_STEP_SIZE, 1.0f);
-                        }
-                    }
-
-                    PlutoComm.setControlTarget(torque);
-                }
-                else
-                {
-                    // Endpoint naturally reached
                     PlutoComm.setControlType("NONE");
                     yield return new WaitForSeconds(0.1f);
                     reachedNegative = true;
-                    reachedNegativeCB = Mathf.Abs(torque);
                     minAngle = currentAngle;
                     torque = 0f;
                     redoButton.SetActive(true);
-                    inst.text = $"APROM Reached both ends min : {_tmin},max :{_tmax}.";
+                    inst.text = $"APROM Assessment complete: {_tmin} to {_tmax}";
                     inst1.text = "Press PLUTO button to move next scene";
                     shadow.color = new Color(0.2f, 0.85f, 0.4f, 0.8f);
                 }
+
+                PlutoComm.setControlTarget(torque);
             }
 
             previousAngle = currentAngle;

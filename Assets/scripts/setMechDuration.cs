@@ -534,6 +534,7 @@ public class MechanismDurationHandler : MonoBehaviour
                 total += val;
             }
         }
+        ConfigData.TotalTime = TOTAL_TIME;
 
         if (!ValidateConstraints(total, selectedMechs.Count))
         {

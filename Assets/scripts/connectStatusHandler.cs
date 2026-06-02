@@ -54,7 +54,7 @@ public class connectStatusHandler : MonoBehaviour
         status = SystemInfo.batteryStatus;
 
         //if level below 30% it show the indication to connect charger
-        if (level < 0.2 && !errorPanel.gameObject.activeSelf && status != BatteryStatus.Charging)// 30% Battery Level Threshold
+        if (level < 0.3 && !errorPanel.gameObject.activeSelf && status != BatteryStatus.Charging)// 30% Battery Level Threshold
         {
             errorPanel.SetActive(true);
             AppLogger.LogInfo($"Error Below BatteryLevel   | level : {SystemInfo.batteryLevel * 100}%");

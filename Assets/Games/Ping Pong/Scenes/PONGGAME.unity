@@ -1033,6 +1033,10 @@ MonoBehaviour:
   starLabel: {fileID: 251821381}
   instructionPanel: {fileID: 665626529}
   _starCount: 0
+  ranipetBGM: {fileID: 8300000, guid: 7aff53ef9c4762149b6310d31fdf4cc1, type: 3}
+  manipalBGM: {fileID: 8300000, guid: fad055c169e0d104dbbc1197d0c33a99, type: 3}
+  ludianaBGM: {fileID: 8300000, guid: 4b22b5d8cd6273749bd73b9acabce15b, type: 3}
+  bgmAudioSource: {fileID: 206402967}
 --- !u!82 &206402967
 AudioSource:
   m_ObjectHideFlags: 0
@@ -1043,8 +1047,8 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: 2efb857ab99eaae429b6510493018126, type: 3}
-  m_Resource: {fileID: 8300000, guid: 2efb857ab99eaae429b6510493018126, type: 3}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
@@ -5111,7 +5115,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 506375041432789504, guid: 8ad9738b6c234be4eb4dcdcd65a5e6e5, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -0.8781128
+      value: -0.8781738
       objectReference: {fileID: 0}
     - target: {fileID: 506375041432789504, guid: 8ad9738b6c234be4eb4dcdcd65a5e6e5, type: 3}
       propertyPath: m_AnchoredPosition.y

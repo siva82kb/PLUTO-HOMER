@@ -35,7 +35,8 @@ public class MechanismSceneHandler : MonoBehaviour
         // Reset mechanisms.
         PlutoComm.sendHeartbeat();
         AppData.Instance.userData =  new PlutoUserData(DataManager.configFile, DataManager.sessionFile);
-
+    // 🔥 LOAD SESSION DATA
+             ConfigData.LoadFromConfig(DataManager.configFile);
         PlutoComm.calibrateStart("NOMECH");
         PlutoComm.setControlGain(1.0f);
         AppData.Instance.SetMechanism(null);
@@ -49,6 +50,13 @@ public class MechanismSceneHandler : MonoBehaviour
         AppLogger.LogInfo($"'{SceneManager.GetActiveScene().name}' scene started.");
         Debug.Log(PlutoComm.MECHANISMS[PlutoComm.mechanism]);
         AppLogger.SetCurrentMechanism(null);
+        if (ConfigData.TotalTime <= 0f)
+        {
+            
+            SceneManager.LoadScene("PLANSETUP");
+            AppData.isPlanSetup =true;
+            return;
+        }
 
         // Update timescale
         Time.timeScale = Time.timeScale == 0 ? 1 : Time.timeScale;
@@ -66,6 +74,15 @@ public class MechanismSceneHandler : MonoBehaviour
     void Update()
     {
         PlutoComm.sendHeartbeat();
+
+         if (Input.GetKey(KeyCode.LeftControl) &&
+            Input.GetKey(KeyCode.LeftShift) &&
+            Input.GetKeyDown(KeyCode.X)) // magic key combo
+        {
+            SceneManager.LoadScene("PLANSETUP");
+            AppData.isPlanSetup =true;
+            Debug.Log("Key pressed");
+        }
         // Check if a scene change is needed.
         if (changeScene == true)
         {

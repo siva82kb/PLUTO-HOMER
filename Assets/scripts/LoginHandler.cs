@@ -23,25 +23,33 @@ public class LoginHandler : MonoBehaviour
 
     void Start()
     {
-        baseDataPath = Path.Combine(Application.dataPath, "data");
-        if (!Directory.Exists(baseDataPath))
+        if (AppData.isNRSVersion)
         {
-            Debug.LogWarning("Data folder not found.");
-            SceneManager.LoadScene("CONFIG");
-        }
-        LoadUserFolders();
-        userDropdown.onValueChanged.AddListener(OnUserSelected);
-        saveButton.onClick.AddListener(SaveIfChanged);
-        createButton.onClick.AddListener(createConfig);
-        editButton.onClick.AddListener(EnableEditing);
+            baseDataPath = Path.Combine(Application.dataPath, "data");
+            if (!Directory.Exists(baseDataPath))
+            {
+                Debug.LogWarning("Data folder not found.");
+                SceneManager.LoadScene("CONFIG");
+            }
+            LoadUserFolders();
+            userDropdown.onValueChanged.AddListener(OnUserSelected);
+            saveButton.onClick.AddListener(SaveIfChanged);
+            createButton.onClick.AddListener(createConfig);
+            editButton.onClick.AddListener(EnableEditing);
 
-        foreach (var input in configInputs)
-        {
-            input.interactable = false; 
+            foreach (var input in configInputs)
+            {
+                input.interactable = false; 
+            }
+            if (userDropdown.options.Count > 0)
+            {
+                OnUserSelected(userDropdown.value); 
+            }
         }
-         if (userDropdown.options.Count > 0)
+        else
         {
-            OnUserSelected(userDropdown.value); 
+            SceneManager.LoadScene("MAIN");
+            return;
         }
 
     }

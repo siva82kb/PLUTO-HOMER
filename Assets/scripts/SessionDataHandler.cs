@@ -75,7 +75,9 @@ public class SessionDataHandler
     {
         if (configTable.Rows.Count > 0)
         {
-            var row = configTable.Rows[configTable.Rows.Count - 1];
+            // var row = configTable.Rows[configTable.Rows.Count - 1];
+            var row = configTable.Rows[0];
+
 
             StartDate = DateTime.ParseExact(row["StartDate"].ToString(), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture);
             EndDate = DateTime.ParseExact(row["EndDate"].ToString(), "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture);

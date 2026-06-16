@@ -123,7 +123,11 @@ public class FlappyGameControl : MonoBehaviour
     public int _starCount;
     private int[] scores;
     private float mechMinDuration, mechMaxDuration, mechMinThreshold, mechMaxThreshold;
-
+     [Header("Location BGMs")]
+    [SerializeField] private AudioClip ranipetBGM;
+    [SerializeField] private AudioClip manipalBGM;
+    [SerializeField] private AudioClip ludianaBGM;
+    public AudioSource bgmAudioSource;
 
 
     void Awake()
@@ -140,7 +144,26 @@ public class FlappyGameControl : MonoBehaviour
         float fullHeight = Camera.main.orthographicSize * 2f; // Full camera height in world units
         PLAYSIZE  = fullHeight * 0.8f; // 80% of the camera height
 
+    setUpLocationBGM();
     }
+    private void setUpLocationBGM()
+    {
+           string location = AppData.Instance.userData.GetDeviceLocation();
+            
+            if (!string.IsNullOrEmpty(location))
+            {
+                string loc = location.Trim().ToLower();
+                if (loc.Contains("ranipet") && ranipetBGM != null)
+                    bgmAudioSource.clip = ranipetBGM;
+                else if (loc.Contains("manipal") && manipalBGM != null)
+                    bgmAudioSource.clip = manipalBGM;
+                else if (loc.Contains("ludhiana") && ludianaBGM != null)
+                    bgmAudioSource.clip = ludianaBGM;
+
+                if (bgmAudioSource.clip != null)
+                    bgmAudioSource.Play();
+            }
+    } 
 
     private void InitializeGame()
     {
@@ -879,7 +902,7 @@ public class FlappyGameControl : MonoBehaviour
     
     gameState = GameStates.DONE;
     lastHighScore = AppData.Instance.successRate * (PlutoAANController.MAXCONTROLBOUND - AppData.Instance.CurrentControlBound);
-    
+            PlutoComm.setControlType("NONE");
     if (AppData.Instance.previousSuccessRates == null)
     {
         score1.text = $"{(int)lastHighScore}";

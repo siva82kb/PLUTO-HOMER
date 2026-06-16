@@ -66,8 +66,11 @@ namespace TS.DoubleSlider
             }
         }
 
-        public float MinValue => _sliderMin.Value;
+public float MinValue => _sliderMin.Value;
         public float MaxValue => _sliderMax.Value;
+
+        public SingleSlider SliderMin => _sliderMin;
+        public SingleSlider SliderMax => _sliderMax;
 
         public float MinValueHoc => _sliderMinHoc.Value;
         public float MaxValueHoc => _sliderMaxHoc.Value;
@@ -169,7 +172,7 @@ namespace TS.DoubleSlider
 
         }
 
-        public void updateMinMaxVal()
+public void updateMinMaxVal()
         {
 
             if (Array.IndexOf(PlutoComm.MECHANISMS, AppData.Instance.selectedMechanism.name) == 4)

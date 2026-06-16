@@ -9,6 +9,7 @@ using XCharts.Runtime;
 using TMPro;
 using System.Collections.Generic;
 using static PlutoUserData;
+using System.IO;
 
 public class summarySceneHandler : MonoBehaviour
 {
@@ -265,7 +266,40 @@ public class summarySceneHandler : MonoBehaviour
         {
             
             ConnectToRobot.disconnect();
+            if (AppData.isNRSVersion)
+            {
+                Application.Quit();
+
+            #if UNITY_EDITOR
+                        UnityEditor.EditorApplication.isPlaying = false;
+            #endif
+            }
+            else
+            {
             SceneManager.LoadScene("DATAUPLOAD");
+            }
+
+                    if (AppData.isNRSVersion) {
+ 
+            try
+            {
+                // Create marker file for NRS device setup check
+                string dirPath = "C:/DeviceSetups/Pluto";
+                string filePath = Path.Combine(dirPath, "pluto_demo_done.txt");
+                Directory.CreateDirectory(dirPath);
+                File.WriteAllText(filePath, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                AppLogger.LogInfo("Created marker file at: " + filePath);
+                Application.Quit();
+                #if UNITY_EDITOR
+                         UnityEditor.EditorApplication.isPlaying = false;
+                #endif
+            }
+            catch (System.Exception ex)
+            {
+                // Debug.LogError("Failed to create marker file: " + ex.Message);
+            }
+            return;
+        }
         });
     }
    

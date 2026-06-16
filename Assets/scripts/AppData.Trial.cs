@@ -28,7 +28,10 @@ public partial class AppData
         trialType = tSrType.tType;
         
         // Set current control bound.
-        _currControlBound = trialType  == HomerTherapy.TrialType.SR85PCCATCH ? 0.0f : aanController.currentCtrlBound;
+        if (trialType == HomerTherapy.TrialType.SR85PCCATCH)
+            _currControlBound = 0.0f;
+        else
+            _currControlBound = aanController.currentCtrlBound;
 
         // Set the trial data files.
         StartRawAndAanExecDataLogging();
@@ -58,7 +61,7 @@ public partial class AppData
                 // Update targets, hits and misses.
         selectedGame.UpdateTargetsHitsMisses(nTargets, nSuccess, nFailure);
         // Update the control bound if needed.
-        if (trialType  != HomerTherapy.TrialType.SR85PCCATCH)
+        if (trialType != HomerTherapy.TrialType.SR85PCCATCH)
         {
             aanController.AdaptControLBound(desiredSuccessRate, successRate);
         }

@@ -144,6 +144,64 @@ public static class DataManager
         return comport;
 
     }
+
+        public static void saveCSV(DataTable table, string path)
+    {
+        if (table == null || table.Columns.Count == 0)
+        {
+            UnityEngine.Debug.LogError("Invalid DataTable. Cannot save CSV.");
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+
+        // =========================
+        // HEADER
+        // =========================
+        for (int i = 0; i < table.Columns.Count; i++)
+        {
+            sb.Append(table.Columns[i].ColumnName);
+            if (i < table.Columns.Count - 1)
+                sb.Append(",");
+        }
+        sb.AppendLine();
+
+        // =========================
+        // ROWS
+        // =========================
+        foreach (DataRow row in table.Rows)
+        {
+            for (int i = 0; i < table.Columns.Count; i++)
+            {
+                string value = row[i]?.ToString();
+
+                // Handle commas safely
+                if (value != null && value.Contains(","))
+                {
+                    value = $"\"{value}\"";
+                }
+
+                sb.Append(value);
+
+                if (i < table.Columns.Count - 1)
+                    sb.Append(",");
+            }
+            sb.AppendLine();
+        }
+
+        // =========================
+        // WRITE FILE (overwrite)
+        // =========================
+        try
+        {
+            File.WriteAllText(path, sb.ToString());
+            UnityEngine.Debug.Log("CSV saved successfully: " + path);
+        }
+        catch (IOException e)
+        {
+            UnityEngine.Debug.LogError("Error saving CSV: " + e.Message);
+        }
+    }
  
 
     public static DataTable loadCSV(string filePath)

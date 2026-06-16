@@ -1,4 +1,4 @@
-using System;
+    using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -28,6 +28,7 @@ public class OneTimeConfig : MonoBehaviour
     public Image fme1PreviewImage;
     public Button fme1SelectButton;
     public GameObject fme1Image, fme2Image;
+    public GameObject configPanel;
     
     // FME2 components - Time input + Image selection
     public TMP_InputField fme2TimeField;
@@ -80,6 +81,8 @@ public class OneTimeConfig : MonoBehaviour
     private string currentLocation;
     private string currentTrainingSide;
 
+    public GameObject verifyImage;
+
     private void Start()
     {
         // Initialize verification panel (hidden by default)
@@ -91,6 +94,19 @@ public class OneTimeConfig : MonoBehaviour
             fme1Image.SetActive(false);
         if(fme2Image!= null)
             fme2Image.SetActive(false);
+
+        if (AppData.isNRSVersion)
+        {
+            // Everything editable
+            SetFieldInteractivity(true);
+            configPanel.SetActive(true);
+        }
+        else
+        {
+            // Keep locked until verification completes
+            SetFieldInteractivity(false);
+        }
+
         // Automatically set startDateField and endDateField
         startDate = DateTime.Now;
         endDate = startDate.AddDays(28).Date.AddDays(1).AddSeconds(-1);
@@ -102,8 +118,18 @@ public class OneTimeConfig : MonoBehaviour
         else
         {
             InitializePreviewImages();
-            verifyPanel.SetActive(true);
 
+            if (AppData.isNRSVersion)
+            {
+                // Direct config mode (no verification)
+                verifyPanel.SetActive(false);
+            }
+            else
+            {
+                configPanel.SetActive(false);
+
+                verifyPanel.SetActive(true);
+            }
         }
         
         startDateField.text = startDate.ToString("dd-MM-yyyy HH:mm:ss");
@@ -116,7 +142,7 @@ public class OneTimeConfig : MonoBehaviour
         hocField.onValueChanged.AddListener(delegate { UpdateTotalDuration(); });
         fme1TimeField.onValueChanged.AddListener(delegate { UpdateTotalDuration(); });
         fme2TimeField.onValueChanged.AddListener(delegate { UpdateTotalDuration(); });
-                fme1TimeField.onValueChanged.AddListener(delegate { displayFMEOption(); });
+        fme1TimeField.onValueChanged.AddListener(delegate { displayFMEOption(); });
         fme2TimeField.onValueChanged.AddListener(delegate { displayFMEOption(); });
 
         fme1SelectButton.onClick.AddListener(() => OpenImageSelectionPopup(1));
@@ -125,21 +151,51 @@ public class OneTimeConfig : MonoBehaviour
         InitializeImageSelectionPopup();
         imageSelectionPopup.SetActive(false);
 
+        if (AppData.isNRSVersion)
+        {
+            verifyPanel.SetActive(false);
+            if (verifyImage != null)
+                verifyImage.SetActive(false);
+        }
+
+        if (AppData.isNRSVersion && verifyButton != null)
+        {
+            verifyButton.gameObject.SetActive(false);
+        }
+
         // Add verify button listener - NEW
         if (verifyButton != null){
             verifyButton.onClick.AddListener(OnVerifyButtonClick);
             Debug.Log($"Verify ButtonInitialized");
             }
+        
         if (popupOk != null)
             popupOk.onClick.AddListener(OnPopupOkClick);
         if (popupCancel != null)
             popupCancel.onClick.AddListener(OnPopupCancelClick);
     }
 
+    private void SetFieldInteractivity(bool isEditable)
+    {
+        if (homerIdField != null)
+            homerIdField.interactable = isEditable;
+
+        if (affectedSideDropdown != null)
+            affectedSideDropdown.interactable = isEditable;
+
+        if (location != null)
+            location.interactable = isEditable;
+    }
 
     // Called when verify button is clicked
     private void OnVerifyButtonClick()
     {
+
+        if (AppData.isNRSVersion)
+        {
+            Debug.Log("NRS Version - skipping verification");
+            return;
+        }
         Debug.Log("Verify button clicked");
         
         if (HOMERID == null)
@@ -184,60 +240,140 @@ public class OneTimeConfig : MonoBehaviour
         // Start verification process
         StartCoroutine(VerifyHomerID(currentPatientID, currentLocation));
     }
+    // private IEnumerator VerifyHomerID(string homerID, string location)
+    // {
+    //     messageText.text = "Verifying HomerID...";
+        
+    //     // Construct S3 path
+    //     string s3Path = $"s3://{awsBucketName}/{location}/{homerDetailsFileName}";
+        
+    //     // Download file from S3 using AWS CLI
+    //     string tempFilePath = Path.Combine(Application.temporaryCachePath, "HomerDetails_temp.json");
+        
+    //     // Use AWS CLI to download the file
+    //     string arguments = $"s3 cp {s3Path} \"{tempFilePath}\" --profile {awsProfile}";
+        
+    //     System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
+    //     startInfo.FileName = "aws";
+    //     startInfo.Arguments = arguments;
+    //     startInfo.RedirectStandardOutput = true;
+    //     startInfo.RedirectStandardError = true;
+    //     startInfo.UseShellExecute = false;
+    //     startInfo.CreateNoWindow = true;
+
+    //     using (System.Diagnostics.Process process = new System.Diagnostics.Process())
+    //     {
+    //         process.StartInfo = startInfo;
+    //         process.Start();
+            
+    //         string output = process.StandardOutput.ReadToEnd();
+    //         string error = process.StandardError.ReadToEnd();
+    //         process.WaitForExit();
+
+    //         yield return null;
+
+    //         if (process.ExitCode != 0)
+    //         {
+    //             Debug.LogError($"AWS CLI Error: {error}");
+    //             messageText.text = "Error connecting to AWS. Check internet connection.";
+    //             yield break;
+    //         }
+    //     }
+
+    //     // Check if file was downloaded successfully
+    //     if (File.Exists(tempFilePath))
+    //     {
+    //         string jsonContent = File.ReadAllText(tempFilePath);
+    //         ProcessHomerDetails(jsonContent, homerID);
+            
+    //         // Clean up temp file
+    //         File.Delete(tempFilePath);
+    //     }
+    //     else
+    //     {
+    //         messageText.text = $"Could not find HomerDetails for location: {location}";
+    //     }
+    // }
+
     private IEnumerator VerifyHomerID(string homerID, string location)
-    {
-        messageText.text = "Verifying HomerID...";
-        
-        // Construct S3 path
-        string s3Path = $"s3://{awsBucketName}/{location}/{homerDetailsFileName}";
-        
-        // Download file from S3 using AWS CLI
-        string tempFilePath = Path.Combine(Application.temporaryCachePath, "HomerDetails_temp.json");
-        
-        // Use AWS CLI to download the file
-        string arguments = $"s3 cp {s3Path} \"{tempFilePath}\" --profile {awsProfile}";
-        
-        System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
-        startInfo.FileName = "aws";
-        startInfo.Arguments = arguments;
-        startInfo.RedirectStandardOutput = true;
-        startInfo.RedirectStandardError = true;
-        startInfo.UseShellExecute = false;
-        startInfo.CreateNoWindow = true;
+{
+     messageText.text = "Verifying HomerID...";
+     yield return null;
+ 
+     string s3Path = $"s3://{awsBucketName}/{location.ToLower()}/patients/{homerID}/{homerID}.json";
+     string tempFilePath = Path.Combine(Application.temporaryCachePath, "HomerPatient_temp.json");
+     string arguments = $"s3 cp {s3Path} \"{tempFilePath}\" --profile {awsProfile}";
+ 
+     System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
+     startInfo.FileName = "aws";
+     startInfo.Arguments = arguments;
+     startInfo.RedirectStandardOutput = true;
+     startInfo.RedirectStandardError = true;
+     startInfo.UseShellExecute = false;
+     startInfo.CreateNoWindow = true;
+ 
+     using (System.Diagnostics.Process process = new System.Diagnostics.Process())
+     {
+         process.StartInfo = startInfo;
+         process.Start();
+         string error = process.StandardError.ReadToEnd();
+         process.WaitForExit();
+ 
+         if (process.ExitCode != 0)
+         {
+             Debug.LogError($"AWS CLI Error: {error}");
+             messageText.text = $"HomerID {homerID} not found.";
+             verifyButton.interactable = true;
+             yield break;
+         }
+     }
+ 
+     if (!File.Exists(tempFilePath))
+     {
+         messageText.text = $"HomerID {homerID} not found.";
+         verifyButton.interactable = true;
+         yield break;
+     }
+ 
+     string jsonContent = File.ReadAllText(tempFilePath);
+     File.Delete(tempFilePath);
+ 
+     ProcessPatientDetails(jsonContent, homerID);
+     verifyButton.interactable = true;
+            configPanel.SetActive(true);
 
-        using (System.Diagnostics.Process process = new System.Diagnostics.Process())
-        {
-            process.StartInfo = startInfo;
-            process.Start();
-            
-            string output = process.StandardOutput.ReadToEnd();
-            string error = process.StandardError.ReadToEnd();
-            process.WaitForExit();
-
-            yield return null;
-
-            if (process.ExitCode != 0)
-            {
-                Debug.LogError($"AWS CLI Error: {error}");
-                messageText.text = "Error connecting to AWS. Check internet connection.";
-                yield break;
-            }
-        }
-
-        // Check if file was downloaded successfully
-        if (File.Exists(tempFilePath))
-        {
-            string jsonContent = File.ReadAllText(tempFilePath);
-            ProcessHomerDetails(jsonContent, homerID);
-            
-            // Clean up temp file
-            File.Delete(tempFilePath);
-        }
-        else
-        {
-            messageText.text = $"Could not find HomerDetails for location: {location}";
-        }
-    }
+}
+ 
+// Reads the per-patient JSON: if group is null → unassigned; if "control" → blocked; otherwise show confirmation popup
+private void ProcessPatientDetails(string jsonContent, string homerID)
+{
+     var json = JSON.Parse(jsonContent);
+     if (json == null)
+     {
+         messageText.text = "Invalid patient data format.";
+         return;
+     }
+ 
+     var groupNode = json["group"];
+     if (groupNode == null || groupNode.IsNull || string.IsNullOrEmpty(groupNode.Value))
+     {
+         messageText.text = $"{homerID} is Unassigned. Please wait — PI should assign a group.";
+         return;
+     }
+ 
+     if (groupNode.Value.ToLower() == "control")
+     {
+         messageText.text = $"{homerID} is assigned to the Control group. Cannot enroll in PLUTO.";
+         return;
+     }
+ 
+     string hospID = json["hospitalID"];
+     currentTrainingSide = json["trainingSide"];
+     
+     popUpConfirmationPatientID.text = $"Homer ID: {homerID}\nPatient ID: {hospID}\nTraining Side: {currentTrainingSide}\n\nAre you sure?";
+     messageText.text = "";
+     popUpPanel.SetActive(true);
+}
 
 
     // NEW: Helper to get dropdown index for training side
@@ -338,7 +474,7 @@ public class OneTimeConfig : MonoBehaviour
                 else
                 {
                     // Not activated - show popup with patient ID and training side
-                    popUpConfirmationPatientID.text = $"HomerID : {searchHomerID} is assigned to Patient id: {hospID}\nTraining Side: {trainSide}\n\nAre you sure?";
+                    popUpConfirmationPatientID.text = $"Homer ID : {searchHomerID}\nPatient ID: {hospID}\nTraining Side: {trainSide}\n\nAre you sure?";
                     Debug.Log($"Training side from cloud: {trainSide}");
                     messageText.text = "";
                     popUpPanel.SetActive(true);
@@ -357,11 +493,12 @@ public class OneTimeConfig : MonoBehaviour
     {
         popUpPanel.SetActive(false);
         verifyPanel.SetActive(false);
-        
+        // SetFieldInteractivity(true);
         // Set the saved values back to fields
         homerIdField.text = currentPatientID;
         affectedSideDropdown.value = GetDropdownIndexForSide(currentTrainingSide);
         location.value = GetDropdownIndexForLocation(currentLocation);
+        verifyImage.SetActive(true);
         
         // Proceed to configuration scene
         // saveConfig();
@@ -372,7 +509,7 @@ public class OneTimeConfig : MonoBehaviour
     {
         popUpPanel.SetActive(false);
         verifyPanel.SetActive(true);
-        
+        SetFieldInteractivity(false);
         // Clear fields
         homerIdField.text = "";
         messageText.text = "Verification cancelled";
@@ -393,6 +530,7 @@ public class OneTimeConfig : MonoBehaviour
     // Modified: Load existing config method
     private void LoadExistingConfig()
     {
+        verifyImage.SetActive(true);
         DataTable configData = DataManager.loadCSV(DataManager.configFile);
         DataRow lastRow = configData.Rows[configData.Rows.Count - 1];
         
@@ -778,14 +916,32 @@ public class OneTimeConfig : MonoBehaviour
 
         // Updated headers to include all fields
         string headers = "HomerID,StartDate,EndDate,TotalTime,WFE,WURD,FPS,HOC,FME1,FME2,FME1ID,FME2ID,TrainingSide,Location,Group";
-        string data = $"{homerID},{startDate},{endDate},{totalDuration},{wfe},{wurd},{fps},{hoc},{fme1Time},{fme2Time},{fme1id},{fme2id},{trainingSide},{Location},{group}";
+        string data = $"{homerID},{startDate},{endDate},0,0,0,0,0,0,0,-1,-1,{trainingSide},{Location},{group}";
 
         string directoryPath = Path.Combine(Application.dataPath, "data", AppData.Instance.userID, "data");
         string datapath = Path.Combine(directoryPath, "configdata.csv");
         
         // Ensure directory exists
-        if (!Directory.Exists(directoryPath))
-            Directory.CreateDirectory(directoryPath);
+        // if (!Directory.Exists(directoryPath))
+        //     Directory.CreateDirectory(directoryPath);
+
+        if (AppData.isNRSVersion)
+        {
+            if (Directory.Exists(directoryPath))
+            {
+                msg.text = "Homer ID already exists. Cannot create duplicate account.";
+                return;
+            }
+            else
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+        }
+        else
+        {
+            if (!Directory.Exists(directoryPath))
+                Directory.CreateDirectory(directoryPath);
+        }
 
         if (!File.Exists(datapath))
         {

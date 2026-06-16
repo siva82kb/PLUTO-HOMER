@@ -94,8 +94,17 @@ public class connectStatusHandler : MonoBehaviour
                 }
                 else
                 {
-                    // Normal flow: load DataUpload
-                    SceneManager.LoadScene("DATAUPLOAD");
+                    if (AppData.isNRSVersion)
+                    {
+                        Application.Quit();
+
+                    #if UNITY_EDITOR
+                                UnityEditor.EditorApplication.isPlaying = false;
+                    #endif
+                    }else{
+                            // Normal flow: load DataUpload
+                            SceneManager.LoadScene("DATAUPLOAD");
+                         }
                 }
                 // CloseAppLogger();
                 // SceneManager.LoadScene("DATAUPLOAD");
@@ -148,7 +157,22 @@ public class connectStatusHandler : MonoBehaviour
         AppLogger.StopLogging();
         PlutoAanLogger.StopLogging();
         PlutoComLogger.StopLogging();
-        // Process.Start("shutdown", "/s /t 0");
+         if (AppData.isNRSVersion)
+                    {
+                        Application.Quit();
+
+                    #if UNITY_EDITOR
+                                UnityEditor.EditorApplication.isPlaying = false;
+                    #endif
+                    }
+                    else{
+                         Application.Quit();
+
+                    #if UNITY_EDITOR
+                                UnityEditor.EditorApplication.isPlaying = false;
+                    #endif
+                    // Process.Start("shutdown", "/s /t 0");
+                    }
         
     }
 }

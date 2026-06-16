@@ -7839,6 +7839,10 @@ MonoBehaviour:
   currSR: {fileID: 1816894508}
   HS: {fileID: 0}
   status: {fileID: 0}
+  ranipetBGM: {fileID: 8300000, guid: 7ee3c38ab6b41a94a8d20c62fb0b0b99, type: 3}
+  manipalBGM: {fileID: 8300000, guid: 8de374cea15811a4bb7a8032abc80b7f, type: 3}
+  ludianaBGM: {fileID: 8300000, guid: 81a39a6f3b1b146488418f3e1227de86, type: 3}
+  bgmAudioSource: {fileID: 776559206}
   aromLeft: {fileID: 1744843505}
   aromRight: {fileID: 1302231362}
   gameSpeedControl: {fileID: 8052530602043666212}
@@ -7902,8 +7906,8 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: 7ee3c38ab6b41a94a8d20c62fb0b0b99, type: 3}
-  m_Resource: {fileID: 8300000, guid: 7ee3c38ab6b41a94a8d20c62fb0b0b99, type: 3}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
   m_Volume: 0.909
   m_Pitch: 1

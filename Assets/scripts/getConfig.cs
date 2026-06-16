@@ -14,22 +14,31 @@ public class getConfig : MonoBehaviour
     public TMP_InputField hospitalIdField;
     public TMP_Dropdown location;
     private string configFilePath;
-    // Start is called before the first frame update
+    private bool isChecking = false;
+    private float spinnerRotation = 0f;
+
     void Start()
     {
-        
+
     }
 
-    // Update is called once per frame
     void Update()
     {
         SHOWMESSAGE();
         checkForConfigFile();
-        
+
+        if (isChecking)
+        {
+            spinnerRotation += 360f * Time.deltaTime / 0.8f; // Full rotation every 0.8 seconds
+            if (spinnerRotation >= 360f)
+                spinnerRotation -= 360f;
+        }
     }
+
     public void onclickConfigure()
     {
-        message.text = "fetching detials ....";
+        isChecking = true;
+        message.text = "Checking 🔃";
         string hospitalID = hospitalIdField.text;
         configFilePath = $"{Application.dataPath}/data/{hospitalID}/data/configdata.csv";
         string Location = location.options[location.value].text;
@@ -38,22 +47,26 @@ public class getConfig : MonoBehaviour
         {
             awsManager.RunAWSpythonScript();
         });
-    
+
     }
-    public  void SHOWMESSAGE()
+    public void SHOWMESSAGE()
     {
+        if (!isChecking)
+            return;
+
         string data = awsManager.getmessage();
         if (data != "")
         {
+            isChecking = false;
             message.text = awsManager.getmessage();
-            //SceneManager.LoadScene("MAIN");
         }
-        
     }
+
     public void checkForConfigFile()
     {
         if (File.Exists(configFilePath))
         {
+            isChecking = false;
             Debug.Log("Logged in");
             SceneManager.LoadScene("MAIN");
         }
